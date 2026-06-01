@@ -54,10 +54,51 @@ import Layout from '../../layouts/Layout.astro';
         </div>
       </section>
 
-      <!-- Recent saves -->
+      <!-- Recent saves (本次 session) -->
       <section id="recent-card" class="card" style="display:none">
         <h2 class="card-title">本次已存 <span id="recent-count" class="result-badge">0</span></h2>
         <div id="recent-list" class="recent-list"></div>
+      </section>
+
+      <!-- Stats widget -->
+      <section class="card stats-card">
+        <div class="stats-grid">
+          <div class="stat-block">
+            <div class="stat-label">今天</div>
+            <div class="stat-value" id="stat-today">—</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">近 30 天</div>
+            <div class="stat-value" id="stat-month">—</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">不同品項</div>
+            <div class="stat-value" id="stat-products">—</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">不同社團</div>
+            <div class="stat-value" id="stat-groups">—</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent listings 永久顯示 -->
+      <section class="card">
+        <div class="recent-head">
+          <h2 class="card-title">最近記錄</h2>
+          <div class="recent-filter">
+            <select id="recent-days" class="filter-select">
+              <option value="1">近 1 天</option>
+              <option value="7" selected>近 7 天</option>
+              <option value="30">近 30 天</option>
+              <option value="90">近 90 天</option>
+            </select>
+            <button id="refresh-recent-btn" class="link-btn" title="重新整理">↻</button>
+          </div>
+        </div>
+        <div id="recent-table-wrap" class="recent-table-wrap">
+          <div class="loading-text">載入中…</div>
+        </div>
       </section>
     </main>
   </div>
@@ -368,6 +409,144 @@ import Layout from '../../layouts/Layout.astro';
       border-color: rgba(234, 179, 8, 0.25);
       color: rgba(254, 240, 138, 0.85);
     }
+
+    /* Stats */
+    .stats-card { padding: 14px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    @media (min-width: 720px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-block {
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+
+    /* Recent listings table */
+    .recent-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .recent-head .card-title { margin: 0; }
+    .recent-filter {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .filter-select {
+      padding: 6px 10px;
+      font-size: 13px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      outline: none;
+      font-family: inherit;
+    }
+    .loading-text {
+      text-align: center;
+      padding: 24px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 14px;
+    }
+    .recent-table-wrap {
+      overflow-x: auto;
+    }
+    .recent-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .recent-table th {
+      text-align: left;
+      padding: 8px 10px;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 500;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      white-space: nowrap;
+    }
+    .recent-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: top;
+    }
+    .recent-table tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .recent-table .col-model { font-weight: 600; }
+    .recent-table .col-price { text-align: right; font-variant-numeric: tabular-nums; }
+    .recent-table .col-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .col-status.available {
+      background: rgba(34, 197, 94, 0.12);
+      color: #86efac;
+    }
+    .col-status.sold {
+      background: rgba(156, 163, 175, 0.18);
+      color: rgba(255, 255, 255, 0.55);
+      text-decoration: line-through;
+    }
+    .col-meta {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .col-source-link {
+      color: rgba(96, 165, 250, 0.8);
+      text-decoration: none;
+      font-size: 11px;
+    }
+    .col-source-link:hover { text-decoration: underline; }
+    .row-empty {
+      text-align: center;
+      padding: 24px;
+      color: rgba(255, 255, 255, 0.35);
+      font-size: 13px;
+    }
+    .badge-unmatched {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 10px;
+      border-radius: 4px;
+      background: rgba(234, 179, 8, 0.15);
+      color: #fde68a;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .badge-legacy {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 10px;
+      border-radius: 4px;
+      background: rgba(168, 85, 247, 0.15);
+      color: #d8b4fe;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
   </style>
 
   <script>
@@ -660,5 +839,110 @@ import Layout from '../../layouts/Layout.astro';
     function escapeHtml(s: string): string {
       return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
     }
+
+    /* ============================================
+       Recent listings + stats
+       ============================================ */
+    const recentDaysSel = $('recent-days') as HTMLSelectElement;
+    const recentWrap = $('recent-table-wrap') as HTMLDivElement;
+    const refreshBtn = $('refresh-recent-btn') as HTMLButtonElement;
+
+    async function loadRecent() {
+      const days = recentDaysSel.value || '7';
+      recentWrap.innerHTML = '<div class="loading-text">載入中…</div>';
+      try {
+        const res = await fetch(`/api/admin/listings/recent?days=${days}&limit=80`, { credentials: 'include' });
+        if (!res.ok) {
+          recentWrap.innerHTML = '<div class="row-empty">載入失敗（' + res.status + '）</div>';
+          return;
+        }
+        const data = await res.json();
+        renderStats(data.stats);
+        renderRecentTable(data.items || []);
+      } catch {
+        recentWrap.innerHTML = '<div class="row-empty">網路錯誤</div>';
+      }
+    }
+
+    function renderStats(stats: any) {
+      ($('stat-today') as HTMLElement).textContent = String(stats?.today_count ?? 0);
+      ($('stat-month') as HTMLElement).textContent = String(stats?.month_count ?? 0);
+      ($('stat-products') as HTMLElement).textContent = String(stats?.month_distinct_products ?? 0);
+      ($('stat-groups') as HTMLElement).textContent = String(stats?.month_distinct_groups ?? 0);
+    }
+
+    function renderRecentTable(items: any[]) {
+      if (items.length === 0) {
+        recentWrap.innerHTML = '<div class="row-empty">這段時間沒有記錄</div>';
+        return;
+      }
+
+      const rows = items.map((it) => {
+        const status = it.status === 'sold' ? 'sold' : 'available';
+        const statusLabel = status === 'sold' ? '已售' : '可購';
+        const unmatched = !it.product_id || it.product_id === 'cat_unknown';
+        const sourceText = it.source_group_name || '—';
+        const timeAgo = formatTimeAgo(it.created_at);
+        const sourceLink = it.source_url
+          ? `<a href="${escapeHtml(it.source_url)}" target="_blank" rel="noopener" class="col-source-link">🔗 FB</a>`
+          : '';
+        const meta = [it.shipping_text, it.meetup_text].filter(Boolean).join(' · ');
+        return `
+          <tr>
+            <td class="col-model">
+              ${escapeHtml(it.model)}
+              ${unmatched ? '<span class="badge-unmatched">未對應</span>' : ''}
+              ${it.is_legacy ? '<span class="badge-legacy">legacy</span>' : ''}
+              ${it.series ? `<div class="col-meta">${escapeHtml(it.series)}${it.condition ? ' · ' + escapeHtml(it.condition) : ''}</div>` : ''}
+              ${meta ? `<div class="col-meta">${escapeHtml(meta)}</div>` : ''}
+            </td>
+            <td class="col-price">NT$ ${(it.price || 0).toLocaleString()}</td>
+            <td><span class="col-status ${status}">${statusLabel}</span></td>
+            <td>${escapeHtml(sourceText)}${sourceLink ? '<br>' + sourceLink : ''}</td>
+            <td class="col-meta" style="white-space:nowrap">${timeAgo}</td>
+          </tr>
+        `;
+      }).join('');
+
+      recentWrap.innerHTML = `
+        <table class="recent-table">
+          <thead>
+            <tr>
+              <th>商品</th>
+              <th style="text-align:right">價格</th>
+              <th>狀態</th>
+              <th>來源</th>
+              <th>時間</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function formatTimeAgo(ts: number): string {
+      const diff = Date.now() - ts;
+      const minutes = Math.floor(diff / 60000);
+      if (minutes < 1) return '剛剛';
+      if (minutes < 60) return `${minutes} 分鐘前`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours} 小時前`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days} 天前`;
+      const d = new Date(ts);
+      return `${d.getMonth() + 1}/${d.getDate()}`;
+    }
+
+    recentDaysSel.addEventListener('change', loadRecent);
+    refreshBtn.addEventListener('click', loadRecent);
+
+    // 進頁立刻載入
+    loadRecent();
+
+    // save 成功後也 reload recent
+    const _origSaveClick = saveBtn.onclick;
+    saveBtn.addEventListener('click', () => {
+      setTimeout(loadRecent, 500); // 等 batch-save 寫完
+    });
   </script>
 </Layout>

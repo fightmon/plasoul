@@ -116,18 +116,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     try {
       await context.env.DB.prepare(
         `INSERT INTO fb_listings (
-          id, product_id,
+          id, product_id, raw_model_name,
           source_platform, source_group_name, source_url, batch_id,
           price, condition, status, notes,
           shipping_text, meetup_text,
           screenshot_r2_key, screenshot_taken_at,
           contributor_user_id, review_status, review_notes,
           is_legacy, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, 'approved', NULL, 0, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, 'approved', NULL, 0, ?, ?)`
       )
         .bind(
           listingId,
           productId || 'cat_unknown',
+          model,
           sourcePlatform,
           sourceGroupName,
           sourceUrl,
