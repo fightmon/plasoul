@@ -327,11 +327,24 @@ import Layout from '../../layouts/Layout.astro';
 
   <script>
     /* ============================================
-       Admin login check (client-side guard)
+       Admin login check (call /api/admin/me，因為 HttpOnly cookie 不能 JS 讀)
        ============================================ */
-    if (!document.cookie.includes('ps_session=')) {
-      window.location.href = '/admin/login';
-    }
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/me', { credentials: 'include' });
+        if (!res.ok) {
+          window.location.href = '/admin/login';
+          return;
+        }
+        const data = await res.json();
+        if (data?.user?.email) {
+          const el = document.getElementById('admin-email');
+          if (el) el.textContent = data.user.email;
+        }
+      } catch {
+        window.location.href = '/admin/login';
+      }
+    })();
 
     /* ============================================
        Setup
