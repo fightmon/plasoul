@@ -27,6 +27,13 @@ npm run dev        # http://localhost:4321
 npm run build      # build → dist/
 ```
 
+## Admin 設定
+
+首次部署後，設一個 admin 帳號才能進 `/admin/login`：
+詳見 [`docs/SETUP_ADMIN.md`](docs/SETUP_ADMIN.md)
+
+需要在 Cloudflare Pages env vars 加 `JWT_SECRET`（隨機 32+ 字元）。
+
 ## D1 操作
 
 ```bash
