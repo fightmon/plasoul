@@ -36,6 +36,8 @@ interface IncomingItem {
   price?: number;
   condition?: string;
   status?: string;
+  shippingText?: string;
+  meetupText?: string;
   notes?: string;
   catalogId?: string;  // 前端 review 時 admin 指定的 catalog
 }
@@ -117,10 +119,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           id, product_id,
           source_platform, source_group_name, source_url, batch_id,
           price, condition, status, notes,
+          shipping_text, meetup_text,
           screenshot_r2_key, screenshot_taken_at,
           contributor_user_id, review_status, review_notes,
           is_legacy, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, 'approved', NULL, 0, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, 'approved', NULL, 0, ?, ?)`
       )
         .bind(
           listingId,
@@ -133,6 +136,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
           (item.condition || '全新').trim(),
           status,
           (item.notes || '').trim() || null,
+          (item.shippingText || '').trim() || null,
+          (item.meetupText || '').trim() || null,
           now,
           now
         )

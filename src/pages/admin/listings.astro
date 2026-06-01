@@ -250,7 +250,7 @@ import Layout from '../../layouts/Layout.astro';
     }
     .result-row {
       display: grid;
-      grid-template-columns: auto 1fr;
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 12px;
       align-items: start;
       padding: 12px;
@@ -270,6 +270,12 @@ import Layout from '../../layouts/Layout.astro';
       flex-shrink: 0;
       accent-color: #fff;
     }
+    .row-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
     .row-fields {
       display: grid;
       grid-template-columns: 1fr;
@@ -279,6 +285,45 @@ import Layout from '../../layouts/Layout.astro';
       .row-fields {
         grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
       }
+    }
+    .row-meta {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+    @media (min-width: 720px) {
+      .row-meta { grid-template-columns: 1fr 1fr; }
+    }
+    .meta-field {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .meta-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .meta-field input {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 5px;
+      outline: none;
+      font-family: inherit;
+    }
+    .meta-field input:focus {
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .meta-field input::placeholder {
+      color: rgba(255, 255, 255, 0.2);
     }
     .row-fields input,
     .row-fields select {
@@ -469,18 +514,30 @@ import Layout from '../../layouts/Layout.astro';
 
         row.innerHTML = `
           <input type="checkbox" class="check" checked />
-          <div class="row-fields">
-            <input type="text" class="model-input" value="${escapeHtml(item.model || item.originalName || '')}" placeholder="品名" />
-            <select class="series-select">
-              <option value="">--系列--</option>
-              ${seriesOptions}
-            </select>
-            <select class="cond-select">${condOptions}</select>
-            <select class="status-select">
-              <option value="available" ${item.status === 'sold' ? '' : 'selected'}>可購</option>
-              <option value="sold" ${item.status === 'sold' ? 'selected' : ''}>已售</option>
-            </select>
-            <input type="number" class="price-input" value="${item.price || 0}" min="0" placeholder="NT$" />
+          <div class="row-content">
+            <div class="row-fields">
+              <input type="text" class="model-input" value="${escapeHtml(item.model || item.originalName || '')}" placeholder="品名" />
+              <select class="series-select">
+                <option value="">--系列--</option>
+                ${seriesOptions}
+              </select>
+              <select class="cond-select">${condOptions}</select>
+              <select class="status-select">
+                <option value="available" ${item.status === 'sold' ? '' : 'selected'}>可購</option>
+                <option value="sold" ${item.status === 'sold' ? 'selected' : ''}>已售</option>
+              </select>
+              <input type="number" class="price-input" value="${item.price || 0}" min="0" placeholder="NT$" />
+            </div>
+            <div class="row-meta">
+              <label class="meta-field">
+                <span class="meta-label">📦 寄送</span>
+                <input type="text" class="ship-input" value="${escapeHtml(item.shippingText || '')}" placeholder="例：賣貨便+45 / 店到店+60" />
+              </label>
+              <label class="meta-field">
+                <span class="meta-label">📍 面交</span>
+                <input type="text" class="meetup-input" value="${escapeHtml(item.meetupText || '')}" placeholder="例：台南面交 / 雙北面交" />
+              </label>
+            </div>
           </div>
         `;
         resultsList.appendChild(row);
@@ -520,6 +577,8 @@ import Layout from '../../layouts/Layout.astro';
             condition: (row.querySelector('.cond-select') as HTMLSelectElement).value,
             status: (row.querySelector('.status-select') as HTMLSelectElement).value,
             price: parseInt((row.querySelector('.price-input') as HTMLInputElement).value || '0', 10),
+            shippingText: (row.querySelector('.ship-input') as HTMLInputElement).value.trim(),
+            meetupText: (row.querySelector('.meetup-input') as HTMLInputElement).value.trim(),
             notes: orig.note || '',
           };
         });
