@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<title>普拉魂擷取</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    padding: 14px;
+    font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
+    background: #0A1428;
+    color: #fff;
+    width: 380px;
+    box-sizing: border-box;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .header-icon { font-size: 22px; line-height: 1; }
+  .header-title { font-weight: 700; font-size: 14px; letter-spacing: 0.05em; }
+  .header-sub {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: auto;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .field-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.02em;
+  }
+  .field-input, .field-textarea {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 13px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  .field-textarea {
+    resize: vertical;
+    min-height: 100px;
+    max-height: 220px;
+    line-height: 1.4;
+  }
+  .field-input:focus, .field-textarea:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .row { display: flex; gap: 8px; }
+  .row > .field { flex: 1; margin-bottom: 0; }
+
+  .status {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 6px 0;
+    min-height: 14px;
+  }
+  .status.ok { color: #86efac; }
+  .status.err { color: #fca5a5; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+  .btn {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s, opacity 0.15s;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: #fff;
+    color: #0A1428;
+  }
+  .btn-primary:hover { background: #f0f0f0; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    flex: 0 0 auto;
+    padding: 8px 12px;
+  }
+  .btn-secondary:hover { background: rgba(255, 255, 255, 0.14); }
+
+  .hint {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="header-icon">🤖</span>
+  <span class="header-title">普拉魂擷取</span>
+  <span class="header-sub" id="version">v0.1</span>
+</div>
+
+<div class="row">
+  <div class="field">
+    <span class="field-label">FB 貼文 URL</span>
+    <input id="url" type="url" class="field-input" placeholder="自動偵測" />
+  </div>
+</div>
+
+<div class="field">
+  <span class="field-label">社團名稱</span>
+  <input id="group" type="text" class="field-input" placeholder="自動偵測" />
+</div>
+
+<div class="field">
+  <span class="field-label">貼文文字（可編輯）</span>
+  <textarea id="text" class="field-textarea" placeholder="自動抓取中…"></textarea>
+</div>
+
+<div class="status" id="status">正在抓取貼文…</div>
+
+<div class="btn-row">
+  <button id="send-btn" class="btn btn-primary" disabled>送到普拉魂後台</button>
+  <button id="reselect-btn" class="btn btn-secondary" title="改用我選取的文字">重抓</button>
+</div>
+
+<div class="hint">
+  💡 抓不到完整文字？在 FB 頁面**手動選取**整篇貼文後再點「重抓」<br />
+  💡 也可以直接在上方 textarea 編輯後再送出
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

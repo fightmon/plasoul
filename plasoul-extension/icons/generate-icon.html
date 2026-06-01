@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<title>產 icon-128.png</title>
+<style>
+  body { font-family: system-ui; padding: 20px; background: #f5f5f5; }
+  canvas { border: 1px solid #ddd; background: white; image-rendering: pixelated; }
+  button { padding: 10px 20px; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<h2>普拉魂 Extension icon 產生器</h2>
+<p>按 [下載] → 把產出的 <code>icon-128.png</code> 放到這個資料夾覆蓋掉本檔同層</p>
+
+<canvas id="c" width="128" height="128"></canvas>
+<p>
+  <button onclick="dl()">📥 下載 icon-128.png</button>
+</p>
+
+<script>
+  const c = document.getElementById('c');
+  const ctx = c.getContext('2d');
+
+  // 深藍背景（plasoul brand 色）+ rounded
+  const r = 28;
+  ctx.fillStyle = '#0A1428';
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(128 - r, 0);
+  ctx.quadraticCurveTo(128, 0, 128, r);
+  ctx.lineTo(128, 128 - r);
+  ctx.quadraticCurveTo(128, 128, 128 - r, 128);
+  ctx.lineTo(r, 128);
+  ctx.quadraticCurveTo(0, 128, 0, 128 - r);
+  ctx.lineTo(0, r);
+  ctx.quadraticCurveTo(0, 0, r, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // 🤖 emoji
+  ctx.font = '88px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🤖', 64, 68);
+
+  function dl() {
+    const a = document.createElement('a');
+    a.href = c.toDataURL('image/png');
+    a.download = 'icon-128.png';
+    a.click();
+  }
+</script>
+</body>
+</html>

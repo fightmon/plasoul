@@ -347,6 +347,34 @@ import Layout from '../../layouts/Layout.astro';
     })();
 
     /* ============================================
+       Hash prefill (給 Chrome Extension 帶資料用)
+       URL: /admin/listings#text=...&url=...&group=...
+       ============================================ */
+    (() => {
+      if (!window.location.hash || window.location.hash.length < 2) return;
+      try {
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const txt = params.get('text');
+        const u = params.get('url');
+        const g = params.get('group');
+        if (txt) {
+          const ta = document.getElementById('text-input') as HTMLTextAreaElement | null;
+          if (ta) ta.value = txt;
+        }
+        if (u) {
+          const i = document.getElementById('src-url') as HTMLInputElement | null;
+          if (i) i.value = u;
+        }
+        if (g) {
+          const i = document.getElementById('src-group') as HTMLInputElement | null;
+          if (i) i.value = g;
+        }
+        // 清掉 hash 避免重整時重複帶（用 replaceState 不留 history）
+        history.replaceState(null, '', window.location.pathname);
+      } catch {}
+    })();
+
+    /* ============================================
        Setup
        ============================================ */
     const SERIES_OPTIONS = ['HG', 'RG', 'MG', 'MGEX', 'MGSD', 'MG Ver.Ka', 'PG', 'RE/100', 'SD', 'ROBOT魂', 'METAL ROBOT魂', '超合金', '好微笑', 'METAL BUILD', 'GFFMC', 'GFFN', 'SHCM PRO'];
