@@ -1,0 +1,36 @@
+name = "plasoul"
+compatibility_date = "2026-06-01"
+pages_build_output_dir = "./dist"
+
+# ============================================
+# 普拉魂 PuraSoul - Cloudflare Pages 設定
+# ============================================
+
+[vars]
+ENVIRONMENT = "production"
+PLATFORM_NAME = "普拉魂"
+
+# ============================================
+# D1 Database (主資料庫)
+# 建立後填 database_id：npx wrangler d1 create plasoul-db
+# ============================================
+[[d1_databases]]
+binding = "DB"
+database_name = "plasoul-db"
+database_id = "TBD-REPLACE-AFTER-WRANGLER-D1-CREATE"
+
+# ============================================
+# KV Namespace (rate limit、session、freemium quota 快取)
+# 建立後填 id：npx wrangler kv namespace create plasoul-kv
+# ============================================
+[[kv_namespaces]]
+binding = "KV"
+id = "TBD-REPLACE-AFTER-WRANGLER-KV-CREATE"
+
+# ============================================
+# R2 Bucket (FB 截圖 + 鋼彈型錄圖)
+# 建立：npx wrangler r2 bucket create plasoul-assets
+# ============================================
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "plasoul-assets"

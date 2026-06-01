@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* ============================================
+   普拉魂 PuraSoul · Design Tokens v0
+   （W0-2 設計品牌資產時會細化）
+   ============================================ */
+@theme {
+  /* 主色（placeholder：W0-2 logo 確定後更新） */
+  --color-brand-primary: #E4002B;        /* 鋼彈紅 */
+  --color-brand-accent:  #D4AF37;        /* 萬代金 */
+  --color-brand-dark:    #0A1428;        /* 深海軍藍 */
+
+  /* 字體 */
+  --font-display: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-body:    "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+/* ============================================
+   Mobile-first base（手機 375px+ 為主，桌機加強）
+   ============================================ */
+html {
+  font-size: 16px;
+}
+
+/* iOS Safari 規則：input ≥ 16px 才不會 auto-zoom */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+/* iPhone notch safe area */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ============================================
+   桌機 (≥ 768px) 微放鬆字體
+   ============================================ */
+@media (min-width: 768px) {
+  html {
+    font-size: 17px;
+  }
+}
+
+/* ============================================
+   Reduced motion (a11y, iOS HIG)
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

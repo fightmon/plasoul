@@ -1,0 +1,22 @@
+# 強制所有文字檔用 LF 行尾（避免 Windows/Mac/Linux 編輯時 CRLF/LF 打架）
+# 樂創踩過雷：曾發生 commit 顯示「6000 行 diff」實際只改一行的鬼事
+* text=auto eol=lf
+
+# 二進位檔案不轉換
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.svg binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.mp4 binary
+*.mov binary
+*.sqlite binary
+*.db binary

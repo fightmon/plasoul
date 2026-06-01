@@ -1,0 +1,26 @@
+{
+  "name": "plasoul",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "普拉魂 PuraSoul — 鋼普拉找便宜 SaaS",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "npm run tailwind:build && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "tailwind:build": "tailwindcss -i src/styles/global.css -o public/tailwind.css --minify"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^13.5.1",
+    "@tailwindcss/vite": "^4.3.0",
+    "astro": "^6.3.3",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0"
+  }
+}

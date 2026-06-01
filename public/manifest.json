@@ -1,0 +1,33 @@
+{
+  "name": "普拉魂 PuraSoul",
+  "short_name": "普拉魂",
+  "description": "鋼普拉找便宜 — 拍張鋼彈，AI 30 秒找便宜的賣家",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A1428",
+  "theme_color": "#0A1428",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["shopping", "hobbies", "lifestyle"]
+}
