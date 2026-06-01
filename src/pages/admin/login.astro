@@ -2,20 +2,20 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 <Layout title="管理員登入 · 普拉魂" noIndex={true}>
-  <main class="min-h-screen flex items-center justify-center px-5 py-10">
-    <div class="w-full max-w-sm">
-      <!-- Logo -->
-      <div class="text-center mb-8">
-        <div class="text-6xl mb-3 select-none" aria-hidden="true">🤖</div>
-        <h1 class="text-2xl font-bold tracking-wide">普拉魂管理後台</h1>
-        <p class="text-sm text-white/50 mt-1 tracking-widest">PuraSoul Admin</p>
+  <main class="login-page">
+    <div class="login-wrap">
+      <!-- Brand header -->
+      <div class="login-brand">
+        <div class="brand-icon" aria-hidden="true">🤖</div>
+        <h1 class="brand-title">普拉魂 管理後台</h1>
+        <p class="brand-sub">PuraSoul Admin</p>
       </div>
 
       <!-- Form card -->
-      <form id="login-form" class="space-y-5 bg-white/[0.04] border border-white/10 rounded-2xl p-6 backdrop-blur shadow-2xl">
+      <form id="login-form" class="login-card">
         <!-- Email -->
-        <label class="block">
-          <span class="text-sm text-white/70 mb-2 block font-medium">Email</span>
+        <div class="field">
+          <label class="field-label" for="email">Email</label>
           <input
             id="email"
             name="email"
@@ -23,72 +23,225 @@ import Layout from '../../layouts/Layout.astro';
             required
             autocomplete="email"
             placeholder="hello@plasoul.com"
-            class="w-full px-4 py-3 rounded-xl bg-white/5 text-white placeholder-white/25 border border-white/10 focus:border-white/40 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
+            class="field-input"
           />
-        </label>
+        </div>
 
         <!-- Password with eye toggle -->
-        <label class="block">
-          <span class="text-sm text-white/70 mb-2 block font-medium">密碼</span>
-          <div class="relative">
+        <div class="field">
+          <label class="field-label" for="password">密碼</label>
+          <div class="field-wrap">
             <input
               id="password"
               name="password"
               type="password"
               required
               autocomplete="current-password"
-              class="w-full px-4 py-3 pr-12 rounded-xl bg-white/5 text-white placeholder-white/25 border border-white/10 focus:border-white/40 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 transition"
+              class="field-input"
             />
             <button
               type="button"
               id="toggle-pwd"
               aria-label="顯示／隱藏密碼"
-              class="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-white/40 hover:text-white/80 transition min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg hover:bg-white/5"
+              class="eye-btn"
             >
-              <!-- Eye-open SVG (default) -->
-              <svg id="icon-eye" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg id="icon-eye" class="eye-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
               </svg>
-              <!-- Eye-off SVG (hidden by default) -->
-              <svg id="icon-eye-off" class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <svg id="icon-eye-off" class="eye-svg" style="display:none" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
                 <line x1="1" y1="1" x2="23" y2="23"/>
               </svg>
             </button>
           </div>
-        </label>
+        </div>
 
         <!-- Error message -->
-        <div id="error-msg" class="hidden items-center gap-2 text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-          <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
+        <div id="error-msg" class="error-box" style="display:none">
           <span id="error-text"></span>
         </div>
 
-        <!-- Submit button -->
-        <button
-          id="submit-btn"
-          type="submit"
-          class="w-full bg-gradient-to-r from-white to-white/90 text-[#0A1428] font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl hover:from-white hover:to-white active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px] flex items-center justify-center gap-2"
-        >
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-            <polyline points="10 17 15 12 10 7"/>
-            <line x1="15" y1="12" x2="3" y2="12"/>
-          </svg>
-          <span id="btn-label">登入</span>
+        <!-- Submit -->
+        <button id="submit-btn" type="submit" class="submit-btn">
+          <span id="btn-label">登 入</span>
         </button>
       </form>
 
-      <p class="text-center text-xs text-white/30 mt-6 tracking-wide">
-        普拉魂 v0.1 · 僅授權人員可登入
-      </p>
+      <p class="login-footer">普拉魂 v0.1 · 僅授權人員可登入</p>
     </div>
   </main>
+
+  <style>
+    .login-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      background: #0A1428;
+    }
+    .login-wrap {
+      width: 100%;
+      max-width: 380px;
+    }
+
+    /* Brand */
+    .login-brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand-icon {
+      font-size: 56px;
+      line-height: 1;
+      margin-bottom: 10px;
+      user-select: none;
+    }
+    .brand-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin: 0;
+      color: #fff;
+    }
+    .brand-sub {
+      font-size: 12px;
+      letter-spacing: 0.25em;
+      color: rgba(255, 255, 255, 0.45);
+      margin: 4px 0 0;
+    }
+
+    /* Card */
+    .login-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 24px 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Field */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .field-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.65);
+      letter-spacing: 0.02em;
+    }
+    .field-wrap {
+      position: relative;
+    }
+    .field-input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+      box-sizing: border-box;
+    }
+    .field-input::placeholder {
+      color: rgba(255, 255, 255, 0.25);
+    }
+    .field-input:focus {
+      border-color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .field-wrap .field-input {
+      padding-right: 44px;
+    }
+
+    /* Eye toggle */
+    .eye-btn {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: rgba(255, 255, 255, 0.4);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .eye-btn:hover {
+      color: rgba(255, 255, 255, 0.85);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .eye-svg {
+      flex-shrink: 0;
+    }
+
+    /* Error */
+    .error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    /* Submit */
+    .submit-btn {
+      width: 100%;
+      min-height: 48px;
+      padding: 13px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0A1428;
+      background: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      letter-spacing: 0.2em;
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.12);
+      transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+    }
+    .submit-btn:hover {
+      background: #f0f0f0;
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.18);
+    }
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+    .submit-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Footer */
+    .login-footer {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.3);
+      letter-spacing: 0.08em;
+    }
+
+    /* Desktop tweak */
+    @media (min-width: 768px) {
+      .login-wrap { max-width: 420px; }
+      .brand-title { font-size: 24px; }
+      .login-card { padding: 28px 24px; }
+    }
+  </style>
 
   <script>
     const form = document.getElementById('login-form') as HTMLFormElement;
@@ -97,7 +250,7 @@ import Layout from '../../layouts/Layout.astro';
     const errBox = document.getElementById('error-msg') as HTMLDivElement;
     const errText = document.getElementById('error-text') as HTMLSpanElement;
 
-    // Password show/hide toggle
+    // Password show/hide
     const pwdInput = document.getElementById('password') as HTMLInputElement;
     const togglePwd = document.getElementById('toggle-pwd') as HTMLButtonElement;
     const iconEye = document.getElementById('icon-eye') as HTMLElement;
@@ -106,17 +259,16 @@ import Layout from '../../layouts/Layout.astro';
     togglePwd.addEventListener('click', () => {
       const showing = pwdInput.type === 'text';
       pwdInput.type = showing ? 'password' : 'text';
-      iconEye.classList.toggle('hidden', !showing);
-      iconEyeOff.classList.toggle('hidden', showing);
+      iconEye.style.display = showing ? '' : 'none';
+      iconEyeOff.style.display = showing ? 'none' : '';
     });
 
     // Submit
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      errBox.classList.add('hidden');
-      errBox.classList.remove('flex');
+      errBox.style.display = 'none';
       btn.disabled = true;
-      btnLabel.textContent = '登入中…';
+      btnLabel.textContent = '登 入 中…';
 
       const email = (document.getElementById('email') as HTMLInputElement).value;
       const password = pwdInput.value;
@@ -131,22 +283,19 @@ import Layout from '../../layouts/Layout.astro';
 
         if (!res.ok || !data.ok) {
           errText.textContent = data.message || '登入失敗';
-          errBox.classList.remove('hidden');
-          errBox.classList.add('flex');
+          errBox.style.display = 'block';
           btn.disabled = false;
-          btnLabel.textContent = '登入';
+          btnLabel.textContent = '登 入';
           return;
         }
 
-        // 成功 → redirect
         btnLabel.textContent = '登入成功，跳轉中…';
         window.location.href = data.redirect || '/admin/listings';
       } catch (err) {
         errText.textContent = '網路錯誤，請稍後再試';
-        errBox.classList.remove('hidden');
-        errBox.classList.add('flex');
+        errBox.style.display = 'block';
         btn.disabled = false;
-        btnLabel.textContent = '登入';
+        btnLabel.textContent = '登 入';
       }
     });
   </script>
