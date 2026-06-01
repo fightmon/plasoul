@@ -17,7 +17,7 @@ PLATFORM_NAME = "普拉魂"
 [[d1_databases]]
 binding = "DB"
 database_name = "plasoul-db"
-database_id = "TBD-REPLACE-AFTER-WRANGLER-D1-CREATE"
+database_id = "a38d8f70-3e62-420c-aacb-d398cbd928ee"
 
 # ============================================
 # KV Namespace (rate limit、session、freemium quota 快取)
@@ -25,7 +25,7 @@ database_id = "TBD-REPLACE-AFTER-WRANGLER-D1-CREATE"
 # ============================================
 [[kv_namespaces]]
 binding = "KV"
-id = "TBD-REPLACE-AFTER-WRANGLER-KV-CREATE"
+id = "6c9516462c824b1c8fa7fd266e413bd5"
 
 # ============================================
 # R2 Bucket (FB 截圖 + 鋼彈型錄圖)
