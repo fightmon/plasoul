@@ -1,49 +1,77 @@
 ---
+/**
+ * Shared layout · all public pages 用這個
+ * - 預設帶 Header (sticky) + Footer
+ * - hideHeaderSearch: 首頁 hero 已有大搜尋，header 上不重複（true 時 header 仍顯示 logo + toggle）
+ * - bareLayout: 不要 Header/Footer (admin 頁等)
+ */
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
 interface Props {
   title?: string;
   description?: string;
   ogImage?: string;
   noIndex?: boolean;
+  hideHeaderSearch?: boolean;
+  bareLayout?: boolean;
 }
 
 const {
   title = "普拉魂 PuraSoul · 鋼普拉找便宜",
-  description = "拍張鋼彈，AI 30 秒找你便宜 NT$300 的賣家。從 FB 社團真實玩家拍賣價，普拉魂幫你找最便宜的鋼普拉。",
+  description = "玩家社群實際交易參考價，每天更新。普拉魂幫你嗅出賣家自售價。",
   ogImage = "/og-default.webp",
   noIndex = false,
+  hideHeaderSearch = false,
+  bareLayout = false,
 } = Astro.props;
 ---
+
 <!doctype html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0A1428" />
+  <meta name="theme-color" content="#0a0e1a" />
   <title>{title}</title>
   <meta name="description" content={description} />
 
   {noIndex && <meta name="robots" content="noindex,nofollow" />}
 
-  <!-- PWA (加到主畫面 + iOS app-like) -->
+  <!-- PWA -->
   <link rel="manifest" href="/manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="普拉魂" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
-  <!-- Open Graph (FB / LINE 分享預覽) -->
+  <!-- Open Graph -->
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImage} />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="zh_TW" />
-
-  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
 
   <link rel="stylesheet" href="/tailwind.css" />
+
+  <!-- Theme detection (anti-FOUC, runs before paint) -->
+  <script is:inline>
+    (function () {
+      try {
+        var stored = localStorage.getItem('ps_theme');
+        var theme = stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
 </head>
-<body class="bg-[var(--color-brand-dark)] text-white antialiased">
+<body>
+  {!bareLayout && <Header showSearch={!hideHeaderSearch} />}
   <slot />
+  {!bareLayout && <Footer />}
 </body>
 </html>

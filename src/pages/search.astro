@@ -1,0 +1,206 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+/**
+ * /search 頁面 · W1 MVP
+ * - 純 SSG 殼，query string 由 client-side 解析（避開 static prerender 拿不到 URL params 的問題）
+ * - 無 q query → 空狀態 + autofocus 搜尋框
+ * - 有 q → 顯示「搜尋功能 W2 上線」placeholder（W2 才接 FTS5 endpoint）
+ */
+---
+
+<Layout title="搜尋 · 普拉魂" hideHeaderSearch={true}>
+  <main class="ps-search-page">
+    {/* Big search form */}
+    <section class="ps-search-hero">
+      <h1 class="ps-search-title" id="ps-search-page-title">搜尋</h1>
+      <form action="/search" method="get" class="ps-search-form" role="search">
+        <input
+          type="search"
+          name="q"
+          id="ps-search-input"
+          placeholder="HG 鋼彈 / RX-78-2 / 強奪自由..."
+          class="ps-search-input"
+          autocomplete="off"
+        />
+        <button type="submit" class="ps-search-submit">搜尋</button>
+      </form>
+    </section>
+
+    {/* Empty state（default 顯示，client 判定後切換） */}
+    <section class="ps-empty" id="ps-empty-state">
+      <div class="ps-empty-icon" aria-hidden="true">🔍</div>
+      <h2 class="ps-empty-title">請輸入關鍵字</h2>
+      <p class="ps-empty-text">
+        試試 <a href="/search?q=HG">HG</a>、<a href="/search?q=RG">RG</a>、<a href="/search?series=MG">MG 系列</a>
+      </p>
+    </section>
+
+    {/* Coming-soon state（有 query 時 client 切換顯示） */}
+    <section class="ps-coming-soon" id="ps-coming-soon" hidden>
+      <div class="ps-coming-soon-icon" aria-hidden="true">🚧</div>
+      <h2 class="ps-coming-soon-title">搜尋結果頁開發中</h2>
+      <p class="ps-coming-soon-text">
+        W2 階段會把搜尋結果頁做完。目前 W1 只先把搜尋框跟導流做起來。
+      </p>
+      <p class="ps-coming-soon-meta">
+        你搜了：<code id="ps-query-echo"></code>
+      </p>
+      <a href="/" class="ps-coming-soon-back">← 回首頁</a>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .ps-search-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 16px 64px;
+  }
+
+  /* Search hero */
+  .ps-search-hero {
+    margin-bottom: 32px;
+    text-align: center;
+  }
+  .ps-search-title {
+    font-size: clamp(20px, 4vw, 28px);
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 20px;
+  }
+  .ps-search-form {
+    display: flex;
+    gap: 8px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .ps-search-input {
+    flex: 1;
+    padding: 14px 18px;
+    background: var(--color-input-bg);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ps-search-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-light);
+  }
+  .ps-search-submit {
+    padding: 0 24px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .ps-search-submit:hover {
+    background: var(--color-primary-dark);
+  }
+
+  /* Empty / coming-soon */
+  .ps-empty,
+  .ps-coming-soon {
+    text-align: center;
+    padding: 64px 16px;
+    background: var(--color-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--shadow-sm);
+  }
+  .ps-empty-icon,
+  .ps-coming-soon-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+  }
+  .ps-empty-title,
+  .ps-coming-soon-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 8px;
+  }
+  .ps-empty-text,
+  .ps-coming-soon-text {
+    color: var(--color-text-secondary);
+    margin: 0 0 16px;
+  }
+  .ps-empty-text a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .ps-empty-text a:hover {
+    text-decoration: underline;
+  }
+  .ps-coming-soon-meta {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    margin: 0 0 20px;
+  }
+  .ps-coming-soon-meta code {
+    background: var(--color-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .ps-coming-soon-back {
+    display: inline-block;
+    padding: 8px 16px;
+    color: var(--color-primary);
+    text-decoration: none;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    transition: background-color 0.15s;
+  }
+  .ps-coming-soon-back:hover {
+    background: var(--color-primary-light);
+  }
+</style>
+
+<script>
+  // Parse query string in client (SSG safe)
+  const params = new URLSearchParams(window.location.search);
+  const q = (params.get('q') || '').trim();
+  const series = (params.get('series') || '').trim();
+  const sort = (params.get('sort') || '').trim();
+  const hasQuery = q.length > 0 || series.length > 0 || sort.length > 0;
+
+  // Update title
+  const title = document.getElementById('ps-search-page-title');
+  if (title) {
+    if (q) title.textContent = `「${q}」`;
+    else if (series) title.textContent = `${series} 系列`;
+    else if (sort === 'newest') title.textContent = '最新動態';
+  }
+
+  // Update page <title>
+  if (q) document.title = `「${q}」搜尋結果 · 普拉魂`;
+  else if (series) document.title = `${series} 系列 · 普拉魂`;
+  else if (sort === 'newest') document.title = '最新賣家動態 · 普拉魂';
+
+  // Pre-fill search input
+  const input = document.getElementById('ps-search-input') as HTMLInputElement | null;
+  if (input && q) input.value = q;
+
+  // Switch state
+  const emptyEl = document.getElementById('ps-empty-state');
+  const comingEl = document.getElementById('ps-coming-soon');
+  if (hasQuery && emptyEl && comingEl) {
+    emptyEl.setAttribute('hidden', '');
+    comingEl.removeAttribute('hidden');
+    const echo = document.getElementById('ps-query-echo');
+    if (echo) {
+      echo.textContent = q || `series=${series}${sort ? ` · sort=${sort}` : ''}`;
+    }
+  } else if (input && !q) {
+    // Autofocus 空狀態時
+    setTimeout(() => input.focus(), 50);
+  }
+</script>

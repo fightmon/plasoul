@@ -1,0 +1,89 @@
+---
+/**
+ * Footer · PRD § 5.2 紀律 5 法律免責必放
+ */
+const year = new Date().getFullYear();
+---
+
+<footer class="ps-footer">
+  <div class="ps-footer-inner">
+    <div class="ps-footer-brand">
+      <span class="ps-footer-logo">🐶 普拉魂 PuraSoul</span>
+      <span class="ps-footer-tagline">鋼普拉找便宜</span>
+    </div>
+
+    <nav class="ps-footer-nav" aria-label="footer navigation">
+      <a href="/about">關於</a>
+      <a href="/terms">服務條款</a>
+      <a href="/privacy">隱私政策</a>
+      <a href="mailto:hello@plasoul.com">hello@plasoul.com</a>
+    </nav>
+
+    <p class="ps-footer-disclaimer">
+      資料來自玩家社群觀察，不保證交易可行性。
+    </p>
+
+    <p class="ps-footer-copy">© {year} 普拉魂 PuraSoul · All rights reserved</p>
+  </div>
+</footer>
+
+<style>
+  .ps-footer {
+    background: var(--color-bg-elevated);
+    border-top: 1px solid var(--color-border-subtle);
+    margin-top: 64px;
+    padding: 32px 16px 24px;
+  }
+  .ps-footer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+  .ps-footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .ps-footer-logo {
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--color-text);
+  }
+  .ps-footer-tagline {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+  }
+  .ps-footer-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 16px;
+    font-size: 14px;
+  }
+  .ps-footer-nav a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .ps-footer-nav a:hover {
+    color: var(--color-primary);
+  }
+  .ps-footer-disclaimer {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    max-width: 400px;
+    margin: 0;
+    line-height: 1.5;
+  }
+  .ps-footer-copy {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    opacity: 0.6;
+    margin: 0;
+  }
+</style>

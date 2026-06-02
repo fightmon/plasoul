@@ -1,0 +1,75 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout title="關於 · 普拉魂 PuraSoul">
+  <main class="ps-page">
+    <h1 class="ps-page-title">關於普拉魂</h1>
+
+    <section class="ps-page-section">
+      <p>
+        普拉魂（PuraSoul）是一個幫鋼普拉玩家「找便宜」的工具站。
+      </p>
+      <p>
+        我們持續觀察 5 大鋼普拉 FB 玩家社團的二手 / 自售貼文，把實際成交與待售價格彙整起來，
+        讓你買鋼彈前能花 30 秒看到「同一款在其他賣家是多少錢」。
+      </p>
+    </section>
+
+    <h2 class="ps-page-h2">為什麼做這個</h2>
+    <section class="ps-page-section">
+      <p>
+        鋼普拉零售價跟玩家社群實際成交價往往差很多。模型店 NT$1,200 的 RG，
+        可能社團裡有人 NT$650 出清；某些絕版貨在二手市場反而比定價貴 3 倍。
+      </p>
+      <p>
+        但你要逛完 5 個社團、滑半小時，才能對一款鋼彈的價格有概念。普拉魂幫你做完這件事。
+      </p>
+    </section>
+
+    <h2 class="ps-page-h2">我們不做的事</h2>
+    <section class="ps-page-section">
+      <p>普拉魂只整理價格觀察，<strong>不替任何賣家招攬客戶、不收佣金、不撮合交易</strong>。</p>
+      <p>
+        看到喜歡的，你需要自己去原社團聯繫賣家。我們不會公開賣家 ID 或聯絡方式，
+        所有交易風險請自行評估。
+      </p>
+    </section>
+
+    <h2 class="ps-page-h2">聯絡我們</h2>
+    <section class="ps-page-section">
+      <p>
+        合作 / Bug 回報 / 想加新社團來源：<a href="mailto:hello@plasoul.com">hello@plasoul.com</a>
+      </p>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .ps-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 16px 64px;
+    color: var(--color-text);
+    line-height: 1.7;
+  }
+  .ps-page-title {
+    font-size: clamp(24px, 5vw, 32px);
+    font-weight: 800;
+    margin: 0 0 24px;
+  }
+  .ps-page-h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 32px 0 12px;
+  }
+  .ps-page-section {
+    margin: 0 0 16px;
+  }
+  .ps-page-section p {
+    margin: 0 0 12px;
+  }
+  .ps-page a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+</style>

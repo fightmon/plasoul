@@ -1,0 +1,178 @@
+---
+/**
+ * Sticky nav header
+ * - 左：logo (text placeholder「🐶 普拉魂」，等 GP-DOG 正圖換)
+ * - 中：搜尋 trigger (手機 icon-only，桌機展開 input)
+ * - 右：🌓 theme toggle + 登入 (W5 才開)
+ */
+interface Props {
+  showSearch?: boolean;
+}
+const { showSearch = true } = Astro.props;
+---
+
+<header class="ps-header">
+  <div class="ps-header-inner">
+    <a href="/" class="ps-logo" aria-label="普拉魂首頁">
+      <span class="ps-logo-icon">🐶</span>
+      <span class="ps-logo-text">普拉魂</span>
+    </a>
+
+    {showSearch && (
+      <form action="/search" method="get" class="ps-header-search" role="search">
+        <input
+          type="search"
+          name="q"
+          placeholder="搜尋 HG / RG / MG 鋼彈型號..."
+          class="ps-header-search-input"
+          aria-label="搜尋"
+          autocomplete="off"
+        />
+        <button type="submit" class="ps-header-search-btn" aria-label="送出搜尋">
+          🔍
+        </button>
+      </form>
+    )}
+
+    <div class="ps-header-actions">
+      <button
+        type="button"
+        id="ps-theme-toggle"
+        class="ps-icon-btn"
+        aria-label="切換深淺色"
+        title="切換深淺色"
+      >
+        <span class="ps-theme-icon-light">☀️</span>
+        <span class="ps-theme-icon-dark">🌙</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .ps-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--glass-bg);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .ps-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .ps-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: var(--color-text);
+    font-weight: 700;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .ps-logo-icon { font-size: 22px; }
+  .ps-logo-text { letter-spacing: 0.5px; }
+
+  .ps-header-search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    padding: 4px 4px 4px 14px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ps-header-search:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+  .ps-header-search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--color-text);
+    padding: 6px 0;
+  }
+  .ps-header-search-input::placeholder {
+    color: var(--color-text-secondary);
+  }
+  .ps-header-search-btn {
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.15s;
+  }
+  .ps-header-search-btn:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .ps-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .ps-icon-btn {
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--color-text);
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .ps-icon-btn:hover {
+    background: var(--color-bg);
+    border-color: var(--color-primary);
+  }
+
+  /* Theme icon visibility */
+  .ps-theme-icon-light { display: none; }
+  .ps-theme-icon-dark { display: inline; }
+  :global([data-theme="dark"]) .ps-theme-icon-light { display: inline; }
+  :global([data-theme="dark"]) .ps-theme-icon-dark { display: none; }
+
+  /* Mobile: 搜尋框縮一點 */
+  @media (max-width: 480px) {
+    .ps-header-search {
+      padding: 3px 3px 3px 10px;
+    }
+    .ps-header-search-input {
+      font-size: 14px;
+    }
+    .ps-logo-text {
+      display: none;
+    }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    const btn = document.getElementById('ps-theme-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme') || 'light';
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      try { localStorage.setItem('ps_theme', next); } catch (e) {}
+    });
+  })();
+</script>

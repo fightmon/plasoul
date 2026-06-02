@@ -1,0 +1,87 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout title="服務條款 · 普拉魂">
+  <main class="ps-page">
+    <h1 class="ps-page-title">服務條款</h1>
+    <p class="ps-page-meta">最後更新：2026-06-02</p>
+
+    <h2 class="ps-page-h2">1. 服務說明</h2>
+    <p>
+      普拉魂（PuraSoul，以下簡稱「本站」）是一個鋼普拉玩家社群價格觀察工具，
+      所提供的價格與商品資訊來自公開社群觀察整理，<strong>不保證任何交易的可行性、商品狀況或交易結果</strong>。
+    </p>
+
+    <h2 class="ps-page-h2">2. 資料來源與性質</h2>
+    <p>
+      本站所列價格、商品狀態、賣家資訊等，均為公開社群實際交易參考價彙整。本站
+      <strong>不主動撮合交易、不收取交易佣金、不擔保任何交易行為</strong>。
+      所有交易須由使用者自行與賣家聯繫，並自行承擔交易風險。
+    </p>
+
+    <h2 class="ps-page-h2">3. 不蒐集賣家個資</h2>
+    <p>
+      本站不蒐集、儲存或公開任何賣家的個人資料（包含但不限於姓名、ID、聯絡方式、地址）。
+      使用者不得透過本站索取上述資訊，亦不得引導他人聯繫特定賣家。
+    </p>
+
+    <h2 class="ps-page-h2">4. 使用者責任</h2>
+    <p>使用者使用本站時應：</p>
+    <ul>
+      <li>不得從事任何違反法律或第三方權益之行為</li>
+      <li>不得利用本站資料從事騷擾、跟蹤、惡意聯繫他人</li>
+      <li>自行評估交易風險，本站不承擔任何交易糾紛責任</li>
+    </ul>
+
+    <h2 class="ps-page-h2">5. 法律免責</h2>
+    <p>
+      <strong>本站資料來自玩家社群觀察，不保證交易可行性。</strong>
+      因使用本站資訊所衍生之任何爭議、損失或法律責任，本站概不負責。
+    </p>
+
+    <h2 class="ps-page-h2">6. 條款變更</h2>
+    <p>本站保留隨時修改本條款之權利，修改後將於本頁公告，繼續使用即視為同意修改後條款。</p>
+
+    <h2 class="ps-page-h2">7. 聯絡</h2>
+    <p><a href="mailto:hello@plasoul.com">hello@plasoul.com</a></p>
+  </main>
+</Layout>
+
+<style>
+  .ps-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 16px 64px;
+    color: var(--color-text);
+    line-height: 1.7;
+  }
+  .ps-page-title {
+    font-size: clamp(24px, 5vw, 32px);
+    font-weight: 800;
+    margin: 0 0 8px;
+  }
+  .ps-page-meta {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+  .ps-page-h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 28px 0 10px;
+  }
+  .ps-page p {
+    margin: 0 0 12px;
+  }
+  .ps-page ul {
+    padding-left: 24px;
+    margin: 0 0 12px;
+  }
+  .ps-page li {
+    margin-bottom: 6px;
+  }
+  .ps-page a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+</style>

@@ -1,13 +1,416 @@
 ---
 import Layout from "../layouts/Layout.astro";
+
+/**
+ * 首頁
+ * - Hero: GAME8LA 風（深色 + 科幻網格 + 雙 CTA）
+ * - Stats: GAME8LA 風 4 格大字
+ * - 系列按鈕: 6 核心 + 收起展開 6 個次要
+ *
+ * 統計數字 client-side fetch /api/public/stats（避免 build time 寫死）
+ */
+
+// 系列定義（首屏顯示 + 收起展開）
+const PRIMARY_SERIES = [
+  { key: "HG", label: "HG", desc: "High Grade" },
+  { key: "RG", label: "RG", desc: "Real Grade" },
+  { key: "MG", label: "MG", desc: "Master Grade" },
+  { key: "MGSD", label: "MGSD", desc: "Master Grade SD" },
+  { key: "PG", label: "PG", desc: "Perfect Grade" },
+  { key: "SD", label: "SD", desc: "Super Deformed" },
+];
+
+const SECONDARY_SERIES = [
+  { key: "MGEX", label: "MGEX" },
+  { key: "ETC", label: "ETC/Gunpla" },
+  { key: "ROBOT", label: "ROBOT魂" },
+  { key: "METAL_ROBOT", label: "METAL ROBOT魂" },
+  { key: "CHOGOKIN", label: "超合金" },
+  { key: "OTHER", label: "其他" },
+];
 ---
-<Layout>
-  <main class="min-h-screen flex items-center justify-center p-6">
-    <div class="max-w-md text-center space-y-4">
-      <div class="text-5xl">🤖</div>
-      <h1 class="text-3xl font-bold">普拉魂 PuraSoul</h1>
-      <p class="text-white/70">拍張鋼彈，AI 30 秒找你便宜 NT$300 的賣家</p>
-      <p class="text-sm text-white/40">v0.1 準備中 · ship 9/30</p>
-    </div>
+
+<Layout
+  title="普拉魂 PuraSoul · 鋼普拉找便宜"
+  description="玩家社群實際交易參考價，每天更新。普拉魂幫你嗅出賣家自售價。"
+  hideHeaderSearch={false}
+>
+  <main class="ps-home">
+    {/* ============================================
+        Hero (GAME8LA 風)
+        ============================================ */}
+    <section class="ps-hero" aria-label="hero">
+      <div class="ps-hero-bg" aria-hidden="true"></div>
+      <div class="ps-hero-inner">
+        <h1 class="ps-hero-title">
+          普拉犬，<span class="ps-hero-title-accent">幫你嗅出</span>賣家自售價
+        </h1>
+        <p class="ps-hero-subtitle">玩家社群實際交易參考價 · 每天更新</p>
+        <div class="ps-hero-ctas">
+          <a href="/search" class="ps-cta ps-cta-primary">
+            立即搜尋鋼彈
+            <span class="ps-cta-arrow">→</span>
+          </a>
+          <a href="/search?sort=newest" class="ps-cta ps-cta-secondary">
+            最新賣家動態
+            <span class="ps-cta-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================================
+        Stats (GAME8LA 風 4 格大字)
+        ============================================ */}
+    <section class="ps-stats" aria-label="資料統計">
+      <div class="ps-stats-inner">
+        <div class="ps-stat">
+          <div class="ps-stat-num" data-stat="hg">—</div>
+          <div class="ps-stat-label">HG 筆數</div>
+        </div>
+        <div class="ps-stat">
+          <div class="ps-stat-num" data-stat="rg">—</div>
+          <div class="ps-stat-label">RG 筆數</div>
+        </div>
+        <div class="ps-stat">
+          <div class="ps-stat-num" data-stat="mg">—</div>
+          <div class="ps-stat-label">MG 筆數</div>
+        </div>
+        <div class="ps-stat">
+          <div class="ps-stat-num" data-stat="source">—</div>
+          <div class="ps-stat-label">賣家連結</div>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================================
+        登入區塊（W5 用戶系統完成才開放）
+        ============================================
+        <section class="ps-login-cta">…</section>
+    */}
+
+    {/* ============================================
+        系列按鈕
+        ============================================ */}
+    <section class="ps-series" aria-label="依系列瀏覽">
+      <h2 class="ps-section-title">依系列瀏覽</h2>
+      <div class="ps-series-grid">
+        {PRIMARY_SERIES.map((s) => (
+          <a href={`/search?series=${encodeURIComponent(s.key)}`} class="ps-series-btn" data-series={s.key}>
+            <span class="ps-series-label">{s.label}</span>
+            <span class="ps-series-count" data-series-count={s.key}>—</span>
+          </a>
+        ))}
+      </div>
+      <button
+        type="button"
+        id="ps-series-toggle"
+        class="ps-series-toggle"
+        aria-expanded="false"
+        aria-controls="ps-series-more"
+      >
+        <span class="ps-series-toggle-open">展開更多系列 ↓</span>
+        <span class="ps-series-toggle-close">收起 ↑</span>
+      </button>
+      <div id="ps-series-more" class="ps-series-grid ps-series-more" hidden>
+        {SECONDARY_SERIES.map((s) => (
+          <a href={`/search?series=${encodeURIComponent(s.key)}`} class="ps-series-btn ps-series-btn-sm">
+            <span class="ps-series-label">{s.label}</span>
+            <span class="ps-series-count" data-series-count={s.key}>—</span>
+          </a>
+        ))}
+      </div>
+    </section>
   </main>
 </Layout>
+
+<style>
+  .ps-home {
+    min-height: 100vh;
+  }
+
+  /* ============================================
+     Hero (GAME8LA style)
+     ============================================ */
+  .ps-hero {
+    position: relative;
+    background: var(--hero-bg);
+    overflow: hidden;
+    padding: 64px 16px 80px;
+    text-align: center;
+  }
+  .ps-hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.12) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(0, 255, 136, 0.08) 0%, transparent 50%),
+      linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px),
+      linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    pointer-events: none;
+  }
+  .ps-hero-inner {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .ps-hero-title {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 800;
+    color: var(--hero-text);
+    line-height: 1.3;
+    margin: 0 0 16px;
+    letter-spacing: -0.5px;
+  }
+  .ps-hero-title-accent {
+    color: var(--hero-bg-glow);
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+  }
+  .ps-hero-subtitle {
+    font-size: clamp(14px, 2vw, 16px);
+    color: var(--hero-text-secondary);
+    margin: 0 0 32px;
+  }
+  .ps-hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .ps-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s, background-color 0.15s;
+    border: 2px solid transparent;
+  }
+  .ps-cta:hover { transform: translateY(-2px); }
+  .ps-cta-arrow { transition: transform 0.15s; }
+  .ps-cta:hover .ps-cta-arrow { transform: translateX(2px); }
+
+  .ps-cta-primary {
+    background: var(--hero-cta-primary-bg);
+    color: var(--hero-cta-primary-text);
+    box-shadow: 0 0 24px rgba(0, 255, 136, 0.4);
+  }
+  .ps-cta-secondary {
+    background: transparent;
+    color: var(--hero-cta-secondary-text);
+    border-color: var(--hero-cta-secondary-border);
+  }
+  .ps-cta-secondary:hover {
+    background: rgba(0, 255, 136, 0.1);
+  }
+
+  /* ============================================
+     Stats
+     ============================================ */
+  .ps-stats {
+    background: var(--color-bg-elevated);
+    border-bottom: 1px solid var(--color-border-subtle);
+    padding: 32px 16px;
+  }
+  .ps-stats-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .ps-stat {
+    text-align: center;
+  }
+  .ps-stat-num {
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 800;
+    color: var(--color-primary);
+    line-height: 1;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ps-stat-num::after {
+    content: "+";
+    font-size: 0.7em;
+    opacity: 0.7;
+    margin-left: 2px;
+  }
+  .ps-stat-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+  }
+
+  /* ============================================
+     系列按鈕
+     ============================================ */
+  .ps-series {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 16px 32px;
+  }
+  .ps-section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0 0 20px;
+    text-align: center;
+  }
+  .ps-series-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .ps-series-more {
+    margin-top: 12px;
+  }
+  .ps-series-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 20px 12px;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    box-shadow: var(--shadow-sm);
+  }
+  .ps-series-btn:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow);
+  }
+  .ps-series-btn-sm {
+    padding: 14px 12px;
+  }
+  .ps-series-label {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .ps-series-btn-sm .ps-series-label {
+    font-size: 15px;
+  }
+  .ps-series-count {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .ps-series-count::after {
+    content: "筆";
+    font-size: 0.8em;
+    margin-left: 2px;
+  }
+
+  .ps-series-toggle {
+    display: block;
+    margin: 16px auto 0;
+    padding: 8px 20px;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .ps-series-toggle:hover {
+    background: var(--color-card);
+    color: var(--color-primary);
+  }
+  .ps-series-toggle-close { display: none; }
+  .ps-series-toggle[aria-expanded="true"] .ps-series-toggle-open { display: none; }
+  .ps-series-toggle[aria-expanded="true"] .ps-series-toggle-close { display: inline; }
+
+  /* ============================================
+     Responsive
+     ============================================ */
+  @media (max-width: 640px) {
+    .ps-stats-inner {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px 16px;
+    }
+    .ps-hero {
+      padding: 48px 16px 56px;
+    }
+    .ps-series-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .ps-cta {
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+  }
+</style>
+
+<script>
+  /* ============================================
+     Fetch stats + render
+     ============================================ */
+  type StatsResponse = {
+    ok: boolean;
+    counts: Record<string, number>;
+    source_count: number;
+    total_count: number;
+  };
+
+  function formatNum(n: number): string {
+    if (n >= 1000) return Math.floor(n / 100) / 10 + 'k';
+    return String(n);
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch('/api/public/stats');
+      const data: StatsResponse = await res.json();
+      if (!data.ok) return;
+
+      // 主要 4 個顯著數字
+      const map: Record<string, number> = {
+        hg: data.counts.HG || 0,
+        rg: data.counts.RG || 0,
+        mg: data.counts.MG || 0,
+        source: data.source_count || 0,
+      };
+      Object.entries(map).forEach(([key, val]) => {
+        const el = document.querySelector(`[data-stat="${key}"]`);
+        if (el) el.textContent = formatNum(val);
+      });
+
+      // 系列按鈕的 count
+      document.querySelectorAll('[data-series-count]').forEach((el) => {
+        const key = el.getAttribute('data-series-count') || '';
+        const count = data.counts[key] || 0;
+        el.textContent = formatNum(count);
+      });
+    } catch (e) {
+      console.error('failed to load stats', e);
+    }
+  }
+  loadStats();
+
+  /* ============================================
+     展開更多系列 toggle
+     ============================================ */
+  const toggleBtn = document.getElementById('ps-series-toggle');
+  const moreBlock = document.getElementById('ps-series-more');
+  if (toggleBtn && moreBlock) {
+    toggleBtn.addEventListener('click', () => {
+      const isOpen = toggleBtn.getAttribute('aria-expanded') === 'true';
+      const next = !isOpen;
+      toggleBtn.setAttribute('aria-expanded', String(next));
+      if (next) {
+        moreBlock.removeAttribute('hidden');
+      } else {
+        moreBlock.setAttribute('hidden', '');
+      }
+    });
+  }
+</script>

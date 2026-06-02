@@ -1,0 +1,93 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+<Layout title="隱私政策 · 普拉魂">
+  <main class="ps-page">
+    <h1 class="ps-page-title">隱私政策</h1>
+    <p class="ps-page-meta">最後更新：2026-06-02</p>
+
+    <h2 class="ps-page-h2">1. 我們蒐集的資料</h2>
+    <p>本站只蒐集為了提供服務必要的最少資料：</p>
+    <ul>
+      <li><strong>瀏覽紀錄</strong>：IP 位址、瀏覽器類型、訪問頁面（用於 anti-abuse rate limit）</li>
+      <li><strong>登入後</strong>：email、加密後密碼（W5 階段才開放）</li>
+      <li><strong>降價警報</strong>：你訂閱的鋼彈型號（W6 階段才開放）</li>
+    </ul>
+
+    <h2 class="ps-page-h2">2. 我們不蒐集的資料</h2>
+    <ul>
+      <li>本站不蒐集任何 <strong>FB 社團賣家</strong> 的個人資料</li>
+      <li>不公開或散布任何賣家 ID、姓名、聯絡方式</li>
+      <li>不追蹤你瀏覽其他網站的行為</li>
+    </ul>
+
+    <h2 class="ps-page-h2">3. Cookie 使用</h2>
+    <p>本站使用 cookie / localStorage 儲存：</p>
+    <ul>
+      <li>深淺色模式偏好（<code>ps_theme</code>）</li>
+      <li>登入 session（<code>ps_session</code>，HttpOnly，W5 階段才開放）</li>
+    </ul>
+    <p>本站不使用第三方廣告追蹤 cookie。</p>
+
+    <h2 class="ps-page-h2">4. 資料保存</h2>
+    <p>
+      使用者帳號資料於帳號刪除後 30 天內完全清除。瀏覽 log 保留 90 天供 anti-abuse 用，到期自動刪除。
+    </p>
+
+    <h2 class="ps-page-h2">5. 第三方服務</h2>
+    <p>本站使用以下第三方服務：</p>
+    <ul>
+      <li>Cloudflare（CDN、DDoS 防護、邊緣運算）</li>
+      <li>未來：LINE Pay（W7 訂閱付款）</li>
+    </ul>
+
+    <h2 class="ps-page-h2">6. 你的權利</h2>
+    <p>你可以隨時：</p>
+    <ul>
+      <li>查詢、修改、刪除你的個人資料</li>
+      <li>取消電子郵件通知</li>
+      <li>關閉帳號（資料 30 天內刪除）</li>
+    </ul>
+
+    <h2 class="ps-page-h2">7. 聯絡</h2>
+    <p>如有隱私相關問題：<a href="mailto:hello@plasoul.com">hello@plasoul.com</a></p>
+  </main>
+</Layout>
+
+<style>
+  .ps-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 16px 64px;
+    color: var(--color-text);
+    line-height: 1.7;
+  }
+  .ps-page-title {
+    font-size: clamp(24px, 5vw, 32px);
+    font-weight: 800;
+    margin: 0 0 8px;
+  }
+  .ps-page-meta {
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    margin: 0 0 24px;
+  }
+  .ps-page-h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 28px 0 10px;
+  }
+  .ps-page p { margin: 0 0 12px; }
+  .ps-page ul { padding-left: 24px; margin: 0 0 12px; }
+  .ps-page li { margin-bottom: 6px; }
+  .ps-page code {
+    background: var(--color-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+  .ps-page a {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+</style>
