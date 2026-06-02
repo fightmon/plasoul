@@ -56,7 +56,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
        fb.is_legacy,
        fb.created_at
      FROM fb_listings fb
-     LEFT JOIN catalog c ON c.id = fb.product_id
+     LEFT JOIN catalog c ON c.id = fb.product_id AND c.id != 'cat_unknown'
      WHERE fb.created_at >= ?
        AND fb.review_status = 'approved'
      ORDER BY fb.created_at DESC
