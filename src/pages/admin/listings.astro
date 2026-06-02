@@ -56,12 +56,19 @@ import Layout from '../../layouts/Layout.astro';
 
       <!-- Results -->
       <section id="results-card" class="card" style="display:none">
-        <h2 class="card-title">
-          AI 解析結果 <span id="result-count" class="result-badge">0</span>
-        </h2>
+        <div class="results-head">
+          <h2 class="card-title">
+            找到 <span id="result-count" class="result-badge">0</span> 個 ·
+            已選 <span id="save-count" class="result-badge">0</span>
+          </h2>
+          <div class="select-actions">
+            <button id="select-all-btn" type="button" class="link-btn">全選</button>
+            <button id="select-none-btn" type="button" class="link-btn">全不選</button>
+          </div>
+        </div>
         <div id="results-list" class="results-list"></div>
         <div class="actions">
-          <button id="save-btn" class="primary-btn">💾 保存選取 <span id="save-count">0</span> 筆</button>
+          <button id="save-btn" class="primary-btn">💾 保存選取</button>
           <button id="reset-btn" class="link-btn">清空</button>
           <span id="save-status" class="status-text"></span>
         </div>
@@ -315,6 +322,52 @@ import Layout from '../../layouts/Layout.astro';
     }
     .result-row.unchecked {
       opacity: 0.5;
+    }
+    .result-row.is-sold {
+      opacity: 0.65;
+      background: rgba(156, 163, 175, 0.04);
+    }
+    .result-row.is-sold .lc-tag,
+    .result-row.is-sold input,
+    .result-row.is-sold select {
+      filter: saturate(0.6);
+    }
+    .raw-hint {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      padding: 4px 2px 0;
+      line-height: 1.4;
+      font-style: italic;
+    }
+    .raw-hint::before {
+      content: 'raw: ';
+      color: rgba(255, 255, 255, 0.3);
+      font-style: normal;
+    }
+
+    /* Results head */
+    .results-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .results-head .card-title { margin: 0; }
+    .select-actions {
+      display: flex;
+      gap: 4px;
+    }
+    .select-actions .link-btn {
+      font-size: 12px;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+    }
+    .select-actions .link-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
     }
     .result-row input[type="checkbox"] {
       width: 20px;
@@ -951,6 +1004,13 @@ import Layout from '../../layouts/Layout.astro';
           (c) => `<option value="${c}" ${c === item.condition ? 'selected' : ''}>${c}</option>`
         ).join('');
 
+        const isSold = item.status === 'sold';
+        if (isSold) row.classList.add('is-sold');
+        const pricePlaceholder = isSold && !item.price ? '已售未知' : 'NT$';
+        const rawHintHtml = item.rawHint
+          ? `<div class="raw-hint">${escapeHtml(item.rawHint)}</div>`
+          : '';
+
         row.innerHTML = `
           <input type="checkbox" class="check" checked />
           <div class="row-content">
@@ -962,11 +1022,12 @@ import Layout from '../../layouts/Layout.astro';
               </select>
               <select class="cond-select">${condOptions}</select>
               <select class="status-select">
-                <option value="available" ${item.status === 'sold' ? '' : 'selected'}>可購</option>
-                <option value="sold" ${item.status === 'sold' ? 'selected' : ''}>已售</option>
+                <option value="available" ${isSold ? '' : 'selected'}>🟢 販售中</option>
+                <option value="sold" ${isSold ? 'selected' : ''}>🔴 已售出</option>
               </select>
-              <input type="number" class="price-input" value="${item.price || 0}" min="0" placeholder="NT$" />
+              <input type="number" class="price-input" value="${item.price || ''}" min="0" placeholder="${pricePlaceholder}" />
             </div>
+            ${rawHintHtml}
             <div class="row-meta">
               <label class="meta-field">
                 <span class="meta-label">📦 寄送</span>
@@ -986,6 +1047,17 @@ import Layout from '../../layouts/Layout.astro';
         check.addEventListener('change', () => {
           row.classList.toggle('unchecked', !check.checked);
           updateSaveCount();
+        });
+        // status 變更時即時更新 sold 灰化
+        const statusSel = row.querySelector('.status-select') as HTMLSelectElement;
+        statusSel.addEventListener('change', () => {
+          row.classList.toggle('is-sold', statusSel.value === 'sold');
+          const priceInput = row.querySelector('.price-input') as HTMLInputElement;
+          if (statusSel.value === 'sold' && !priceInput.value) {
+            priceInput.placeholder = '已售未知';
+          } else {
+            priceInput.placeholder = 'NT$';
+          }
         });
       });
       updateSaveCount();
@@ -1095,6 +1167,22 @@ import Layout from '../../layouts/Layout.astro';
       parsedItems = [];
       saveStatus.textContent = '';
     });
+
+    /* ============================================
+       Select all / none buttons
+       ============================================ */
+    const selectAllBtn = $('select-all-btn') as HTMLButtonElement;
+    const selectNoneBtn = $('select-none-btn') as HTMLButtonElement;
+    function setAllChecked(val: boolean) {
+      resultsList.querySelectorAll('.result-row').forEach((row) => {
+        const cb = row.querySelector('.check') as HTMLInputElement;
+        if (cb) cb.checked = val;
+        row.classList.toggle('unchecked', !val);
+      });
+      updateSaveCount();
+    }
+    selectAllBtn.addEventListener('click', () => setAllChecked(true));
+    selectNoneBtn.addEventListener('click', () => setAllChecked(false));
 
     function escapeHtml(s: string): string {
       return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
