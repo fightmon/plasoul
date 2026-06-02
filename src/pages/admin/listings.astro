@@ -469,83 +469,136 @@ import Layout from '../../layouts/Layout.astro';
       color: rgba(255, 255, 255, 0.4);
       font-size: 14px;
     }
-    .recent-table-wrap {
-      overflow-x: auto;
+    /* Recent listings card grid */
+    .recent-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
     }
-    .recent-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
+    @media (min-width: 760px) {
+      .recent-grid { grid-template-columns: repeat(2, 1fr); }
     }
-    .recent-table th {
-      text-align: left;
-      padding: 8px 10px;
-      color: rgba(255, 255, 255, 0.5);
-      font-weight: 500;
-      font-size: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    .listing-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .listing-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .lc-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .lc-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.35;
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .lc-price {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-    .recent-table td {
-      padding: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      vertical-align: top;
+    .lc-price.sold {
+      color: rgba(255, 255, 255, 0.4);
+      text-decoration: line-through;
     }
-    .recent-table tr:hover td {
-      background: rgba(255, 255, 255, 0.03);
+    .lc-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      font-size: 12px;
     }
-    .recent-table .col-model { font-weight: 600; }
-    .recent-table .col-price { text-align: right; font-variant-numeric: tabular-nums; }
-    .recent-table .col-status {
-      font-size: 11px;
+    .lc-tag {
       padding: 2px 8px;
       border-radius: 999px;
-      display: inline-block;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.75);
     }
-    .col-status.available {
+    .lc-tag.status-available {
       background: rgba(34, 197, 94, 0.12);
       color: #86efac;
     }
-    .col-status.sold {
-      background: rgba(156, 163, 175, 0.18);
+    .lc-tag.status-sold {
+      background: rgba(156, 163, 175, 0.16);
       color: rgba(255, 255, 255, 0.55);
-      text-decoration: line-through;
     }
-    .col-meta {
+    .lc-tag.unmatched {
+      background: rgba(234, 179, 8, 0.15);
+      color: #fde68a;
+    }
+    .lc-tag.legacy {
+      background: rgba(168, 85, 247, 0.15);
+      color: #d8b4fe;
+    }
+    .lc-meta-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      line-height: 1.45;
+    }
+    .lc-meta-icon {
+      flex-shrink: 0;
+      width: 14px;
+      text-align: center;
+      opacity: 0.7;
+    }
+    .lc-meta-text {
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .lc-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.06);
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.4);
     }
-    .col-source-link {
-      color: rgba(96, 165, 250, 0.8);
+    .lc-source {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .lc-fb-link {
+      color: rgba(96, 165, 250, 0.85);
       text-decoration: none;
-      font-size: 11px;
+      flex-shrink: 0;
     }
-    .col-source-link:hover { text-decoration: underline; }
+    .lc-fb-link:hover { text-decoration: underline; }
+    .lc-time {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
     .row-empty {
       text-align: center;
       padding: 24px;
       color: rgba(255, 255, 255, 0.35);
       font-size: 13px;
-    }
-    .badge-unmatched {
-      display: inline-block;
-      padding: 1px 6px;
-      font-size: 10px;
-      border-radius: 4px;
-      background: rgba(234, 179, 8, 0.15);
-      color: #fde68a;
-      margin-left: 6px;
-      vertical-align: middle;
-    }
-    .badge-legacy {
-      display: inline-block;
-      padding: 1px 6px;
-      font-size: 10px;
-      border-radius: 4px;
-      background: rgba(168, 85, 247, 0.15);
-      color: #d8b4fe;
-      margin-left: 6px;
-      vertical-align: middle;
     }
   </style>
 
@@ -877,47 +930,70 @@ import Layout from '../../layouts/Layout.astro';
         return;
       }
 
-      const rows = items.map((it) => {
+      const cards = items.map((it) => {
         const status = it.status === 'sold' ? 'sold' : 'available';
         const statusLabel = status === 'sold' ? '已售' : '可購';
         const unmatched = !it.product_id || it.product_id === 'cat_unknown';
         const sourceText = it.source_group_name || '—';
         const timeAgo = formatTimeAgo(it.created_at);
-        const sourceLink = it.source_url
-          ? `<a href="${escapeHtml(it.source_url)}" target="_blank" rel="noopener" class="col-source-link">🔗 FB</a>`
+
+        // tags row: 系列 · 條件 · 狀態 · 未對應 · legacy
+        const tags = [];
+        if (it.series) tags.push(`<span class="lc-tag">${escapeHtml(it.series)}</span>`);
+        if (it.condition) tags.push(`<span class="lc-tag">${escapeHtml(it.condition)}</span>`);
+        tags.push(`<span class="lc-tag status-${status}">${statusLabel}</span>`);
+        if (unmatched) tags.push('<span class="lc-tag unmatched">未對應</span>');
+        if (it.is_legacy) tags.push('<span class="lc-tag legacy">legacy</span>');
+
+        // meta rows: 寄送 / 面交（各自一行）
+        const metaParts = [];
+        if (it.shipping_text) {
+          metaParts.push(`
+            <div class="lc-meta-row">
+              <span class="lc-meta-icon">📦</span>
+              <span class="lc-meta-text">${escapeHtml(it.shipping_text)}</span>
+            </div>
+          `);
+        }
+        if (it.meetup_text) {
+          metaParts.push(`
+            <div class="lc-meta-row">
+              <span class="lc-meta-icon">📍</span>
+              <span class="lc-meta-text">${escapeHtml(it.meetup_text)}</span>
+            </div>
+          `);
+        }
+        if (it.notes) {
+          metaParts.push(`
+            <div class="lc-meta-row">
+              <span class="lc-meta-icon">📝</span>
+              <span class="lc-meta-text">${escapeHtml(it.notes)}</span>
+            </div>
+          `);
+        }
+
+        const fbLink = it.source_url
+          ? `<a href="${escapeHtml(it.source_url)}" target="_blank" rel="noopener" class="lc-fb-link">🔗 FB</a>`
           : '';
-        const meta = [it.shipping_text, it.meetup_text].filter(Boolean).join(' · ');
+
         return `
-          <tr>
-            <td class="col-model">
-              ${escapeHtml(it.model)}
-              ${unmatched ? '<span class="badge-unmatched">未對應</span>' : ''}
-              ${it.is_legacy ? '<span class="badge-legacy">legacy</span>' : ''}
-              ${it.series ? `<div class="col-meta">${escapeHtml(it.series)}${it.condition ? ' · ' + escapeHtml(it.condition) : ''}</div>` : ''}
-              ${meta ? `<div class="col-meta">${escapeHtml(meta)}</div>` : ''}
-            </td>
-            <td class="col-price">NT$ ${(it.price || 0).toLocaleString()}</td>
-            <td><span class="col-status ${status}">${statusLabel}</span></td>
-            <td>${escapeHtml(sourceText)}${sourceLink ? '<br>' + sourceLink : ''}</td>
-            <td class="col-meta" style="white-space:nowrap">${timeAgo}</td>
-          </tr>
+          <div class="listing-card">
+            <div class="lc-head">
+              <div class="lc-title">${escapeHtml(it.model)}</div>
+              <div class="lc-price ${status}">NT$ ${(it.price || 0).toLocaleString()}</div>
+            </div>
+            <div class="lc-tags">${tags.join('')}</div>
+            ${metaParts.join('')}
+            <div class="lc-footer">
+              <span class="lc-source">${escapeHtml(sourceText)}</span>
+              ${fbLink}
+              <span class="lc-time">${timeAgo}</span>
+            </div>
+          </div>
         `;
       }).join('');
 
-      recentWrap.innerHTML = `
-        <table class="recent-table">
-          <thead>
-            <tr>
-              <th>商品</th>
-              <th style="text-align:right">價格</th>
-              <th>狀態</th>
-              <th>來源</th>
-              <th>時間</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      `;
+      recentWrap.innerHTML = `<div class="recent-grid">${cards}</div>`;
     }
 
     function formatTimeAgo(ts: number): string {
