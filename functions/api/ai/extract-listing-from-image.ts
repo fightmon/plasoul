@@ -78,86 +78,53 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   }
 
-  // Compose Groq vision request
-  const promptText = images.length > 1
-    ? IMAGE_PROMPT.replace('請分析這張', `請分析以下 ${images.length} 張`)
-    : IMAGE_PROMPT;
-
-  const contentParts: any[] = [{ type: 'text', text: promptText }];
-  images.forEach((img) => {
-    contentParts.push({
-      type: 'image_url',
-      image_url: { url: `data:${img.mime};base64,${img.base64}` },
-    });
-  });
+  // 可選：附帶文字（從 textarea 來的，當 context 給 AI）
+  const extraText = String(body.text || '').trim().slice(0, 4000);
 
   const workerUrl = context.env.GROQ_WORKER_URL || DEFAULT_GROQ_WORKER;
-  let groqResp: Response;
-  try {
-    groqResp = await fetch(workerUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [{ role: 'user', content: contentParts }],
-        temperature: 0.1,
-        max_tokens: 8000,
-      }),
-    });
-  } catch (e) {
-    return jsonError('UPSTREAM_ERROR', 'AI 服務暫時無法連線', 503);
-  }
 
-  if (!groqResp.ok) {
-    const errText = await groqResp.text().catch(() => '');
-    return jsonError(
-      'AI_FAILED',
-      `AI 解析失敗 (HTTP ${groqResp.status}): ${errText.slice(0, 200)}`,
-      502
-    );
-  }
-
-  let groqJson: any;
-  try {
-    groqJson = await groqResp.json();
-  } catch {
-    return jsonError('AI_INVALID_JSON', 'AI 回傳格式錯誤', 502);
-  }
-
-  const aiContent: string = groqJson?.choices?.[0]?.message?.content || '';
-  if (!aiContent) {
-    return jsonError('AI_EMPTY', 'AI 未回傳結果', 502);
-  }
-
-  // 提取 JSON object（含 items 陣列）
-  const parsed = extractJsonObject(aiContent);
-  if (!parsed) {
-    return jsonError(
-      'AI_PARSE_FAILED',
-      `AI 回傳無法解析: ${aiContent.slice(0, 300)}`,
-      502
-    );
-  }
-
-  const items: ParsedItem[] = Array.isArray(parsed.items) ? parsed.items : [];
-
-  // 後處理：過濾無效 + sold-with-no-price 允許
-  const validItems = items.filter(
-    (it: any) =>
-      it &&
-      typeof it === 'object' &&
-      (it.model || it.originalName) &&
-      (it.status === 'sold' || Number(it.price) >= 50)
+  // 每張圖獨立 call Groq（避免 max_tokens 不夠塞多商品 JSON）
+  // 並行送，加快速度
+  const results = await Promise.all(
+    images.map((img, idx) => analyzeOneImage(img, idx, images.length, extraText, workerUrl))
   );
+
+  // Merge items + 去重（同 model + price 視為同一筆）
+  const allItems: ParsedItem[] = [];
+  const seenKeys = new Set<string>();
+  let errorMsg = '';
+  let group = '';
+  let poster = '';
+
+  for (const r of results) {
+    if (r.error) {
+      errorMsg = errorMsg || r.error;
+      continue;
+    }
+    if (!group && r.group) group = r.group;
+    if (!poster && r.poster) poster = r.poster;
+    for (const it of r.items) {
+      const key = `${(it.model || it.originalName || '').toLowerCase()}|${it.price}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      allItems.push(it);
+    }
+  }
+
+  if (allItems.length === 0 && errorMsg) {
+    return jsonError('AI_FAILED', errorMsg, 502);
+  }
 
   return new Response(
     JSON.stringify({
       ok: true,
-      items: validItems,
-      raw_count: items.length,
-      filtered_count: validItems.length,
-      group: parsed.group || '',
-      poster: parsed.poster || '',
+      items: allItems,
+      raw_count: allItems.length,
+      filtered_count: allItems.length,
+      group,
+      poster,
+      partial_error: errorMsg || undefined,
+      image_count: images.length,
     }),
     {
       status: 200,
@@ -168,6 +135,85 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
   );
 };
+
+/**
+ * 單張圖 call Groq Vision
+ */
+async function analyzeOneImage(
+  img: IncomingImage,
+  idx: number,
+  total: number,
+  extraText: string,
+  workerUrl: string
+): Promise<{ items: ParsedItem[]; group?: string; poster?: string; error?: string }> {
+  const promptPrefix = total > 1
+    ? `（這是第 ${idx + 1}/${total} 張圖）\n`
+    : '';
+  const extraContext = extraText
+    ? `\n\n附加文字資訊（可參考補充，但以圖片為主）：\n${extraText}\n`
+    : '';
+  const promptText = promptPrefix + IMAGE_PROMPT + extraContext;
+
+  const contentParts: any[] = [
+    { type: 'text', text: promptText },
+    {
+      type: 'image_url',
+      image_url: { url: `data:${img.mime};base64,${img.base64}` },
+    },
+  ];
+
+  let resp: Response;
+  try {
+    resp = await fetch(workerUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: contentParts }],
+        temperature: 0.1,
+        max_tokens: 8000,
+      }),
+    });
+  } catch (e: any) {
+    return { items: [], error: `第 ${idx + 1} 張連線錯誤: ${e?.message || e}` };
+  }
+
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    return {
+      items: [],
+      error: `第 ${idx + 1} 張 HTTP ${resp.status}: ${errText.slice(0, 100)}`,
+    };
+  }
+
+  let json: any;
+  try {
+    json = await resp.json();
+  } catch {
+    return { items: [], error: `第 ${idx + 1} 張回傳非 JSON` };
+  }
+
+  const content = json?.choices?.[0]?.message?.content || '';
+  const parsed = extractJsonObject(content);
+  if (!parsed) {
+    return { items: [], error: `第 ${idx + 1} 張 AI 回傳無法解析` };
+  }
+
+  const items: ParsedItem[] = Array.isArray(parsed.items) ? parsed.items : [];
+  const validItems = items.filter(
+    (it: any) =>
+      it &&
+      typeof it === 'object' &&
+      (it.model || it.originalName) &&
+      (it.status === 'sold' || Number(it.price) >= 50 || Number(it.price) === 0)
+  );
+
+  return {
+    items: validItems,
+    group: parsed.group || '',
+    poster: parsed.poster || '',
+  };
+}
 
 /**
  * 從 AI content 提取 JSON object（含 items[]）

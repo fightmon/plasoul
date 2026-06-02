@@ -859,6 +859,7 @@ import Layout from '../../layouts/Layout.astro';
           credentials: 'include',
           body: JSON.stringify({
             images: pendingImages.map((p) => ({ mime: p.mime, base64: p.base64 })),
+            text: textInput.value.trim(), // 同時帶 textarea 文字當 context
           }),
         });
         const data = await res.json();
