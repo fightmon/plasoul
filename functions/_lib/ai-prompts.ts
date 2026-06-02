@@ -103,6 +103,46 @@ export const AI_PROMPT = `以下是一篇FB鋼彈模型販售貼文，請提取�
 `;
 
 /**
+ * Vision Prompt — 給「FB 貼文截圖 / 商品照片」用
+ * (從模物獵人 IMAGE_PROMPT copy)
+ */
+export const IMAGE_PROMPT = `你是一個模型/玩具二手買賣資訊萃取助手。請分析這張 FB 社團販售貼文截圖或商品照片，並以 JSON 格式回傳以下資訊：
+{
+  "group": "FB社團名稱（截圖中貼文所在的社團名稱，若無則空字串）",
+  "poster": "PO文者名稱（發文者，若無則空字串）",
+  "items": [
+    {
+      "originalName": "賣家原始品名（完全按貼文/圖片原文）",
+      "model": "正規化品名（確定是 Bandai 官方中文名稱才填，否則同 originalName；含子系列如三國傳 劉備；PB 字樣保留；寧可與 originalName 相同也不要猜錯）",
+      "nameEn": "英文品名（非常確定才填，不確定填空字串）",
+      "franchise": "作品系列代號，只能填：0079/Z/ZZ/CCA/0080/0083/08MS/UC/NT/HATHAWAY/ORIGIN/G/WING/X/TURNA/SEED/00/AGE/GRR/IBO/WFM/BUILD/SD；不確定填空字串",
+      "series": "只能填：HG、RG、MG、MGEX、MGSD、MG Ver.Ka、PG、RE/100、SD、ROBOT魂、METAL ROBOT魂、超合金、好微笑、METAL BUILD、GFFMC、GFFN、SHCM PRO；HGUC/HGBF一律填HG；COMPOSITE Ver.Ka填MG Ver.Ka；BB戰士一律填SD；品名含好微笑/MODEROID填好微笑；MGEX是獨立系列不要歸到MG；不確定填空字串",
+      "scale": "比例如1/144，不確定填空字串",
+      "price": 數字型售價,
+      "status": "active 或 sold；含「售出」「已售」「SOLD」→sold；其餘 active",
+      "condition": "全新 / 全新（拆檢） / 九成新 / 八成新 / 七成新 / 已組；含「素組」「塗裝」「噴塗」「上漆」「完成品」「殺肉」「組完入櫃」「天線斷」「斷件」→已組",
+      "shippingText": "寄送方式如「賣貨便+45」「店到店+60」「含運」「不含運」「郵寄+80」；無則填空字串",
+      "meetupText": "面交資訊（縣市+區/門市/捷運站），多時段用「、」分隔；無則填空字串",
+      "note": "其他備註：付款方式（匯款/ATM）、賣家備註（24小時內匯款/他團同步）等；多項用「、」分隔；無則留空",
+      "rawHint": "原始文字摘要（30字以內）"
+    }
+  ]
+}
+
+規則：
+1. items 陣列每個元素代表一個商品，若有多商品則陣列多個元素
+2. price 必須是純數字，不含貨幣符號
+3. 若圖片是純商品照（無價格文字），price 填 0
+4. 若截圖看不出某欄位資料，填空字串
+5. 只回傳 JSON，不要加任何說明文字、不要 markdown code fence
+6. 若品名含「+」連接多個角色／型號（如「劉備+關羽+張飛」），視為一組套裝，整串作為同一筆商品
+7. model 欄位要保留子系列／作品名稱（如「三國傳 劉備+關羽+張飛」）
+8. BB戰士 系列一律在 series 欄填「SD」
+9. MGEX 是獨立系列，不要歸到 MG
+10. 開頭含「[徵]」「【徵】」「(徵)」的行是「徵求購買」，請忽略，不要列入 items
+`;
+
+/**
  * AI 解析結果單筆 schema
  */
 export interface ParsedItem {

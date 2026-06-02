@@ -33,10 +33,23 @@ import Layout from '../../layouts/Layout.astro';
 
       <!-- Text input -->
       <section class="card">
-        <h2 class="card-title">FB 貼文文字 <span class="required">*必填</span></h2>
-        <textarea id="text-input" class="textarea" rows="10" placeholder="貼上整篇 FB 貼文…"></textarea>
+        <h2 class="card-title">FB 貼文文字 或 截圖（Ctrl+V 貼圖）</h2>
+        <textarea
+          id="text-input"
+          class="textarea"
+          rows="10"
+          placeholder="貼上整篇 FB 貼文文字… 或直接 Ctrl+V 貼圖（截圖、商品照、FB貼文截圖都可）"
+        ></textarea>
+
+        <!-- Image preview area -->
+        <div id="img-preview-wrap" class="img-preview-wrap" style="display:none">
+          <div class="img-preview-list" id="img-preview-list"></div>
+          <button id="img-clear-btn" class="link-btn" style="font-size:12px">清掉所有圖</button>
+        </div>
+
         <div class="actions">
-          <button id="parse-btn" class="primary-btn">🤖 AI 解析</button>
+          <button id="parse-btn" class="primary-btn">🤖 AI 解析文字</button>
+          <button id="parse-img-btn" class="primary-btn" style="display:none">🖼️ AI 解析圖片</button>
           <span id="parse-status" class="status-text"></span>
         </div>
       </section>
@@ -594,6 +607,53 @@ import Layout from '../../layouts/Layout.astro';
       white-space: nowrap;
     }
 
+    /* Image preview */
+    .img-preview-wrap {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .img-preview-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .img-thumb {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .img-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .img-thumb .x-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 18px;
+      height: 18px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      padding: 0;
+    }
+
     .row-empty {
       text-align: center;
       padding: 24px;
@@ -677,6 +737,152 @@ import Layout from '../../layouts/Layout.astro';
     const adminEmail = $('admin-email') as HTMLSpanElement;
 
     let parsedItems: any[] = [];
+
+    /* ============================================
+       Image paste handler
+       ============================================ */
+    const imgPreviewWrap = $('img-preview-wrap') as HTMLElement;
+    const imgPreviewList = $('img-preview-list') as HTMLDivElement;
+    const parseImgBtn = $('parse-img-btn') as HTMLButtonElement;
+    const imgClearBtn = $('img-clear-btn') as HTMLButtonElement;
+
+    interface PendingImage {
+      mime: string;
+      base64: string;
+      dataUrl: string;
+      id: string;
+    }
+    let pendingImages: PendingImage[] = [];
+
+    function updateImgUI() {
+      const has = pendingImages.length > 0;
+      imgPreviewWrap.style.display = has ? 'flex' : 'none';
+      parseImgBtn.style.display = has ? '' : 'none';
+      parseBtn.style.display = has ? 'none' : '';
+      parseImgBtn.textContent = has
+        ? `🖼️ AI 解析 ${pendingImages.length} 張圖片`
+        : '🖼️ AI 解析圖片';
+    }
+
+    function renderImgList() {
+      imgPreviewList.innerHTML = pendingImages
+        .map(
+          (img) => `
+        <div class="img-thumb" data-id="${img.id}">
+          <img src="${img.dataUrl}" alt="preview" />
+          <button class="x-btn" data-rm="${img.id}" title="移除">×</button>
+        </div>
+      `
+        )
+        .join('');
+      imgPreviewList.querySelectorAll('[data-rm]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const id = (e.currentTarget as HTMLElement).getAttribute('data-rm');
+          pendingImages = pendingImages.filter((p) => p.id !== id);
+          renderImgList();
+          updateImgUI();
+        });
+      });
+    }
+
+    async function fileToBase64(file: File): Promise<{ mime: string; base64: string; dataUrl: string }> {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = reader.result as string;
+          const base64 = dataUrl.split(',')[1] || '';
+          resolve({ mime: file.type, base64, dataUrl });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // textarea paste
+    textInput.addEventListener('paste', async (e) => {
+      const items = (e as ClipboardEvent).clipboardData?.items;
+      if (!items) return;
+      let imageFound = false;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          imageFound = true;
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) continue;
+          if (pendingImages.length >= 4) {
+            parseStatus.textContent = '⚠️ 最多 4 張圖';
+            parseStatus.className = 'status-text error';
+            continue;
+          }
+          try {
+            const { mime, base64, dataUrl } = await fileToBase64(file);
+            pendingImages.push({
+              mime,
+              base64,
+              dataUrl,
+              id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            });
+            renderImgList();
+            updateImgUI();
+            parseStatus.textContent = `✅ 已加入第 ${pendingImages.length} 張圖`;
+            parseStatus.className = 'status-text success';
+          } catch (err) {
+            parseStatus.textContent = '❌ 圖片讀取失敗';
+            parseStatus.className = 'status-text error';
+          }
+        }
+      }
+      // 若沒抓到圖（純文字 paste）→ 讓 default paste 跑
+    });
+
+    imgClearBtn.addEventListener('click', () => {
+      pendingImages = [];
+      renderImgList();
+      updateImgUI();
+      parseStatus.textContent = '';
+    });
+
+    /* ============================================
+       AI parse - image
+       ============================================ */
+    parseImgBtn.addEventListener('click', async () => {
+      if (pendingImages.length === 0) return;
+      parseImgBtn.disabled = true;
+      parseStatus.textContent = `🖼️ AI Vision 解析 ${pendingImages.length} 張圖中…（可能 10-30 秒）`;
+      parseStatus.className = 'status-text';
+      resultsCard.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/ai/extract-listing-from-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            images: pendingImages.map((p) => ({ mime: p.mime, base64: p.base64 })),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          parseStatus.textContent = `❌ ${data.message || '解析失敗'}`;
+          parseStatus.className = 'status-text error';
+          parseImgBtn.disabled = false;
+          return;
+        }
+        parsedItems = data.items || [];
+        // 如果 AI 抓到 group / poster，回填 source 區
+        if (data.group && !srcGroup.value) srcGroup.value = data.group;
+
+        parseStatus.textContent = `✅ 從圖片找到 ${parsedItems.length} 個商品（原始 ${data.raw_count || parsedItems.length}）`;
+        parseStatus.className = 'status-text success';
+        renderResults();
+        resultsCard.style.display = '';
+        parseImgBtn.disabled = false;
+      } catch (e) {
+        parseStatus.textContent = '❌ 網路錯誤';
+        parseStatus.className = 'status-text error';
+        parseImgBtn.disabled = false;
+      }
+    });
 
     /* ============================================
        Logout

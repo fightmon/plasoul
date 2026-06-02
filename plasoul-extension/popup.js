@@ -60,67 +60,86 @@ function extractFbPostInPage() {
 
   let preExtractedStoryEl = null;
 
-  // Helper: 找 top-level article（不是 nested 在另一個 article 內 = 不是留言）
-  const findTopLevelArticles = (root) => {
-    const all = Array.from(root.querySelectorAll('[role="article"]'));
-    return all.filter((a) => {
-      let p = a.parentElement;
-      while (p && p !== root) {
-        if (p.getAttribute && p.getAttribute('role') === 'article') return false;
-        p = p.parentElement;
-      }
-      return true;
-    });
-  };
+  // ===========================================================
+  // 新策略：viewport-based — user 螢幕中正看到的就是 main post
+  // FB modal/dialog selector 不穩，改用「user 視野中的 story 元素」
+  // ===========================================================
+  const viewportHeight = window.innerHeight;
 
-  // 找 article 優先順序
-  const dialog = document.querySelector('[role="dialog"]');
-
-  // Strategy A: dialog 內直接找最頂的 story_message（FB 主 post 慣例位置）
-  if (dialog) {
-    const storyEls = Array.from(
-      dialog.querySelectorAll('[data-ad-rendering-role="story_message"]')
-    );
-    if (storyEls.length > 0) {
-      // 取最頂端的（top 最小）— 主 post 在 dialog 頂端，留言在下方
-      storyEls.sort(
-        (a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top
-      );
-      preExtractedStoryEl = storyEls[0];
-      article = preExtractedStoryEl.closest('[role="article"]');
-      source = 'dialog-story';
-    }
-  }
-
-  // Strategy B: dialog top-level article
-  if (!article && dialog) {
-    const topLevel = findTopLevelArticles(dialog);
-    if (topLevel.length > 0) {
-      topLevel.sort((a, b) => {
-        const aTop = a.getBoundingClientRect().top;
-        const bTop = b.getBoundingClientRect().top;
-        if (Math.abs(aTop - bTop) < 50) {
-          return (b.innerText || '').length - (a.innerText || '').length;
-        }
-        return aTop - bTop;
+  // Collect all story_message candidates
+  const allStorySels = [
+    '[data-ad-rendering-role="story_message"]',
+    '[data-ad-comet-preview="message"]',
+  ];
+  const candidates = [];
+  allStorySels.forEach((sel) => {
+    document.querySelectorAll(sel).forEach((el) => {
+      const text = (el.innerText || '').trim();
+      if (text.length < 30) return;
+      const rect = el.getBoundingClientRect();
+      // 排除 hidden / display:none
+      if (rect.width === 0 || rect.height === 0) return;
+      candidates.push({
+        el,
+        text,
+        length: text.length,
+        top: rect.top,
+        // 「在 viewport 中央區域」= 用戶正在看的
+        inCenter: rect.top >= -100 && rect.top < viewportHeight * 0.6,
+        inView: rect.bottom > 0 && rect.top < viewportHeight,
       });
-      article = topLevel[0];
-      source = 'dialog-top';
-    }
+    });
+  });
+
+  if (candidates.length > 0) {
+    // 排序：在中央 > 在 view > 距離 viewport 中心近 > 長
+    candidates.sort((a, b) => {
+      if (a.inCenter !== b.inCenter) return a.inCenter ? -1 : 1;
+      if (a.inView !== b.inView) return a.inView ? -1 : 1;
+      // 同 category 內，top 小（更上面）優先
+      return a.top - b.top;
+    });
+    preExtractedStoryEl = candidates[0].el;
+    article = preExtractedStoryEl.closest('[role="article"]');
+    source = candidates[0].inCenter ? 'viewport-center' : 'viewport';
   }
 
-  // Strategy C: timeline 上找最長的 top-level article
+  // Fallback: 抓 viewport 內最長的 article
   if (!article) {
-    const topLevel = findTopLevelArticles(document.body);
+    const articles = document.querySelectorAll('[role="article"]');
+    let longest = null;
     let longestLen = 0;
-    topLevel.forEach((a) => {
+    articles.forEach((a) => {
+      const rect = a.getBoundingClientRect();
+      const inView = rect.bottom > 0 && rect.top < viewportHeight;
+      if (!inView) return;
       const len = (a.innerText || '').length;
       if (len > longestLen) {
-        article = a;
+        longest = a;
         longestLen = len;
       }
     });
-    if (article) source = 'longest';
+    if (longest) {
+      article = longest;
+      source = 'viewport-article';
+    }
+  }
+
+  // Final fallback: document 內最長
+  if (!article) {
+    let longest = null;
+    let longestLen = 0;
+    document.querySelectorAll('[role="article"]').forEach((a) => {
+      const len = (a.innerText || '').length;
+      if (len > longestLen) {
+        longest = a;
+        longestLen = len;
+      }
+    });
+    if (longest) {
+      article = longest;
+      source = 'longest';
+    }
   }
 
   // 1. URL: 從 article 找 post permalink
@@ -261,14 +280,15 @@ async function runExtract(tabId) {
       setStatus('⚠️ 沒抓到貼文文字（試手動選取後按「重抓」）', 'err');
       $('send-btn').disabled = true;
     } else {
-      const sourceLabel =
-        data.source === 'selection'
-          ? '你選取的範圍'
-          : data.source === 'dialog'
-            ? '已開啟的貼文 dialog'
-            : data.source === 'longest'
-              ? 'Timeline 最長 article'
-              : 'fallback';
+      const sourceLabels = {
+        selection: '你選取的範圍',
+        'viewport-center': '你螢幕中央的貼文',
+        viewport: '你視野內的貼文',
+        'viewport-article': '視野內最長 article',
+        longest: '頁面最長 article',
+        fallback: 'fallback',
+      };
+      const sourceLabel = sourceLabels[data.source] || data.source;
       setStatus(`✅ 抓到 ${data.postText.length} 字（${sourceLabel}）`, 'ok');
       $('send-btn').disabled = false;
     }
