@@ -168,7 +168,7 @@ import Layout from '../../layouts/Layout.astro';
           <div class="field">
             <span class="field-label">Slug (URL 用) *</span>
             <input id="cat-slug" type="text" class="field-input" placeholder="hg-ecoas-jegan（小寫+橫線）" />
-            <span class="field-hint">未來 SEO 連結 /gundam/<code>{slug}</code>，自動帶系列前綴</span>
+            <span class="field-hint">未來 SEO 連結 /gundam/<code>{'{slug}'}</code>，自動帶系列前綴</span>
           </div>
 
           <div id="catalog-modal-error" class="error-box" style="display:none"></div>
