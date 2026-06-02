@@ -121,6 +121,64 @@ import Layout from '../../layouts/Layout.astro';
         </div>
       </section>
     </main>
+
+    <!-- Catalog create modal -->
+    <div id="catalog-modal" class="modal-backdrop" style="display:none">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3 class="modal-title">⚡ 建立新 Catalog</h3>
+          <button id="catalog-modal-close" class="modal-close" title="關閉">×</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-hint" id="catalog-modal-hint">未對應的 listing 將自動 link 到這個新建的 catalog。</p>
+
+          <div class="field">
+            <span class="field-label">系列 (series) *</span>
+            <select id="cat-series" class="field-input">
+              <option value="">--選擇--</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <span class="field-label">商品名 (full_name) *</span>
+            <input id="cat-full-name" type="text" class="field-input" placeholder="例：HG 1/144 鋼彈 ECOAS 傑鋼" />
+          </div>
+
+          <div class="grid-2">
+            <div class="field">
+              <span class="field-label">比例 (scale)</span>
+              <input id="cat-scale" type="text" class="field-input" placeholder="1/144" />
+            </div>
+            <div class="field">
+              <span class="field-label">作品 (franchise)</span>
+              <input id="cat-franchise" type="text" class="field-input" placeholder="UC / SEED / 00 / ..." />
+            </div>
+          </div>
+
+          <div class="field">
+            <span class="field-label">日文名 (name_jp)</span>
+            <input id="cat-name-jp" type="text" class="field-input" placeholder="可選" />
+          </div>
+
+          <div class="field">
+            <span class="field-label">英文名 (name_en)</span>
+            <input id="cat-name-en" type="text" class="field-input" placeholder="可選" />
+          </div>
+
+          <div class="field">
+            <span class="field-label">Slug (URL 用) *</span>
+            <input id="cat-slug" type="text" class="field-input" placeholder="hg-ecoas-jegan（小寫+橫線）" />
+            <span class="field-hint">未來 SEO 連結 /gundam/<code>{slug}</code>，自動帶系列前綴</span>
+          </div>
+
+          <div id="catalog-modal-error" class="error-box" style="display:none"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="catalog-modal-cancel" class="link-btn">取消</button>
+          <button id="catalog-modal-submit" class="primary-btn">建立 + 連結 listing</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <style>
@@ -655,6 +713,32 @@ import Layout from '../../layouts/Layout.astro';
       flex-shrink: 0;
     }
     .lc-fb-link:hover { text-decoration: underline; }
+
+    /* Thumbnails in listing card */
+    .lc-thumbs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .lc-thumb {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: zoom-in;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .lc-thumb:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .lc-thumb-more {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      padding: 0 6px;
+    }
     .lc-time {
       flex-shrink: 0;
       white-space: nowrap;
@@ -711,6 +795,117 @@ import Layout from '../../layouts/Layout.astro';
       text-align: center;
       padding: 24px;
       color: rgba(255, 255, 255, 0.35);
+      font-size: 13px;
+    }
+
+    /* Listing card 上「⚡ 建 catalog」action */
+    .lc-action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: #fde68a;
+      background: rgba(234, 179, 8, 0.1);
+      border: 1px solid rgba(234, 179, 8, 0.25);
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .lc-action-btn:hover {
+      background: rgba(234, 179, 8, 0.2);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-box {
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      background: #0F1A2E;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 22px;
+      cursor: pointer;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .modal-body {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-hint {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+      margin: 0 0 4px;
+    }
+    .field-hint {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-top: 4px;
+    }
+    .field-hint code {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 12px 20px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .error-box {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+      padding: 10px 12px;
+      border-radius: 8px;
       font-size: 13px;
     }
   </style>
@@ -1104,6 +1299,30 @@ import Layout from '../../layouts/Layout.astro';
       saveStatus.textContent = '💾 保存中…';
       saveStatus.className = 'status-text';
 
+      // 先上傳 pending images（如果有）拿 r2_keys
+      const imageR2Keys: string[] = [];
+      if (pendingImages.length > 0) {
+        saveStatus.textContent = `📷 上傳 ${pendingImages.length} 張圖中…`;
+        for (let i = 0; i < pendingImages.length; i++) {
+          const img = pendingImages[i];
+          try {
+            const upRes = await fetch('/api/admin/upload-screenshot', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ mime: img.mime, base64: img.base64 }),
+            });
+            const upData = await upRes.json();
+            if (upRes.ok && upData.ok && upData.r2_key) {
+              imageR2Keys.push(upData.r2_key);
+            }
+          } catch {
+            // 個別圖失敗不擋（圖少存幾張不影響 listings）
+          }
+        }
+        saveStatus.textContent = `💾 已上傳 ${imageR2Keys.length} 張圖，保存 listings 中…`;
+      }
+
       try {
         const res = await fetch('/api/admin/listings/batch-save', {
           method: 'POST',
@@ -1112,6 +1331,7 @@ import Layout from '../../layouts/Layout.astro';
             source_url: srcUrl.value.trim() || null,
             source_group_name: srcGroup.value.trim() || null,
             items,
+            image_r2_keys: imageR2Keys,
           }),
         });
         const data = await res.json();
@@ -1128,11 +1348,14 @@ import Layout from '../../layouts/Layout.astro';
         renderRecent(data);
         recentCard.style.display = '';
 
-        // Clear results card + textarea
+        // Clear results card + textarea + images
         resultsCard.style.display = 'none';
         textInput.value = '';
         parsedItems = [];
         parseStatus.textContent = '';
+        pendingImages = [];
+        renderImgList();
+        updateImgUI();
         saveBtn.disabled = false;
       } catch (e) {
         saveStatus.textContent = '❌ 網路錯誤';
@@ -1271,13 +1494,27 @@ import Layout from '../../layouts/Layout.astro';
           ? `<a href="${escapeHtml(it.source_url)}" target="_blank" rel="noopener" class="lc-fb-link">🔗 FB</a>`
           : '';
 
+        const buildCatalogBtn = unmatched
+          ? `<button class="lc-action-btn" data-build-catalog="${escapeHtml(it.id)}" data-name="${escapeHtml(it.model)}">⚡ 建立 catalog</button>`
+          : '';
+
+        // Screenshot thumbnails
+        const imageKeys: string[] = Array.isArray(it.image_r2_keys) ? it.image_r2_keys : [];
+        const thumbsHtml = imageKeys.length > 0
+          ? `<div class="lc-thumbs">${imageKeys
+              .slice(0, 4)
+              .map((k) => `<img class="lc-thumb" src="/api/screenshot/${escapeHtml(k)}" data-fullkey="${escapeHtml(k)}" alt="screenshot" loading="lazy" />`)
+              .join('')}${imageKeys.length > 4 ? `<span class="lc-thumb-more">+${imageKeys.length - 4}</span>` : ''}</div>`
+          : '';
+
         return `
           <div class="listing-card">
             <div class="lc-head">
               <div class="lc-title">${escapeHtml(it.model)}</div>
               <div class="lc-price ${status}">NT$ ${(it.price || 0).toLocaleString()}</div>
             </div>
-            <div class="lc-tags">${tags.join('')}</div>
+            <div class="lc-tags">${tags.join('')} ${buildCatalogBtn}</div>
+            ${thumbsHtml}
             ${metaParts.join('')}
             <div class="lc-footer">
               <span class="lc-source">${escapeHtml(sourceText)}</span>
@@ -1289,7 +1526,144 @@ import Layout from '../../layouts/Layout.astro';
       }).join('');
 
       recentWrap.innerHTML = `<div class="recent-grid">${cards}</div>`;
+
+      // Hook up「⚡ 建立 catalog」button
+      recentWrap.querySelectorAll('[data-build-catalog]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const t = e.currentTarget as HTMLElement;
+          openCatalogModal(t.getAttribute('data-build-catalog') || '', t.getAttribute('data-name') || '');
+        });
+      });
+
+      // Thumbnail click → 開新 tab 看大圖
+      recentWrap.querySelectorAll('.lc-thumb').forEach((img) => {
+        img.addEventListener('click', (e) => {
+          const key = (e.currentTarget as HTMLElement).getAttribute('data-fullkey') || '';
+          if (key) window.open('/api/screenshot/' + key, '_blank');
+        });
+      });
     }
+
+    /* ============================================
+       Catalog create modal
+       ============================================ */
+    const catalogModal = $('catalog-modal') as HTMLDivElement;
+    const catalogModalClose = $('catalog-modal-close') as HTMLButtonElement;
+    const catalogModalCancel = $('catalog-modal-cancel') as HTMLButtonElement;
+    const catalogModalSubmit = $('catalog-modal-submit') as HTMLButtonElement;
+    const catalogModalHint = $('catalog-modal-hint') as HTMLParagraphElement;
+    const catalogModalError = $('catalog-modal-error') as HTMLDivElement;
+    const catSeries = $('cat-series') as HTMLSelectElement;
+    const catFullName = $('cat-full-name') as HTMLInputElement;
+    const catScale = $('cat-scale') as HTMLInputElement;
+    const catFranchise = $('cat-franchise') as HTMLInputElement;
+    const catNameJp = $('cat-name-jp') as HTMLInputElement;
+    const catNameEn = $('cat-name-en') as HTMLInputElement;
+    const catSlug = $('cat-slug') as HTMLInputElement;
+
+    // 填 series options
+    SERIES_OPTIONS.forEach((s) => {
+      const opt = document.createElement('option');
+      opt.value = s;
+      opt.textContent = s;
+      catSeries.appendChild(opt);
+    });
+
+    let currentListingId = '';
+
+    function openCatalogModal(listingId: string, presetName: string) {
+      currentListingId = listingId;
+      catFullName.value = presetName;
+      catScale.value = '';
+      catFranchise.value = '';
+      catNameJp.value = '';
+      catNameEn.value = '';
+      catSlug.value = '';
+      catSeries.value = '';
+      catalogModalError.style.display = 'none';
+      catalogModalHint.textContent = listingId
+        ? `將自動 link 到 listing「${presetName}」`
+        : '建立新 catalog';
+      catalogModal.style.display = 'flex';
+      catFullName.focus();
+      // 自動 suggest slug 從 full_name
+      catFullName.addEventListener('input', autoSuggestSlug);
+      catSeries.addEventListener('change', autoSuggestSlug);
+    }
+
+    function autoSuggestSlug() {
+      if (catSlug.dataset.userEdited === '1') return;
+      const series = catSeries.value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const name = catFullName.value
+        .replace(/[^\x20-\x7e]+/g, ' ')   // 去中文
+        .replace(/[^a-zA-Z0-9]+/g, '-')   // 連續非字母數字 → -
+        .replace(/^-+|-+$/g, '')           // trim -
+        .toLowerCase();
+      catSlug.value = series && name ? `${series}-${name}` : (name || series);
+    }
+    catSlug.addEventListener('input', () => { catSlug.dataset.userEdited = '1'; });
+
+    function closeCatalogModal() {
+      catalogModal.style.display = 'none';
+      currentListingId = '';
+    }
+
+    catalogModalClose.addEventListener('click', closeCatalogModal);
+    catalogModalCancel.addEventListener('click', closeCatalogModal);
+    catalogModal.addEventListener('click', (e) => {
+      if (e.target === catalogModal) closeCatalogModal();
+    });
+
+    catalogModalSubmit.addEventListener('click', async () => {
+      const payload = {
+        series: catSeries.value.trim(),
+        slug: catSlug.value.trim().toLowerCase(),
+        full_name: catFullName.value.trim(),
+        scale: catScale.value.trim(),
+        franchise: catFranchise.value.trim(),
+        name_jp: catNameJp.value.trim(),
+        name_en: catNameEn.value.trim(),
+        listing_id: currentListingId || undefined,
+      };
+
+      if (!payload.series || !payload.slug || !payload.full_name) {
+        catalogModalError.textContent = '必填：系列 / 商品名 / Slug';
+        catalogModalError.style.display = 'block';
+        return;
+      }
+
+      catalogModalSubmit.disabled = true;
+      catalogModalSubmit.textContent = '建立中…';
+      catalogModalError.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/admin/catalog/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) {
+          catalogModalError.textContent = data.message || '建立失敗';
+          catalogModalError.style.display = 'block';
+          catalogModalSubmit.disabled = false;
+          catalogModalSubmit.textContent = '建立 + 連結 listing';
+          return;
+        }
+        // 成功
+        closeCatalogModal();
+        catalogModalSubmit.disabled = false;
+        catalogModalSubmit.textContent = '建立 + 連結 listing';
+        // refresh recent list
+        loadRecent();
+      } catch (e) {
+        catalogModalError.textContent = '網路錯誤';
+        catalogModalError.style.display = 'block';
+        catalogModalSubmit.disabled = false;
+        catalogModalSubmit.textContent = '建立 + 連結 listing';
+      }
+    });
 
     function formatTimeAgo(ts: number): string {
       const diff = Date.now() - ts;

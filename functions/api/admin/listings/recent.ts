@@ -53,6 +53,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
        fb.source_url,
        fb.source_group_name,
        fb.product_id,
+       fb.batch_id,
        fb.is_legacy,
        fb.created_at
      FROM fb_listings fb
@@ -66,6 +67,27 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     .all<any>();
 
   const items = listResult.results || [];
+
+  // 為每筆 listing 查 batch_images（依 batch_id 分組）
+  const batchIds = [...new Set(items.map((it: any) => it.batch_id).filter(Boolean))];
+  let imagesByBatch: Record<string, string[]> = {};
+  if (batchIds.length > 0) {
+    const placeholders = batchIds.map(() => '?').join(',');
+    const imgRows = await context.env.DB.prepare(
+      `SELECT batch_id, r2_key FROM batch_images WHERE batch_id IN (${placeholders}) ORDER BY uploaded_at ASC`
+    )
+      .bind(...batchIds)
+      .all<{ batch_id: string; r2_key: string }>();
+    (imgRows.results || []).forEach((row) => {
+      if (!imagesByBatch[row.batch_id]) imagesByBatch[row.batch_id] = [];
+      imagesByBatch[row.batch_id].push(row.r2_key);
+    });
+  }
+
+  // 附 image_keys 到每筆 item
+  items.forEach((it: any) => {
+    it.image_r2_keys = imagesByBatch[it.batch_id] || [];
+  });
 
   // 統計（近 30 天）
   const statsResult = await context.env.DB.prepare(

@@ -58,6 +58,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const sourceGroupName = String(body.source_group_name || '').trim() || null;
   const sourcePlatform = String(body.source_platform || 'fb_group').trim();
   const items: IncomingItem[] = Array.isArray(body.items) ? body.items : [];
+  // 上傳完的圖片 r2_keys（給這個 batch 共用）
+  const imageR2Keys: string[] = Array.isArray(body.image_r2_keys) ? body.image_r2_keys : [];
 
   if (items.length === 0) {
     return jsonError('NO_ITEMS', '沒有要存的商品', 400);
@@ -68,6 +70,22 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const now = Date.now();
   const batchId = `batch_${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // 把已上傳的 images 重新 link 到正式 batch_id
+  // （upload-screenshot 時 batch_id 可能是 pending_xxx）
+  if (imageR2Keys.length > 0) {
+    try {
+      const placeholders = imageR2Keys.map(() => '?').join(',');
+      await context.env.DB.prepare(
+        `UPDATE batch_images SET batch_id = ? WHERE r2_key IN (${placeholders})`
+      )
+        .bind(batchId, ...imageR2Keys)
+        .run();
+    } catch (e) {
+      // log but 不擋（圖照存，只是 batch link 失敗）
+      console.error('link images to batch failed', e);
+    }
+  }
 
   const saved: any[] = [];
   const skipped: { reason: string; model: string }[] = [];
