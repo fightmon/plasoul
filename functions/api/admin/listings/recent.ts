@@ -71,21 +71,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   // 為每筆 listing 查 batch_images（依 batch_id 分組）
   const batchIds = [...new Set(items.map((it: any) => it.batch_id).filter(Boolean))];
   let imagesByBatch: Record<string, string[]> = {};
+  let coverByBatch: Record<string, string> = {};
   if (batchIds.length > 0) {
     const placeholders = batchIds.map(() => '?').join(',');
     const imgRows = await context.env.DB.prepare(
-      `SELECT batch_id, r2_key FROM batch_images WHERE batch_id IN (${placeholders}) ORDER BY uploaded_at ASC`
+      `SELECT batch_id, r2_key, is_cover FROM batch_images WHERE batch_id IN (${placeholders}) ORDER BY uploaded_at ASC`
     )
       .bind(...batchIds)
-      .all<{ batch_id: string; r2_key: string }>();
+      .all<{ batch_id: string; r2_key: string; is_cover: number }>();
     (imgRows.results || []).forEach((row) => {
-      if (!imagesByBatch[row.batch_id]) imagesByBatch[row.batch_id] = [];
-      imagesByBatch[row.batch_id].push(row.r2_key);
+      if (row.is_cover) {
+        // 一個 batch 只取一張封面（若有多張，取最早上傳的）
+        if (!coverByBatch[row.batch_id]) coverByBatch[row.batch_id] = row.r2_key;
+      } else {
+        if (!imagesByBatch[row.batch_id]) imagesByBatch[row.batch_id] = [];
+        imagesByBatch[row.batch_id].push(row.r2_key);
+      }
     });
   }
 
-  // 附 image_keys 到每筆 item
+  // 附 cover + image_keys 到每筆 item
   items.forEach((it: any) => {
+    it.cover_r2_key = coverByBatch[it.batch_id] || null;
     it.image_r2_keys = imagesByBatch[it.batch_id] || [];
   });
 

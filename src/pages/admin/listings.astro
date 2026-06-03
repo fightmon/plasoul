@@ -31,6 +31,19 @@ import Layout from '../../layouts/Layout.astro';
         </div>
       </section>
 
+      <!-- Cover image（這篇貼文的代表圖，選填，跟 AI 解析圖獨立）-->
+      <section class="card">
+        <h2 class="card-title">📷 封面圖（這篇貼文代表圖，選填）</h2>
+        <p class="cover-hint">點下方框框後 Ctrl+V 貼上 1 張封面 — 只作顯示用，不會送進 AI 解析。</p>
+        <div id="cover-drop" class="cover-drop" tabindex="0">
+          <div id="cover-empty" class="cover-empty">📋 點我 → Ctrl+V 貼封面圖</div>
+          <div id="cover-preview" class="cover-preview" style="display:none">
+            <img id="cover-img" class="cover-img" src="" alt="封面預覽" />
+            <button id="cover-remove" class="x-btn" title="移除封面">×</button>
+          </div>
+        </div>
+      </section>
+
       <!-- Text input -->
       <section class="card">
         <h2 class="card-title">FB 貼文文字 或 截圖（Ctrl+V 貼圖）</h2>
@@ -798,6 +811,76 @@ import Layout from '../../layouts/Layout.astro';
       font-size: 13px;
     }
 
+    /* Cover image upload */
+    .cover-hint {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.45);
+    }
+    .cover-drop {
+      border: 1px dashed rgba(255, 255, 255, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      min-height: 96px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .cover-drop:focus {
+      border-color: rgba(125, 211, 252, 0.55);
+      background: rgba(125, 211, 252, 0.06);
+    }
+    .cover-empty {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 13px;
+      user-select: none;
+    }
+    .cover-preview {
+      position: relative;
+      max-width: 320px;
+    }
+    .cover-img {
+      display: block;
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+    .cover-preview .x-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+
+    /* Listing card 封面圖 */
+    .lc-cover {
+      margin-bottom: 8px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .lc-cover-img {
+      display: block;
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      cursor: pointer;
+    }
+
     /* Listing card 上「⚡ 建 catalog」action */
     .lc-action-btn {
       display: inline-flex;
@@ -1001,6 +1084,52 @@ import Layout from '../../layouts/Layout.astro';
       id: string;
     }
     let pendingImages: PendingImage[] = [];
+
+    // ---- Cover image（封面：單張，獨立於 AI 解析）----
+    const coverDrop = $('cover-drop') as HTMLElement;
+    const coverEmpty = $('cover-empty') as HTMLElement;
+    const coverPreview = $('cover-preview') as HTMLElement;
+    const coverImg = $('cover-img') as HTMLImageElement;
+    const coverRemove = $('cover-remove') as HTMLButtonElement;
+    let pendingCover: { mime: string; base64: string; dataUrl: string } | null = null;
+
+    function renderCover() {
+      if (pendingCover) {
+        coverImg.src = pendingCover.dataUrl;
+        coverPreview.style.display = '';
+        coverEmpty.style.display = 'none';
+      } else {
+        coverImg.src = '';
+        coverPreview.style.display = 'none';
+        coverEmpty.style.display = '';
+      }
+    }
+
+    coverDrop.addEventListener('click', () => coverDrop.focus());
+    coverDrop.addEventListener('paste', async (e) => {
+      const clip = (e as ClipboardEvent).clipboardData?.items;
+      if (!clip) return;
+      for (const item of Array.from(clip)) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) continue;
+          try {
+            const { mime, base64, dataUrl } = await fileToBase64(file);
+            pendingCover = { mime, base64, dataUrl };
+            renderCover();
+          } catch {
+            /* 封面讀取失敗，忽略 */
+          }
+          return;
+        }
+      }
+    });
+    coverRemove.addEventListener('click', (e) => {
+      e.stopPropagation();
+      pendingCover = null;
+      renderCover();
+    });
 
     function updateImgUI() {
       const has = pendingImages.length > 0;
@@ -1301,6 +1430,26 @@ import Layout from '../../layouts/Layout.astro';
 
       // 先上傳 pending images（如果有）拿 r2_keys
       const imageR2Keys: string[] = [];
+
+      // 封面圖（如果有）→ is_cover=1，r2_key 一併進 imageR2Keys 讓 batch-save relink 到正式 batch
+      if (pendingCover) {
+        saveStatus.textContent = '📷 上傳封面圖中…';
+        try {
+          const upRes = await fetch('/api/admin/upload-screenshot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ mime: pendingCover.mime, base64: pendingCover.base64, is_cover: true }),
+          });
+          const upData = await upRes.json();
+          if (upRes.ok && upData.ok && upData.r2_key) {
+            imageR2Keys.push(upData.r2_key);
+          }
+        } catch {
+          // 封面上傳失敗不擋保存
+        }
+      }
+
       if (pendingImages.length > 0) {
         saveStatus.textContent = `📷 上傳 ${pendingImages.length} 張圖中…`;
         for (let i = 0; i < pendingImages.length; i++) {
@@ -1356,6 +1505,8 @@ import Layout from '../../layouts/Layout.astro';
         pendingImages = [];
         renderImgList();
         updateImgUI();
+        pendingCover = null;
+        renderCover();
         saveBtn.disabled = false;
       } catch (e) {
         saveStatus.textContent = '❌ 網路錯誤';
@@ -1498,6 +1649,13 @@ import Layout from '../../layouts/Layout.astro';
           ? `<button class="lc-action-btn" data-build-catalog="${escapeHtml(it.id)}" data-name="${escapeHtml(it.model)}">⚡ 建立 catalog</button>`
           : '';
 
+        // Cover（封面優先，無則 fallback 第一張來源圖）
+        const coverKey: string =
+          it.cover_r2_key || (Array.isArray(it.image_r2_keys) ? it.image_r2_keys[0] : '') || '';
+        const coverHtml = coverKey
+          ? `<div class="lc-cover"><img class="lc-cover-img" src="/api/screenshot/${escapeHtml(coverKey)}" data-fullkey="${escapeHtml(coverKey)}" alt="封面" loading="lazy" /></div>`
+          : '';
+
         // Screenshot thumbnails
         const imageKeys: string[] = Array.isArray(it.image_r2_keys) ? it.image_r2_keys : [];
         const thumbsHtml = imageKeys.length > 0
@@ -1509,6 +1667,7 @@ import Layout from '../../layouts/Layout.astro';
 
         return `
           <div class="listing-card">
+            ${coverHtml}
             <div class="lc-head">
               <div class="lc-title">${escapeHtml(it.model)}</div>
               <div class="lc-price ${status}">NT$ ${(it.price || 0).toLocaleString()}</div>
@@ -1536,7 +1695,7 @@ import Layout from '../../layouts/Layout.astro';
       });
 
       // Thumbnail click → 開新 tab 看大圖
-      recentWrap.querySelectorAll('.lc-thumb').forEach((img) => {
+      recentWrap.querySelectorAll('.lc-thumb, .lc-cover-img').forEach((img) => {
         img.addEventListener('click', (e) => {
           const key = (e.currentTarget as HTMLElement).getAttribute('data-fullkey') || '';
           if (key) window.open('/api/screenshot/' + key, '_blank');

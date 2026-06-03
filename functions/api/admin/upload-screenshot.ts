@@ -33,6 +33,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const mime = String(body.mime || '').trim();
   const base64 = String(body.base64 || '').trim();
   const batchId = String(body.batch_id || '').trim() || `pending_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  // 封面圖旗標（跟 AI 解析來源圖獨立，只作顯示用）
+  const isCover = body.is_cover ? 1 : 0;
 
   if (!mime || !base64) {
     return jsonError('MISSING_FIELDS', '請帶 mime 跟 base64', 400);
@@ -79,10 +81,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const imageId = 'img_' + now + '_' + Math.random().toString(36).slice(2, 8);
   try {
     await context.env.DB.prepare(
-      `INSERT INTO batch_images (id, batch_id, r2_key, mime, size_bytes, uploaded_by, uploaded_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO batch_images (id, batch_id, r2_key, mime, size_bytes, is_cover, uploaded_by, uploaded_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-      .bind(imageId, batchId, r2Key, mime, bytes.byteLength, user.sub, now)
+      .bind(imageId, batchId, r2Key, mime, bytes.byteLength, isCover, user.sub, now)
       .run();
   } catch (e: any) {
     // R2 已上傳，DB 失敗 → log but 不 rollback（R2 留著也沒事，下次 GC）
@@ -95,6 +97,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       image_id: imageId,
       r2_key: r2Key,
       batch_id: batchId,
+      is_cover: isCover,
       url: `/api/screenshot/${encodeURIComponent(r2Key)}`,
       size_bytes: bytes.byteLength,
     }),
