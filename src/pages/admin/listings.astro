@@ -461,7 +461,7 @@ import Layout from '../../layouts/Layout.astro';
     }
     @media (min-width: 720px) {
       .row-fields {
-        grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
       }
     }
     .row-meta {
@@ -519,10 +519,29 @@ import Layout from '../../layouts/Layout.astro';
     .row-fields select:focus {
       border-color: var(--admin-border-focus);
     }
-    .row-fields .price-input {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
+    .row-price {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+    .price-label { font-size: 12px; color: var(--admin-text-faint); flex-shrink: 0; }
+    .price-prefix { font-size: 15px; font-weight: 700; color: var(--admin-text-dim); flex-shrink: 0; }
+    .row-price .price-input {
+      width: 160px;
+      max-width: 100%;
+      padding: 8px 12px;
+      font-size: 19px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--admin-surface-2);
+      border: 1px solid var(--admin-border-2);
+      border-radius: 8px;
+      outline: none;
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
+      box-sizing: border-box;
+    }
+    .row-price .price-input:focus { border-color: var(--admin-border-focus); }
 
     /* Recent saves */
     .recent-list {
@@ -1363,6 +1382,9 @@ import Layout from '../../layouts/Layout.astro';
                 <option value="available" ${isSold ? '' : 'selected'}>🟢 販售中</option>
                 <option value="sold" ${isSold ? 'selected' : ''}>🔴 已售出</option>
               </select>
+            </div>
+            <div class="row-price">
+              <span class="price-label">💰 售價</span><span class="price-prefix">NT$</span>
               <input type="number" class="price-input" value="${item.price || ''}" min="0" placeholder="${pricePlaceholder}" />
             </div>
             ${rawHintHtml}
