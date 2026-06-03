@@ -128,6 +128,9 @@
 /* ============================================
    Base
    ============================================ */
+*, *::before, *::after {
+  box-sizing: border-box;   /* ★ padding/border 算進寬度內，避免「滿版+padding」元素溢出（RWD 必備）*/
+}
 html, body {
   margin: 0;          /* ★ 重要：拿掉瀏覽器預設 body 8px margin（會造成整頁多一圈框）*/
   padding: 0;
