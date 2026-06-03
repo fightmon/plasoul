@@ -612,18 +612,23 @@ import Layout from '../../layouts/Layout.astro';
       grid-template-columns: 1fr;
       gap: 10px;
     }
-    @media (min-width: 760px) {
-      .recent-grid { grid-template-columns: repeat(2, 1fr); }
-    }
     .listing-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
       padding: 14px;
       display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 12px;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .lc-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
       flex-direction: column;
       gap: 8px;
-      transition: border-color 0.15s, background 0.15s;
     }
     .listing-card:hover {
       border-color: rgba(255, 255, 255, 0.16);
@@ -868,7 +873,9 @@ import Layout from '../../layouts/Layout.astro';
 
     /* Listing card 封面圖 */
     .lc-cover {
-      margin-bottom: 8px;
+      flex: 0 0 96px;
+      width: 96px;
+      height: 96px;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -876,7 +883,7 @@ import Layout from '../../layouts/Layout.astro';
     .lc-cover-img {
       display: block;
       width: 100%;
-      height: 130px;
+      height: 100%;
       object-fit: cover;
       cursor: pointer;
     }
@@ -1668,17 +1675,19 @@ import Layout from '../../layouts/Layout.astro';
         return `
           <div class="listing-card">
             ${coverHtml}
-            <div class="lc-head">
-              <div class="lc-title">${escapeHtml(it.model)}</div>
-              <div class="lc-price ${status}">NT$ ${(it.price || 0).toLocaleString()}</div>
-            </div>
-            <div class="lc-tags">${tags.join('')} ${buildCatalogBtn}</div>
-            ${thumbsHtml}
-            ${metaParts.join('')}
-            <div class="lc-footer">
-              <span class="lc-source">${escapeHtml(sourceText)}</span>
-              ${fbLink}
-              <span class="lc-time">${timeAgo}</span>
+            <div class="lc-body">
+              <div class="lc-head">
+                <div class="lc-title">${escapeHtml(it.model)}</div>
+                <div class="lc-price ${status}">NT$ ${(it.price || 0).toLocaleString()}</div>
+              </div>
+              <div class="lc-tags">${tags.join('')} ${buildCatalogBtn}</div>
+              ${thumbsHtml}
+              ${metaParts.join('')}
+              <div class="lc-footer">
+                <span class="lc-source">${escapeHtml(sourceText)}</span>
+                ${fbLink}
+                <span class="lc-time">${timeAgo}</span>
+              </div>
             </div>
           </div>
         `;
