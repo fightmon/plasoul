@@ -5,11 +5,11 @@
 
 :root {
   /* === Brand === */
-  --color-primary: #0071e3;       /* Apple Blue */
-  --color-primary-dark: #0077ED;
-  --color-primary-light: #e8f4fd;
-  --color-accent: #ff6b35;        /* 普拉魂 Orange */
-  --color-accent-dark: #e55a2b;
+  --color-primary: #1E50E5;       /* 鋼彈藍 */
+  --color-primary-dark: #1A44C4;
+  --color-primary-light: #e7edff;
+  --color-accent: #E4002B;        /* 鋼彈紅 */
+  --color-accent-dark: #C20025;
 
   /* === Surfaces (Light) === */
   --color-bg: #f5f5f7;
@@ -48,33 +48,31 @@
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(0, 0, 0, 0.08);
 
-  /* === Hero (GAME8LA-style 黑底螢光綠) ===
-     Hero 在 light/dark 都用同一個深色背景（吸睛區）
-     從原本「黑底螢光綠」改為「黑底琥珀暖光」，給玩家社群的溫度 */
-  --hero-bg: #0a0e1a;
-  --hero-bg-warm-1: #1a1410;       /* 暗咖啡 */
-  --hero-bg-warm-2: #261d16;       /* 略亮一階 */
-  --hero-bg-glow: #D4925A;         /* 琥珀暖光（取代原螢光綠） */
+  /* === Hero (鋼彈識別：黑底 + 藍光 + 紅關鍵字) === */
+  --hero-bg: #0C1018;              /* 近黑 */
+  --hero-bg-warm-1: #0c1430;       /* 深藍（blob 漸層用）*/
+  --hero-bg-warm-2: #122047;       /* 略亮藍一階 */
+  --hero-bg-glow: #E4002B;         /* 關鍵字紅（title-accent 用）*/
   --hero-text: #ffffff;
   --hero-text-secondary: rgba(255, 255, 255, 0.72);
   --hero-text-muted: rgba(255, 255, 255, 0.5);
-  --hero-cta-primary-bg: #D4925A;
-  --hero-cta-primary-bg-hover: #E2A06D;
-  --hero-cta-primary-text: #1a1410;
-  --hero-cta-secondary-border: rgba(212, 146, 90, 0.55);
-  --hero-cta-secondary-text: #E2A06D;
+  --hero-cta-primary-bg: #E4002B;          /* 主 CTA 紅 */
+  --hero-cta-primary-bg-hover: #FF1F48;
+  --hero-cta-primary-text: #ffffff;
+  --hero-cta-secondary-border: rgba(30, 80, 229, 0.55);  /* 次 CTA 藍框 */
+  --hero-cta-secondary-text: #6f9bff;
 
-  /* === Warm Glow palette（給 stats 漸層卡用，4 色暖系）=== */
-  --glow-peach: #E5B197;
-  --glow-mint:  #7FB89A;
-  --glow-rose:  #C99691;
-  --glow-amber: #D4A574;
+  /* === Glow palette（沿用名稱，值改鋼彈藍紅）=== */
+  --glow-peach: #6f9bff;
+  --glow-mint:  #E4002B;
+  --glow-rose:  #1E50E5;
+  --glow-amber: #6f9bff;
 
-  /* === Accent colours (暖琥珀 + 銅) === */
-  --accent-amber: #D4925A;
-  --accent-amber-soft: rgba(212, 146, 90, 0.16);
-  --accent-amber-glow: rgba(212, 146, 90, 0.32);
-  --accent-copper: #B87333;
+  /* === Accent colours（沿用 amber 名稱，值已改鋼彈藍）=== */
+  --accent-amber: #1E50E5;
+  --accent-amber-soft: rgba(30, 80, 229, 0.16);
+  --accent-amber-glow: rgba(30, 80, 229, 0.40);
+  --accent-copper: #1A44C4;
 
   /* === 有機 blob 圓角（給 hero 圖位、stat 卡裝飾用）=== */
   --radius-blob-1: 62% 38% 56% 44% / 48% 56% 44% 52%;
@@ -95,11 +93,11 @@
 
 [data-theme="dark"] {
   /* === Brand === */
-  --color-primary: #4da6ff;
-  --color-primary-dark: #7bbfff;
-  --color-primary-light: rgba(77, 166, 255, 0.12);
-  --color-accent: #ff8a5c;
-  --color-accent-dark: #ff6b35;
+  --color-primary: #5B86FF;
+  --color-primary-dark: #87A9FF;
+  --color-primary-light: rgba(30, 80, 229, 0.18);
+  --color-accent: #FF4D6A;
+  --color-accent-dark: #FF7088;
 
   /* === Surfaces (Dark) === */
   --color-bg: #080c1a;
