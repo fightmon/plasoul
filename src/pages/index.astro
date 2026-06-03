@@ -528,8 +528,15 @@ const SECONDARY_SERIES = [
   .ps-series-toggle[aria-expanded="true"] .ps-series-toggle-close { display: inline; }
 
   /* ============================================
-     Responsive
+     Responsive — 系列格分段降欄 6 → 4 → 3 → 2
      ============================================ */
+  @media (max-width: 1024px) {
+    .ps-series-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 20px;
+    }
+  }
+
   @media (max-width: 768px) {
     .ps-stats-inner {
       grid-template-columns: repeat(2, 1fr);
@@ -538,9 +545,10 @@ const SECONDARY_SERIES = [
     .ps-stat-num { font-size: clamp(28px, 7vw, 36px); }
     .ps-stat-label { font-size: 12px; }
     .ps-series-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
     }
-    .ps-series-btn { padding: 18px 16px; }
+    .ps-series-btn { padding: 16px 12px; }
     .ps-series-label { font-size: 19px; }
   }
 
@@ -558,6 +566,10 @@ const SECONDARY_SERIES = [
     .ps-hero-ctas .ps-cta {
       width: 100%;
       justify-content: center;
+    }
+    .ps-series-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
     }
   }
 </style>
