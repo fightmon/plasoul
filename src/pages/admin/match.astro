@@ -1,0 +1,187 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="對應工具 · 普拉魂 Admin" noIndex={true} bareLayout={true}>
+  <div class="admin-shell">
+    <header class="admin-topbar">
+      <div class="topbar-brand">🔗 報價對應工具</div>
+      <div class="topbar-right">
+        <a href="/admin/listings" class="link-btn">← 新增報價</a>
+        <button id="logout-btn" class="link-btn">登出</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <h1 class="page-title">報價 ↔ 產品 對應</h1>
+      <p class="page-sub">
+        把未對應的報價（cat_unknown）按品名分組，建立 catalog 產品並對應。
+        對應後搜尋會分組、產品頁才有料。
+      </p>
+
+      <div class="stat-bar">
+        <span>未對應報價 <b id="stat-listings">—</b> 筆</span>
+        <span>·</span>
+        <span><b id="stat-groups">—</b> 組待處理</span>
+        <button id="reload-btn" class="link-btn">↻ 重新整理</button>
+      </div>
+
+      <div id="status" class="status-text"></div>
+      <div id="groups" class="groups"></div>
+    </main>
+  </div>
+</Layout>
+
+<style>
+  .admin-shell { min-height: 100vh; background: var(--admin-bg); color: var(--admin-text); }
+  .admin-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid var(--admin-border); position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+  .topbar-brand { font-weight: 700; letter-spacing: 0.05em; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .link-btn {
+    background: transparent; border: none; color: var(--admin-text-dim);
+    cursor: pointer; font-size: 13px; padding: 6px 10px; border-radius: 6px;
+    text-decoration: none; transition: color 0.15s, background 0.15s;
+  }
+  .link-btn:hover { color: var(--admin-text); background: var(--admin-surface-2); }
+
+  .admin-main { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+  .page-title { font-size: 24px; font-weight: 700; margin: 8px 0 4px; }
+  .page-sub { color: var(--admin-text-faint); font-size: 14px; margin: 0 0 20px; line-height: 1.6; }
+
+  .stat-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font-size: 14px; color: var(--admin-text-dim); margin-bottom: 16px;
+    padding: 12px 16px; background: var(--admin-surface); border-radius: 10px;
+    border: 1px solid var(--admin-border);
+  }
+  .stat-bar b { color: var(--color-primary-dark); font-size: 18px; }
+  .stat-bar .link-btn { margin-left: auto; }
+
+  .status-text { font-size: 13px; margin-bottom: 12px; min-height: 18px; }
+  .status-text.success { color: #86efac; }
+  .status-text.error { color: #fca5a5; }
+
+  .groups { display: flex; flex-direction: column; gap: 10px; }
+  .group {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    background: var(--admin-surface); border: 1px solid var(--admin-border);
+    border-radius: 12px; padding: 14px;
+  }
+  .group-info { flex: 1; min-width: 200px; }
+  .group-name-input {
+    width: 100%; padding: 8px 10px; font-size: 14px; font-weight: 600;
+    color: var(--admin-text); background: var(--admin-surface-2);
+    border: 1px solid var(--admin-border-2); border-radius: 8px; outline: none;
+  }
+  .group-name-input:focus { border-color: var(--admin-border-focus); }
+  .group-meta { font-size: 12px; color: var(--admin-text-faint); margin-top: 5px; }
+  .group-series {
+    padding: 8px 10px; font-size: 13px; color: var(--admin-text);
+    background: var(--admin-surface-2); border: 1px solid var(--admin-border-2);
+    border-radius: 8px; cursor: pointer; min-width: 92px;
+  }
+  .group-apply {
+    padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer;
+    color: #fff; background: var(--color-primary); border: none; border-radius: 8px;
+    transition: background 0.15s; white-space: nowrap;
+  }
+  .group-apply:hover { background: var(--color-primary-dark); }
+  .group-apply:disabled { opacity: 0.5; cursor: default; }
+
+  .empty { text-align: center; padding: 48px 16px; color: var(--admin-text-faint); }
+  .loading-text { text-align: center; padding: 32px; color: var(--admin-text-faint); }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id);
+  const SERIES = ['HG','RG','MG','MGEX','MGSD','MG Ver.Ka','PG','RE/100','SD','ROBOT魂','METAL ROBOT魂','METAL BUILD','超合金','好微笑','30MF','30MP','FM','FRS','BB','EW-RG','其他'];
+
+  const groupsEl = $('groups')!;
+  const statusEl = $('status')!;
+  const statListings = $('stat-listings')!;
+  const statGroups = $('stat-groups')!;
+
+  function applyScope(c: HTMLElement) {
+    const attr = Array.from(c.attributes).map((a) => a.name).find((n) => n.startsWith('data-astro-cid'));
+    if (attr) c.querySelectorAll('*').forEach((el) => el.setAttribute(attr, ''));
+  }
+  const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+  // Auth gate
+  (async () => {
+    try {
+      const me = await fetch('/api/admin/me', { credentials: 'include' });
+      if (!me.ok) { window.location.href = '/admin/login'; return; }
+    } catch { window.location.href = '/admin/login'; return; }
+    load();
+  })();
+
+  $('logout-btn')!.addEventListener('click', async () => {
+    try { await fetch('/api/admin/logout', { method: 'POST' }); } catch {}
+    window.location.href = '/admin/login';
+  });
+  $('reload-btn')!.addEventListener('click', load);
+
+  async function load() {
+    groupsEl.innerHTML = '<div class="loading-text">載入中…</div>';
+    try {
+      const res = await fetch('/api/admin/match/unmatched', { credentials: 'include' });
+      const data = await res.json();
+      if (!data.ok) { groupsEl.innerHTML = '<div class="empty">載入失敗</div>'; return; }
+      statListings.textContent = data.total_listings;
+      statGroups.textContent = data.group_count;
+      if (!data.groups.length) {
+        groupsEl.innerHTML = '<div class="empty">🎉 全部對應完成，沒有待處理的報價了</div>';
+        return;
+      }
+      const opts = (sel: string) => SERIES.map((s) => `<option value="${esc(s)}"${s === sel ? ' selected' : ''}>${esc(s)}</option>`).join('');
+      groupsEl.innerHTML = data.groups.map((g: any) => `
+        <div class="group" data-ids="${esc(g.listing_ids.join(','))}">
+          <div class="group-info">
+            <input class="group-name-input" value="${esc(g.display_name)}" />
+            <div class="group-meta">${g.count} 筆 · NT$ ${g.price_min.toLocaleString()}${g.price_max !== g.price_min ? '–' + g.price_max.toLocaleString() : ''}</div>
+          </div>
+          <select class="group-series">${opts(g.series_guess)}</select>
+          <button class="group-apply">建立並對應 ${g.count} 筆</button>
+        </div>
+      `).join('');
+      applyScope(groupsEl);
+
+      groupsEl.querySelectorAll('.group-apply').forEach((btn) => {
+        btn.addEventListener('click', () => applyGroup(btn as HTMLButtonElement));
+      });
+    } catch {
+      groupsEl.innerHTML = '<div class="empty">網路錯誤</div>';
+    }
+  }
+
+  async function applyGroup(btn: HTMLButtonElement) {
+    const row = btn.closest('.group') as HTMLElement;
+    const ids = (row.dataset.ids || '').split(',').filter(Boolean);
+    const full_name = (row.querySelector('.group-name-input') as HTMLInputElement).value.trim();
+    const series = (row.querySelector('.group-series') as HTMLSelectElement).value;
+    if (!full_name) { statusEl.textContent = '品名不能空白'; statusEl.className = 'status-text error'; return; }
+    btn.disabled = true; btn.textContent = '對應中…';
+    try {
+      const res = await fetch('/api/admin/match/apply', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ listing_ids: ids, series, full_name }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) { statusEl.textContent = '❌ ' + (data.message || '對應失敗'); statusEl.className = 'status-text error'; btn.disabled = false; btn.textContent = '重試'; return; }
+      statusEl.textContent = `✅ 「${full_name}」已建立並對應 ${data.linked_count} 筆（slug: ${data.slug}）`;
+      statusEl.className = 'status-text success';
+      row.remove();
+      const remain = groupsEl.querySelectorAll('.group').length;
+      statGroups.textContent = String(remain);
+      if (remain === 0) groupsEl.innerHTML = '<div class="empty">🎉 全部對應完成</div>';
+    } catch {
+      statusEl.textContent = '❌ 網路錯誤'; statusEl.className = 'status-text error';
+      btn.disabled = false; btn.textContent = '重試';
+    }
+  }
+</script>
