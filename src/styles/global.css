@@ -49,15 +49,36 @@
   --glass-border: rgba(0, 0, 0, 0.08);
 
   /* === Hero (GAME8LA-style 黑底螢光綠) ===
-     Hero 在 light/dark 都用同一個深色背景（吸睛區） */
+     Hero 在 light/dark 都用同一個深色背景（吸睛區）
+     從原本「黑底螢光綠」改為「黑底琥珀暖光」，給玩家社群的溫度 */
   --hero-bg: #0a0e1a;
-  --hero-bg-glow: #00ff88;        /* 螢光綠（半透明用） */
+  --hero-bg-warm-1: #1a1410;       /* 暗咖啡 */
+  --hero-bg-warm-2: #261d16;       /* 略亮一階 */
+  --hero-bg-glow: #D4925A;         /* 琥珀暖光（取代原螢光綠） */
   --hero-text: #ffffff;
-  --hero-text-secondary: rgba(255, 255, 255, 0.7);
-  --hero-cta-primary-bg: #00ff88;
-  --hero-cta-primary-text: #0a0e1a;
-  --hero-cta-secondary-border: #00ff88;
-  --hero-cta-secondary-text: #00ff88;
+  --hero-text-secondary: rgba(255, 255, 255, 0.72);
+  --hero-text-muted: rgba(255, 255, 255, 0.5);
+  --hero-cta-primary-bg: #D4925A;
+  --hero-cta-primary-bg-hover: #E2A06D;
+  --hero-cta-primary-text: #1a1410;
+  --hero-cta-secondary-border: rgba(212, 146, 90, 0.55);
+  --hero-cta-secondary-text: #E2A06D;
+
+  /* === Warm Glow palette（給 stats 漸層卡用，4 色暖系）=== */
+  --glow-peach: #E5B197;
+  --glow-mint:  #7FB89A;
+  --glow-rose:  #C99691;
+  --glow-amber: #D4A574;
+
+  /* === Accent colours (暖琥珀 + 銅) === */
+  --accent-amber: #D4925A;
+  --accent-amber-soft: rgba(212, 146, 90, 0.16);
+  --accent-amber-glow: rgba(212, 146, 90, 0.32);
+  --accent-copper: #B87333;
+
+  /* === 有機 blob 圓角（給 hero 圖位、stat 卡裝飾用）=== */
+  --radius-blob-1: 62% 38% 56% 44% / 48% 56% 44% 52%;
+  --radius-blob-2: 44% 56% 62% 38% / 56% 48% 52% 44%;
 }
 
 [data-theme="dark"] {
