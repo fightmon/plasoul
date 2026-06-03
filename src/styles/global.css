@@ -21,7 +21,7 @@
 
   /* === Text === */
   --color-text: #1d1d1f;
-  --color-text-secondary: #86868b;
+  --color-text-secondary: #5d5d64;
   --color-text-on-primary: #ffffff;
 
   /* === Borders === */
@@ -60,7 +60,7 @@
   --hero-cta-primary-bg-hover: #FF1F48;
   --hero-cta-primary-text: #ffffff;
   --hero-cta-secondary-border: rgba(30, 80, 229, 0.55);  /* 次 CTA 藍框 */
-  --hero-cta-secondary-text: #6f9bff;
+  --hero-cta-secondary-text: #A9C7FF;
 
   /* === Glow palette（沿用名稱，值改鋼彈藍紅）=== */
   --glow-peach: #6f9bff;
