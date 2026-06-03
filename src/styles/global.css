@@ -79,6 +79,18 @@
   /* === 有機 blob 圓角（給 hero 圖位、stat 卡裝飾用）=== */
   --radius-blob-1: 62% 38% 56% 44% / 48% 56% 44% 52%;
   --radius-blob-2: 44% 56% 62% 38% / 56% 48% 52% 44%;
+
+  /* === Admin 固定深色主題 tokens（admin 永遠深色，不隨明暗切換；值對應原硬碼，零視覺變化）=== */
+  --admin-bg: #0A1428;
+  --admin-surface: rgba(255, 255, 255, 0.04);
+  --admin-surface-2: rgba(255, 255, 255, 0.06);
+  --admin-border: rgba(255, 255, 255, 0.08);
+  --admin-border-2: rgba(255, 255, 255, 0.1);
+  --admin-border-focus: rgba(255, 255, 255, 0.4);
+  --admin-text: #fff;
+  --admin-text-dim: rgba(255, 255, 255, 0.6);
+  --admin-text-faint: rgba(255, 255, 255, 0.5);
+  --admin-text-ghost: rgba(255, 255, 255, 0.25);
 }
 
 [data-theme="dark"] {
