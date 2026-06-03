@@ -1320,6 +1320,13 @@ import Layout from '../../layouts/Layout.astro';
       }
     });
 
+    // Astro scoped 樣式只套到模板元素；JS 動態產生的內容需手動補上 scope 屬性，否則 scoped CSS 全失效
+    function applyScope(container: HTMLElement) {
+      const attr = Array.from(container.attributes).map((a) => a.name).find((n) => n.startsWith('data-astro-cid'));
+      if (!attr) return;
+      container.querySelectorAll('*').forEach((el) => el.setAttribute(attr, ''));
+    }
+
     function renderResults() {
       resultCount.textContent = String(parsedItems.length);
       resultsList.innerHTML = '';
@@ -1391,6 +1398,7 @@ import Layout from '../../layouts/Layout.astro';
           }
         });
       });
+      applyScope(resultsList);
       updateSaveCount();
     }
 
@@ -1540,6 +1548,7 @@ import Layout from '../../layouts/Layout.astro';
         row.innerHTML = `<span>⚠️ ${escapeHtml(s.model)}</span><span>${escapeHtml(s.reason)}</span>`;
         recentList.insertBefore(row, recentList.firstChild);
       });
+      applyScope(recentList);
     }
 
     resetBtn.addEventListener('click', () => {
@@ -1694,6 +1703,7 @@ import Layout from '../../layouts/Layout.astro';
       }).join('');
 
       recentWrap.innerHTML = `<div class="recent-grid">${cards}</div>`;
+      applyScope(recentWrap);
 
       // Hook up「⚡ 建立 catalog」button
       recentWrap.querySelectorAll('[data-build-catalog]').forEach((btn) => {
