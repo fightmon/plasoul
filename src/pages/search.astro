@@ -2,16 +2,15 @@
 import Layout from "../layouts/Layout.astro";
 
 /**
- * /search 頁面 · W1 MVP
- * - 純 SSG 殼，query string 由 client-side 解析（避開 static prerender 拿不到 URL params 的問題）
- * - 無 q query → 空狀態 + autofocus 搜尋框
- * - 有 q → 顯示「搜尋功能 W2 上線」placeholder（W2 才接 FTS5 endpoint）
+ * /search · 找便宜（W2）
+ * - 純 SSG 殼，client 讀 query string → fetch /api/public/search → 渲染報價卡
+ * - 一筆 listing 一張卡（左圖右資訊），照價格排序
+ * - 「前往」走 /api/go/:id 轉址（source_url 不進 HTML，法律紅線）
  */
 ---
 
 <Layout title="搜尋 · 普拉魂" hideHeaderSearch={true}>
   <main class="ps-search-page">
-    {/* Big search form */}
     <section class="ps-search-hero">
       <h1 class="ps-search-title" id="ps-search-page-title">搜尋</h1>
       <form action="/search" method="get" class="ps-search-form" role="search">
@@ -19,7 +18,7 @@ import Layout from "../layouts/Layout.astro";
           type="search"
           name="q"
           id="ps-search-input"
-          placeholder="HG 鋼彈 / RX-78-2 / 強奪自由..."
+          placeholder="牛鋼 / RX-78-2 / 命運..."
           class="ps-search-input"
           autocomplete="off"
         />
@@ -27,180 +26,260 @@ import Layout from "../layouts/Layout.astro";
       </form>
     </section>
 
-    {/* Empty state（default 顯示，client 判定後切換） */}
+    {/* 空狀態 */}
     <section class="ps-empty" id="ps-empty-state">
       <div class="ps-empty-icon" aria-hidden="true">🔍</div>
-      <h2 class="ps-empty-title">請輸入關鍵字</h2>
+      <h2 class="ps-empty-title">想找哪一盒？</h2>
       <p class="ps-empty-text">
-        試試 <a href="/search?q=HG">HG</a>、<a href="/search?q=RG">RG</a>、<a href="/search?series=MG">MG 系列</a>
+        試試 <a href="/search?series=RG">RG</a>、<a href="/search?series=MG">MG</a>、<a href="/search?q=自由">自由</a>
       </p>
     </section>
 
-    {/* Coming-soon state（有 query 時 client 切換顯示） */}
-    <section class="ps-coming-soon" id="ps-coming-soon" hidden>
-      <div class="ps-coming-soon-icon" aria-hidden="true">🚧</div>
-      <h2 class="ps-coming-soon-title">搜尋結果頁開發中</h2>
-      <p class="ps-coming-soon-text">
-        W2 階段會把搜尋結果頁做完。目前 W1 只先把搜尋框跟導流做起來。
-      </p>
-      <p class="ps-coming-soon-meta">
-        你搜了：<code id="ps-query-echo"></code>
-      </p>
-      <a href="/" class="ps-coming-soon-back">← 回首頁</a>
+    {/* 載入中 */}
+    <section class="ps-loading" id="ps-loading" hidden>
+      <div class="ps-spinner" aria-hidden="true"></div>
+      <p>搜尋中…</p>
+    </section>
+
+    {/* 結果 */}
+    <section class="ps-results-wrap" id="ps-results-wrap" hidden>
+      <div class="ps-results-head">
+        <span id="ps-results-count" class="ps-results-count"></span>
+        <label class="ps-sort">
+          排序
+          <select id="ps-sort-select" class="ps-sort-select">
+            <option value="price">價格低 → 高</option>
+            <option value="price_desc">價格高 → 低</option>
+            <option value="newest">最新</option>
+          </select>
+        </label>
+      </div>
+      <div class="ps-results" id="ps-results"></div>
+    </section>
+
+    {/* 無結果 */}
+    <section class="ps-empty" id="ps-noresult" hidden>
+      <div class="ps-empty-icon" aria-hidden="true">🤷</div>
+      <h2 class="ps-empty-title">沒找到「<span id="ps-noresult-q"></span>」</h2>
+      <p class="ps-empty-text">換個關鍵字，或試試 <a href="/search?series=RG">RG</a> / <a href="/search?series=MG">MG</a></p>
     </section>
   </main>
 </Layout>
 
 <style>
-  .ps-search-page {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 32px 16px 64px;
-  }
+  .ps-search-page { max-width: 880px; margin: 0 auto; padding: 32px 16px 80px; }
 
-  /* Search hero */
-  .ps-search-hero {
-    margin-bottom: 32px;
-    text-align: center;
-  }
-  .ps-search-title {
-    font-size: clamp(20px, 4vw, 28px);
-    font-weight: 700;
-    color: var(--color-text);
-    margin: 0 0 20px;
-  }
-  .ps-search-form {
-    display: flex;
-    gap: 8px;
-    max-width: 600px;
-    margin: 0 auto;
-  }
+  .ps-search-hero { margin-bottom: 28px; text-align: center; }
+  .ps-search-title { font-size: clamp(20px, 4vw, 28px); font-weight: 700; color: var(--color-text); margin: 0 0 20px; }
+  .ps-search-form { display: flex; gap: 8px; max-width: 600px; margin: 0 auto; }
   .ps-search-input {
-    flex: 1;
-    padding: 14px 18px;
-    background: var(--color-input-bg);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-pill);
-    color: var(--color-text);
-    outline: none;
+    flex: 1; min-width: 0; padding: 14px 18px; font-size: 16px;
+    background: var(--color-input-bg); border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill); color: var(--color-text); outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .ps-search-input:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 4px var(--color-primary-light);
-  }
+  .ps-search-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 4px var(--color-primary-light); }
   .ps-search-submit {
-    padding: 0 24px;
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-pill);
-    font-weight: 700;
-    cursor: pointer;
-    transition: background-color 0.15s;
+    padding: 0 24px; background: var(--color-primary); color: #fff; border: none;
+    border-radius: var(--radius-pill); font-weight: 700; cursor: pointer; transition: background-color 0.15s;
   }
-  .ps-search-submit:hover {
-    background: var(--color-primary-dark);
+  .ps-search-submit:hover { background: var(--color-primary-dark); }
+
+  /* 空 / 無結果 */
+  .ps-empty {
+    text-align: center; padding: 56px 16px; background: var(--color-card);
+    border-radius: var(--radius); border: 1px solid var(--color-border-subtle); box-shadow: var(--shadow-sm);
+  }
+  .ps-empty-icon { font-size: 52px; margin-bottom: 14px; opacity: 0.6; }
+  .ps-empty-title { font-size: 20px; font-weight: 700; color: var(--color-text); margin: 0 0 8px; }
+  .ps-empty-text { color: var(--color-text-secondary); margin: 0; }
+  .ps-empty-text a { color: var(--color-primary); text-decoration: none; font-weight: 600; }
+  .ps-empty-text a:hover { text-decoration: underline; }
+
+  /* 載入 */
+  .ps-loading { text-align: center; padding: 48px 16px; color: var(--color-text-secondary); }
+  .ps-spinner {
+    width: 32px; height: 32px; margin: 0 auto 12px; border-radius: 50%;
+    border: 3px solid var(--color-border); border-top-color: var(--color-primary);
+    animation: ps-spin 0.7s linear infinite;
+  }
+  @keyframes ps-spin { to { transform: rotate(360deg); } }
+
+  /* 結果頭 */
+  .ps-results-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 12px;
+  }
+  .ps-results-count { font-size: 14px; color: var(--color-text-secondary); font-weight: 600; }
+  .ps-sort { font-size: 13px; color: var(--color-text-secondary); display: inline-flex; align-items: center; gap: 6px; }
+  .ps-sort-select {
+    font-size: 13px; padding: 6px 10px; border-radius: 8px;
+    border: 1px solid var(--color-border); background: var(--color-card); color: var(--color-text); cursor: pointer;
   }
 
-  /* Empty / coming-soon */
-  .ps-empty,
-  .ps-coming-soon {
-    text-align: center;
-    padding: 64px 16px;
-    background: var(--color-card);
-    border-radius: var(--radius);
+  /* 結果清單 + 報價卡 */
+  .ps-results { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+
+  .ps-offer {
+    display: flex; gap: 14px; align-items: stretch;
+    background: var(--color-card); border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .ps-offer:hover { border-color: var(--color-primary); box-shadow: var(--shadow); }
+  .ps-offer-img {
+    flex: 0 0 96px; width: 96px; height: 96px; border-radius: 10px; overflow: hidden;
+    background: var(--color-bg); display: flex; align-items: center; justify-content: center;
     border: 1px solid var(--color-border-subtle);
-    box-shadow: var(--shadow-sm);
   }
-  .ps-empty-icon,
-  .ps-coming-soon-icon {
-    font-size: 56px;
-    margin-bottom: 16px;
-    opacity: 0.6;
+  .ps-offer-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ps-offer-img .ph { font-size: 30px; opacity: 0.4; }
+  .ps-offer-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+  .ps-offer-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .ps-offer-name {
+    font-size: 15px; font-weight: 700; color: var(--color-text); line-height: 1.35;
+    text-decoration: none; min-width: 0; word-break: break-word;
   }
-  .ps-empty-title,
-  .ps-coming-soon-title {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--color-text);
-    margin: 0 0 8px;
+  .ps-offer-name:hover { color: var(--color-primary); }
+  .ps-offer-price {
+    font-size: 19px; font-weight: 800; color: var(--color-accent);
+    white-space: nowrap; font-variant-numeric: tabular-nums; letter-spacing: -0.3px;
   }
-  .ps-empty-text,
-  .ps-coming-soon-text {
-    color: var(--color-text-secondary);
-    margin: 0 0 16px;
+  .ps-offer-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ps-chip {
+    font-size: 11px; padding: 2px 9px; border-radius: 999px;
+    background: var(--color-primary-light); color: var(--color-primary-dark); font-weight: 600;
   }
-  .ps-empty-text a {
-    color: var(--color-primary);
-    text-decoration: none;
-    font-weight: 600;
+  .ps-offer-meta { font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.5; }
+  .ps-offer-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-top: auto; padding-top: 8px; border-top: 1px dashed var(--color-border-subtle);
   }
-  .ps-empty-text a:hover {
-    text-decoration: underline;
-  }
-  .ps-coming-soon-meta {
-    font-size: 13px;
-    color: var(--color-text-secondary);
-    margin: 0 0 20px;
-  }
-  .ps-coming-soon-meta code {
-    background: var(--color-bg);
-    padding: 2px 6px;
-    border-radius: 4px;
-  }
-  .ps-coming-soon-back {
-    display: inline-block;
-    padding: 8px 16px;
-    color: var(--color-primary);
-    text-decoration: none;
-    border: 1px solid var(--color-primary);
-    border-radius: var(--radius-pill);
-    font-weight: 600;
+  .ps-offer-src { font-size: 11.5px; color: var(--color-text-secondary); }
+  .ps-offer-go {
+    flex-shrink: 0; font-size: 13px; font-weight: 700; text-decoration: none;
+    color: #fff; background: var(--color-primary); padding: 7px 14px; border-radius: 999px;
     transition: background-color 0.15s;
   }
-  .ps-coming-soon-back:hover {
-    background: var(--color-primary-light);
+  .ps-offer-go:hover { background: var(--color-primary-dark); }
+
+  @media (max-width: 480px) {
+    .ps-offer-img { flex-basis: 76px; width: 76px; height: 76px; }
+    .ps-offer-price { font-size: 17px; }
   }
 </style>
 
 <script>
-  // Parse query string in client (SSG safe)
+  const $ = (id: string) => document.getElementById(id);
   const params = new URLSearchParams(window.location.search);
-  const q = (params.get('q') || '').trim();
+  let q = (params.get('q') || '').trim();
   const series = (params.get('series') || '').trim();
-  const sort = (params.get('sort') || '').trim();
-  const hasQuery = q.length > 0 || series.length > 0 || sort.length > 0;
+  let sort = (params.get('sort') || 'price').trim();
 
-  // Update title
-  const title = document.getElementById('ps-search-page-title');
-  if (title) {
-    if (q) title.textContent = `「${q}」`;
-    else if (series) title.textContent = `${series} 系列`;
-    else if (sort === 'newest') title.textContent = '最新動態';
-  }
+  const titleEl = $('ps-search-page-title');
+  const input = $('ps-search-input') as HTMLInputElement | null;
+  const emptyEl = $('ps-empty-state');
+  const loadingEl = $('ps-loading');
+  const resultsWrap = $('ps-results-wrap');
+  const resultsEl = $('ps-results');
+  const countEl = $('ps-results-count');
+  const noResultEl = $('ps-noresult');
+  const sortSel = $('ps-sort-select') as HTMLSelectElement | null;
 
-  // Update page <title>
-  if (q) document.title = `「${q}」搜尋結果 · 普拉魂`;
-  else if (series) document.title = `${series} 系列 · 普拉魂`;
-  else if (sort === 'newest') document.title = '最新賣家動態 · 普拉魂';
-
-  // Pre-fill search input
-  const input = document.getElementById('ps-search-input') as HTMLInputElement | null;
+  const heading = q ? `「${q}」` : series ? `${series} 系列` : '搜尋';
+  if (titleEl) titleEl.textContent = heading;
+  if (q || series) document.title = `${heading} · 普拉魂`;
   if (input && q) input.value = q;
+  if (sortSel) sortSel.value = sort;
 
-  // Switch state
-  const emptyEl = document.getElementById('ps-empty-state');
-  const comingEl = document.getElementById('ps-coming-soon');
-  if (hasQuery && emptyEl && comingEl) {
-    emptyEl.setAttribute('hidden', '');
-    comingEl.removeAttribute('hidden');
-    const echo = document.getElementById('ps-query-echo');
-    if (echo) {
-      echo.textContent = q || `series=${series}${sort ? ` · sort=${sort}` : ''}`;
-    }
-  } else if (input && !q) {
-    // Autofocus 空狀態時
-    setTimeout(() => input.focus(), 50);
+  // Astro scoped 樣式不套到 JS 動態元素 → 從容器補 scope 屬性
+  function applyScope(container: HTMLElement) {
+    const attr = Array.from(container.attributes).map((a) => a.name).find((n) => n.startsWith('data-astro-cid'));
+    if (attr) container.querySelectorAll('*').forEach((el) => el.setAttribute(attr, ''));
   }
+
+  const esc = (s: string) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const timeAgo = (ms: number) => {
+    if (!ms) return '';
+    const d = Math.floor((Date.now() - ms) / 86400000);
+    if (d <= 0) return '今天';
+    if (d < 30) return `${d} 天前`;
+    if (d < 365) return `${Math.floor(d / 30)} 個月前`;
+    return `${Math.floor(d / 365)} 年前`;
+  };
+
+  function show(el: Element | null) { el?.removeAttribute('hidden'); }
+  function hide(el: Element | null) { el?.setAttribute('hidden', ''); }
+
+  function card(o: any): string {
+    const img = o.cover_key
+      ? `<img src="/api/screenshot/${encodeURIComponent(o.cover_key)}" alt="${esc(o.product_name)}" loading="lazy" />`
+      : `<span class="ph" aria-hidden="true">🤖</span>`;
+    const tags = [o.condition, o.series].filter(Boolean).map((t: string) => `<span class="ps-chip">${esc(t)}</span>`).join('');
+    const meta = [o.shipping_text ? `📦 ${esc(o.shipping_text)}` : '', o.meetup_text ? `📍 ${esc(o.meetup_text)}` : ''].filter(Boolean).join('　');
+    const go = o.has_link
+      ? `<a class="ps-offer-go" href="/api/go/${esc(o.listing_id)}" target="_blank" rel="noopener nofollow">前往 →</a>`
+      : '';
+    const nameHtml = o.slug
+      ? `<a class="ps-offer-name" href="/gundam/${esc(o.slug)}">${esc(o.product_name)}</a>`
+      : `<span class="ps-offer-name ps-offer-name--plain">${esc(o.product_name)}</span>`;
+    return `
+      <div class="ps-offer">
+        <div class="ps-offer-img">${img}</div>
+        <div class="ps-offer-body">
+          <div class="ps-offer-head">
+            ${nameHtml}
+            <div class="ps-offer-price">NT$ ${(o.price || 0).toLocaleString()}</div>
+          </div>
+          <div class="ps-offer-tags">${tags}</div>
+          ${meta ? `<div class="ps-offer-meta">${meta}</div>` : ''}
+          <div class="ps-offer-foot">
+            <span class="ps-offer-src">玩家社群參考價 · ${timeAgo(o.created_at)}</span>
+            ${go}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function run() {
+    if (!q && !series) { show(emptyEl); return; }
+    hide(emptyEl); hide(resultsWrap); hide(noResultEl); show(loadingEl);
+    try {
+      const usp = new URLSearchParams();
+      if (q) usp.set('q', q);
+      if (series) usp.set('series', series);
+      usp.set('sort', sort);
+      const res = await fetch(`/api/public/search?${usp.toString()}`);
+      const data = await res.json();
+      hide(loadingEl);
+      const offers = (data && data.offers) || [];
+      if (!offers.length) {
+        const qe = $('ps-noresult-q'); if (qe) qe.textContent = q || series;
+        show(noResultEl);
+        return;
+      }
+      if (resultsEl) {
+        resultsEl.innerHTML = offers.map(card).join('');
+        applyScope(resultsEl as HTMLElement);
+      }
+      if (countEl) countEl.textContent = `找到 ${offers.length} 筆報價`;
+      show(resultsWrap);
+    } catch (e) {
+      hide(loadingEl);
+      const qe = $('ps-noresult-q'); if (qe) qe.textContent = q || series;
+      show(noResultEl);
+    }
+  }
+
+  // 換排序 → 重查
+  sortSel?.addEventListener('change', () => {
+    sort = sortSel.value;
+    const usp = new URLSearchParams(window.location.search);
+    usp.set('sort', sort);
+    history.replaceState(null, '', `/search?${usp.toString()}`);
+    run();
+  });
+
+  if (!q && !series && input) setTimeout(() => input.focus(), 50);
+  run();
 </script>
