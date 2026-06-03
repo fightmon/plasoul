@@ -29,7 +29,9 @@ interface Catalog {
 }
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const slug = String(context.params.slug || '').trim();
+  let slug = String(context.params.slug || '').trim();
+  // CF Pages 的路徑參數可能保留 URL 編碼；中文 slug 需解碼才對得上 DB
+  try { slug = decodeURIComponent(slug); } catch { /* 保留原值 */ }
   if (!slug) return notFound();
 
   const cat = await context.env.DB.prepare(
