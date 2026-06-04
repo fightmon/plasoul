@@ -73,7 +73,7 @@ ${o.body}
   <p class="ftr-links"><a href="/">首頁</a> · <a href="/gundam">找鋼彈</a> · <a href="/about">關於</a> · <a href="/terms">服務條款</a> · <a href="/privacy">隱私政策</a></p>
 </footer>
 <script>(function(){var b=document.getElementById('theme-toggle');if(!b)return;b.addEventListener('click',function(){var c=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',c);try{localStorage.setItem('ps_theme',c);}catch(e){}});})();
-fetch('/api/user/me',{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(d&&d.ok){var a=document.getElementById('ps-acct');if(a){a.setAttribute('href','/garage');a.title='我的車庫';a.textContent='📦 車庫';a.classList.add('is-user');}}}).catch(function(){});</script>
+fetch('/api/user/me',{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(d&&d.ok){var a=document.getElementById('ps-acct');if(a){a.setAttribute('href','/account');a.title='我的帳號';a.textContent='👤 帳號';a.classList.add('is-user');}}}).catch(function(){});</script>
 </body>
 </html>`;
 }

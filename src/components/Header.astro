@@ -207,7 +207,7 @@ const { showSearch = true } = Astro.props;
       .then((d) => {
         if (!d || !d.ok) return;
         const link = document.getElementById('ps-account-link');
-        if (link) { link.setAttribute('href', '/garage'); link.setAttribute('title', '我的車庫'); link.textContent = '📦 車庫'; link.classList.add('is-user'); }
+        if (link) { link.setAttribute('href', '/account'); link.setAttribute('title', '我的帳號'); link.textContent = '👤 帳號'; link.classList.add('is-user'); }
       })
       .catch(() => {});
   })();
