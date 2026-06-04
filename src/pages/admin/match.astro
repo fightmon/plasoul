@@ -15,8 +15,8 @@ import Layout from '../../layouts/Layout.astro';
     <main class="admin-main">
       <h1 class="page-title">報價 ↔ 產品 對應</h1>
       <p class="page-sub">
-        把未對應的報價（cat_unknown）按品名分組，建立 catalog 產品並對應。
-        對應後搜尋會分組、產品頁才有料。
+        把未對應的報價（cat_unknown）按品名分組，建立 catalog 產品並對應。對應後搜尋會分組、產品頁才有料。<br/>
+        不確定是什麼 → 點「🔗 原貼文 / 📷 截圖」查證；組合包 / 雜項對不了 → 按「略過」移出佇列（可日後救回）。
       </p>
 
       <div class="stat-bar">
@@ -93,6 +93,24 @@ import Layout from '../../layouts/Layout.astro';
   .group-apply:hover { background: var(--color-primary-dark); }
   .group-apply:disabled { opacity: 0.5; cursor: default; }
 
+  .group-skip {
+    padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer;
+    color: var(--admin-text-dim); background: transparent;
+    border: 1px solid var(--admin-border-2); border-radius: 8px; white-space: nowrap;
+  }
+  .group-skip:hover { color: #fca5a5; border-color: rgba(248,113,113,0.4); }
+  .group-skip:disabled { opacity: 0.5; cursor: default; }
+
+  .group-src-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 7px; }
+  .group-src {
+    font-size: 12px; color: var(--color-primary-dark); text-decoration: none;
+    padding: 3px 9px; background: var(--admin-surface-2);
+    border: 1px solid var(--admin-border-2); border-radius: 6px;
+  }
+  .group-src:hover { text-decoration: underline; border-color: var(--admin-border-focus); }
+  .group-src-row.muted-src { color: var(--admin-text-faint); font-size: 12px; }
+  .group-note { font-size: 12px; color: var(--admin-text-faint); margin-top: 6px; line-height: 1.5; }
+
   .empty { text-align: center; padding: 48px 16px; color: var(--admin-text-faint); }
   .loading-text { text-align: center; padding: 32px; color: var(--admin-text-faint); }
 </style>
@@ -140,20 +158,34 @@ import Layout from '../../layouts/Layout.astro';
         return;
       }
       const opts = (sel: string) => SERIES.map((s) => `<option value="${esc(s)}"${s === sel ? ' selected' : ''}>${esc(s)}</option>`).join('');
+      const srcRow = (g: any) => {
+        const parts: string[] = [];
+        (g.links || []).forEach((u: string, i: number) => parts.push(`<a class="group-src" href="${esc(u)}" target="_blank" rel="noopener noreferrer">🔗 原貼文${g.links.length > 1 ? ' ' + (i + 1) : ''}</a>`));
+        (g.shots || []).forEach((k: string, i: number) => parts.push(`<a class="group-src" href="/api/screenshot/${encodeURIComponent(k)}" target="_blank" rel="noopener noreferrer">📷 截圖${g.shots.length > 1 ? ' ' + (i + 1) : ''}</a>`));
+        return parts.length
+          ? `<div class="group-src-row">${parts.join('')}</div>`
+          : `<div class="group-src-row muted-src">（無原始連結 · legacy 資料，只能依品名判斷）</div>`;
+      };
       groupsEl.innerHTML = data.groups.map((g: any) => `
         <div class="group" data-ids="${esc(g.listing_ids.join(','))}">
           <div class="group-info">
             <input class="group-name-input" value="${esc(g.display_name)}" />
             <div class="group-meta">${g.count} 筆 · NT$ ${g.price_min.toLocaleString()}${g.price_max !== g.price_min ? '–' + g.price_max.toLocaleString() : ''}</div>
+            ${srcRow(g)}
+            ${g.note ? `<div class="group-note">📝 ${esc(String(g.note).slice(0, 100))}</div>` : ''}
           </div>
           <select class="group-series">${opts(g.series_guess)}</select>
           <button class="group-apply">建立並對應 ${g.count} 筆</button>
+          <button class="group-skip">略過</button>
         </div>
       `).join('');
       applyScope(groupsEl);
 
       groupsEl.querySelectorAll('.group-apply').forEach((btn) => {
         btn.addEventListener('click', () => applyGroup(btn as HTMLButtonElement));
+      });
+      groupsEl.querySelectorAll('.group-skip').forEach((btn) => {
+        btn.addEventListener('click', () => skipGroup(btn as HTMLButtonElement));
       });
     } catch {
       groupsEl.innerHTML = '<div class="empty">網路錯誤</div>';
@@ -183,6 +215,31 @@ import Layout from '../../layouts/Layout.astro';
     } catch {
       statusEl.textContent = '❌ 網路錯誤'; statusEl.className = 'status-text error';
       btn.disabled = false; btn.textContent = '重試';
+    }
+  }
+
+  async function skipGroup(btn: HTMLButtonElement) {
+    const row = btn.closest('.group') as HTMLElement;
+    const ids = (row.dataset.ids || '').split(',').filter(Boolean);
+    const name = (row.querySelector('.group-name-input') as HTMLInputElement).value.trim();
+    if (!confirm(`確定略過「${name}」這組（${ids.length} 筆）？\n會標記為「不對應」並移出待對應佇列。之後若要救回，可在資料庫把 review_status 改回 approved。`)) return;
+    btn.disabled = true; btn.textContent = '略過中…';
+    try {
+      const res = await fetch('/api/admin/match/reject', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ listing_ids: ids }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) { statusEl.textContent = '❌ ' + (data.message || '略過失敗'); statusEl.className = 'status-text error'; btn.disabled = false; btn.textContent = '略過'; return; }
+      statusEl.textContent = `🗑️ 已略過「${name}」${data.rejected_count} 筆`;
+      statusEl.className = 'status-text success';
+      row.remove();
+      const remain = groupsEl.querySelectorAll('.group').length;
+      statGroups.textContent = String(remain);
+      if (remain === 0) groupsEl.innerHTML = '<div class="empty">🎉 全部處理完成</div>';
+    } catch {
+      statusEl.textContent = '❌ 網路錯誤'; statusEl.className = 'status-text error';
+      btn.disabled = false; btn.textContent = '略過';
     }
   }
 </script>

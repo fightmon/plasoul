@@ -38,16 +38,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const rows =
     (
       await context.env.DB.prepare(
-        `SELECT id, raw_model_name, price
+        `SELECT id, raw_model_name, price, source_url, screenshot_r2_key, notes
          FROM fb_listings
          WHERE product_id = 'cat_unknown' AND review_status = 'approved'
          ORDER BY raw_model_name`
-      ).all<{ id: string; raw_model_name: string; price: number }>()
+      ).all<{ id: string; raw_model_name: string; price: number; source_url: string | null; screenshot_r2_key: string | null; notes: string | null }>()
     ).results || [];
 
   const map = new Map<
     string,
-    { display: Record<string, number>; ids: string[]; min: number; max: number }
+    { display: Record<string, number>; ids: string[]; min: number; max: number; links: Set<string>; shots: Set<string>; note: string | null }
   >();
 
   for (const r of rows) {
@@ -56,13 +56,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const key = name.toLowerCase().replace(/\s+/g, '');
     let g = map.get(key);
     if (!g) {
-      g = { display: {}, ids: [], min: r.price, max: r.price };
+      g = { display: {}, ids: [], min: r.price, max: r.price, links: new Set(), shots: new Set(), note: null };
       map.set(key, g);
     }
     g.display[name] = (g.display[name] || 0) + 1; // 統計原始寫法，取最常見當顯示名
     g.ids.push(r.id);
     if (r.price < g.min) g.min = r.price;
     if (r.price > g.max) g.max = r.price;
+    if (r.source_url) g.links.add(r.source_url);
+    if (r.screenshot_r2_key) g.shots.add(r.screenshot_r2_key);
+    if (!g.note && r.notes) g.note = r.notes;
   }
 
   const groups = [...map.entries()]
@@ -76,6 +79,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         listing_ids: g.ids,
         price_min: g.min,
         price_max: g.max,
+        links: [...g.links].slice(0, 5),
+        shots: [...g.shots].slice(0, 5),
+        note: g.note,
       };
     })
     .sort((a, b) => b.count - a.count || a.display_name.localeCompare(b.display_name));
