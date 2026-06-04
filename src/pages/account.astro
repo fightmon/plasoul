@@ -67,6 +67,7 @@ import Layout from '../layouts/Layout.astro';
 
   .acc-form { display: flex; flex-direction: column; gap: 14px; }
   .acc-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--color-text-secondary); }
+  .acc-field[hidden] { display: none; }
   .acc-field input {
     padding: 11px 13px; font-size: 16px; border: 1px solid var(--color-border);
     border-radius: var(--radius-sm); background: var(--color-input-bg); color: var(--color-text); outline: none;
