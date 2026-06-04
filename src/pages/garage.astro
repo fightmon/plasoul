@@ -1,0 +1,144 @@
+---
+import Layout from '../layouts/Layout.astro';
+/**
+ * /garage · 我的車庫（PRD 入口2）
+ * 狀態：backlog 山積 / building 組裝中 / done 完成 / sold 割愛 / wishlist 願望
+ */
+---
+<Layout title="我的車庫 · 普拉魂" hideHeaderSearch={true}>
+  <main class="gr">
+    <div id="gr-loading" class="gr-center">載入中…</div>
+
+    <div id="gr-main" hidden>
+      <header class="gr-head">
+        <h1 class="gr-title">📦 我的車庫</h1>
+        <p class="gr-sub" id="gr-summary"></p>
+      </header>
+
+      <div class="gr-tabs" id="gr-tabs"></div>
+      <div class="gr-list" id="gr-list"></div>
+      <div class="gr-empty" id="gr-empty" hidden>
+        這裡還空空的。去 <a href="/search">找便宜</a> 或 <a href="/gundam">逛型錄</a>，看到喜歡的就加進車庫。
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .gr { max-width: 880px; margin: 0 auto; padding: 28px 16px 80px; }
+  .gr-center { text-align: center; padding: 60px; color: var(--color-text-secondary); }
+  .gr-head { margin-bottom: 18px; }
+  .gr-title { font-size: clamp(22px, 4vw, 28px); font-weight: 800; margin: 0 0 6px; color: var(--color-text); }
+  .gr-sub { color: var(--color-text-secondary); font-size: 14px; margin: 0; }
+
+  .gr-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .gr-tab {
+    border: 1px solid var(--color-border); background: var(--color-card); color: var(--color-text-secondary);
+    border-radius: var(--radius-pill); padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+  }
+  .gr-tab.is-active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+  .gr-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .gr-item {
+    display: flex; gap: 14px; background: var(--color-card); border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm); padding: 12px; box-shadow: var(--shadow-sm); align-items: center;
+  }
+  .gr-img { flex: 0 0 64px; width: 64px; height: 64px; border-radius: 8px; overflow: hidden; background: var(--color-bg); display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-border-subtle); }
+  .gr-img img { width: 100%; height: 100%; object-fit: cover; } .gr-img .ph { font-size: 24px; opacity: .4; }
+  .gr-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .gr-name { font-size: 14px; font-weight: 700; color: var(--color-text); text-decoration: none; word-break: break-word; }
+  .gr-name:hover { color: var(--color-primary); }
+  .gr-meta { font-size: 12px; color: var(--color-text-secondary); }
+  .gr-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .gr-status { font-size: 12px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-card); color: var(--color-text); cursor: pointer; }
+  .gr-rm { background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer; font-size: 16px; line-height: 1; }
+  .gr-rm:hover { color: var(--color-accent); }
+  .gr-empty { text-align: center; padding: 48px 16px; color: var(--color-text-secondary); }
+  .gr-empty a { color: var(--color-primary); }
+  @media (max-width: 480px) { .gr-item { flex-wrap: wrap; } .gr-actions { width: 100%; justify-content: space-between; } }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+  const STATES = [
+    { k: 'all', label: '全部' },
+    { k: 'backlog', label: '🟡 山積中' },
+    { k: 'building', label: '🔵 組裝中' },
+    { k: 'done', label: '🟢 已完成' },
+    { k: 'sold', label: '⚫ 已割愛' },
+    { k: 'wishlist', label: '💭 願望' },
+  ];
+  const STATUS_OPTS = [
+    ['backlog', '🟡 山積中'], ['building', '🔵 組裝中'], ['done', '🟢 已完成'], ['sold', '⚫ 已割愛'], ['wishlist', '💭 願望'],
+  ];
+  const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const TIER_LIMIT: Record<string, number> = { free: 5, premium: 30, pro: 100 };
+
+  let items: any[] = [], filter = 'all', tier = 'free';
+
+  // 需登入
+  (async () => {
+    let me;
+    try { const r = await fetch('/api/user/me', { credentials: 'include' }); me = r.ok ? await r.json() : null; } catch {}
+    if (!me || !me.ok) { location.href = '/account?next=/garage'; return; }
+    tier = me.user.tier || 'free';
+    await load();
+  })();
+
+  async function load() {
+    const r = await fetch('/api/user/garage/list', { credentials: 'include' });
+    const d = await r.json();
+    items = (d && d.items) || [];
+    const counts = (d && d.counts) || {};
+    $('gr-summary').textContent = `共 ${counts.total || 0} 盒（上限 ${TIER_LIMIT[tier] || 5}）· 願望 ${counts.wishlist || 0}`;
+    renderTabs(counts);
+    render();
+    $('gr-loading').setAttribute('hidden', '');
+    $('gr-main').removeAttribute('hidden');
+  }
+
+  function renderTabs(counts: any) {
+    $('gr-tabs').innerHTML = STATES.map((s) => {
+      const n = s.k === 'all' ? items.length : (counts[s.k] || 0);
+      return `<button class="gr-tab${s.k === filter ? ' is-active' : ''}" data-k="${s.k}">${s.label} ${n}</button>`;
+    }).join('');
+    $('gr-tabs').querySelectorAll('.gr-tab').forEach((b) => b.addEventListener('click', () => { filter = (b as HTMLElement).dataset.k!; renderTabs(counts); render(); }));
+  }
+
+  function render() {
+    const list = filter === 'all' ? items : items.filter((i) => i.status === filter);
+    if (!list.length) { $('gr-list').innerHTML = ''; $('gr-empty').removeAttribute('hidden'); return; }
+    $('gr-empty').setAttribute('hidden', '');
+    $('gr-list').innerHTML = list.map((it) => {
+      const img = it.image_r2_key ? `<img src="/api/screenshot/${encodeURIComponent(it.image_r2_key)}" alt=""/>` : `<span class="ph">🤖</span>`;
+      const name = it.full_name || '未命名';
+      const nameHtml = it.slug ? `<a class="gr-name" href="/gundam/${esc(it.slug)}">${esc(name)}</a>` : `<span class="gr-name">${esc(name)}</span>`;
+      const opts = STATUS_OPTS.map(([v, l]) => `<option value="${v}"${v === it.status ? ' selected' : ''}>${l}</option>`).join('');
+      const price = it.purchase_price ? `買價 NT$${(it.purchase_price).toLocaleString()}` : '';
+      return `<div class="gr-item" data-id="${esc(it.id)}">
+        <div class="gr-img">${img}</div>
+        <div class="gr-body">${nameHtml}<div class="gr-meta">${esc(it.series || '')} ${price}</div></div>
+        <div class="gr-actions">
+          <select class="gr-status">${opts}</select>
+          <button class="gr-rm" title="移除">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    $('gr-list').querySelectorAll('.gr-item').forEach((row) => {
+      const id = (row as HTMLElement).dataset.id!;
+      row.querySelector('.gr-status')!.addEventListener('change', async (e) => {
+        const status = (e.target as HTMLSelectElement).value;
+        await fetch('/api/user/garage/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id, status }) });
+        const it = items.find((x) => x.id === id); if (it) it.status = status;
+        load();
+      });
+      row.querySelector('.gr-rm')!.addEventListener('click', async () => {
+        if (!confirm('確定從車庫移除？')) return;
+        await fetch('/api/user/garage/remove', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id }) });
+        items = items.filter((x) => x.id !== id);
+        load();
+      });
+    });
+  }
+</script>

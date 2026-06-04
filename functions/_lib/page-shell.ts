@@ -64,6 +64,7 @@ ${ld}
     <input type="search" name="q" placeholder="搜尋鋼模型號…" aria-label="搜尋" />
   </form>
   <a class="hdr-nav" href="/gundam">找鋼彈</a>
+  <a class="hdr-nav" id="ps-acct" href="/account" title="登入 / 帳號">👤</a>
   <button id="theme-toggle" class="theme-btn" aria-label="切換主題">🌓</button>
 </header>
 ${o.body}
@@ -71,7 +72,8 @@ ${o.body}
   <p class="ftr-disc">資料來自玩家社群觀察，不保證交易可行性。本站為非官方鋼普拉資訊整合平台，不隸屬於 BANDAI SPIRITS。</p>
   <p class="ftr-links"><a href="/">首頁</a> · <a href="/gundam">找鋼彈</a> · <a href="/about">關於</a> · <a href="/terms">服務條款</a> · <a href="/privacy">隱私政策</a></p>
 </footer>
-<script>(function(){var b=document.getElementById('theme-toggle');if(!b)return;b.addEventListener('click',function(){var c=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',c);try{localStorage.setItem('ps_theme',c);}catch(e){}});})();</script>
+<script>(function(){var b=document.getElementById('theme-toggle');if(!b)return;b.addEventListener('click',function(){var c=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',c);try{localStorage.setItem('ps_theme',c);}catch(e){}});})();
+fetch('/api/user/me',{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(d&&d.ok){var a=document.getElementById('ps-acct');if(a){a.setAttribute('href','/garage');a.title='我的車庫';a.textContent='📦';}}}).catch(function(){});</script>
 </body>
 </html>`;
 }
@@ -110,6 +112,13 @@ a{color:inherit}img{max-width:100%}
 .block-title{font-size:18px;font-weight:800;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--border-s)}
 .ftr{border-top:1px solid var(--border-s);padding:24px 16px;text-align:center;color:var(--text2);font-size:12px;line-height:1.7}
 .ftr-links a{color:var(--text2);text-decoration:none;margin:0 2px}.ftr-links a:hover{color:var(--primary)}
+/* 車庫 widget */
+.gw{display:flex;flex-direction:column;gap:10px}
+.gw-actions{display:flex;gap:10px;flex-wrap:wrap}
+.gw-btn{padding:10px 18px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+.gw-add{background:var(--primary);color:#fff;border-color:var(--primary)}
+.gw-wish:hover{border-color:var(--primary);color:var(--primary)}
+.gw-msg{font-size:13px;color:var(--text2)}.gw-msg.ok{color:#16a34a;font-weight:700}
 /* 產品頁 */
 .hero{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:28px}
 .hero-img{flex:0 0 240px;width:240px;height:240px;border-radius:var(--r);overflow:hidden;background:var(--card);border:1px solid var(--border-s);display:flex;align-items:center;justify-content:center}

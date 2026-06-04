@@ -127,6 +127,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       ${offers.length ? `<a class="cta" href="#cmp">↓ 看 ${offers.length} 個報價（最低 NT$${money(minP)}）</a>` : ''}
     </div>
   </section>
+  <section class="block">
+    <h2 class="block-title">📦 你跟這盒的關係</h2>
+    <div class="gw">
+      <div class="gw-actions">
+        <button class="gw-btn gw-add" data-status="backlog">➕ 加入車庫</button>
+        <button class="gw-btn gw-wish" data-status="wishlist">💭 加願望</button>
+      </div>
+      <div class="gw-msg" id="gw-msg"></div>
+    </div>
+  </section>
+
   <section class="block" id="cmp">
     <h2 class="block-title">比價 · 玩家社群參考價</h2>
     ${priceSummary}
@@ -135,7 +146,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   </section>
   <section class="block"><h2 class="block-title">外部資源</h2><div class="ext-row">${ext}</div></section>
   ${relHtml}
-</main>`;
+</main>
+<script>
+(function(){var slug=${JSON.stringify(cat.slug)};var msg=document.getElementById('gw-msg');
+document.querySelectorAll('.gw-btn').forEach(function(btn){btn.addEventListener('click',function(){var status=btn.getAttribute('data-status');btn.disabled=true;
+fetch('/api/user/garage/add',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({slug:slug,status:status})}).then(function(r){return r.json().then(function(d){return{s:r.status,d:d};});}).then(function(o){btn.disabled=false;
+if(o.s===401){location.href='/account?next=/gundam/'+encodeURIComponent(slug);return;}
+if(o.d&&o.d.ok){if(msg){msg.textContent=status==='wishlist'?'已加入願望清單 ✓':'已加入車庫 ✓';msg.className='gw-msg ok';}}
+else if(msg){msg.textContent=(o.d&&o.d.message)||'加入失敗';}}).catch(function(){btn.disabled=false;if(msg)msg.textContent='網路錯誤';});});});})();
+</script>`;
 
   return new Response(
     renderShell({ title: `${name} 比價 · 普拉魂`, description: desc, canonical, ogImage: heroImg ? `https://plasoul.com${heroImg}` : null, jsonld, body }),
