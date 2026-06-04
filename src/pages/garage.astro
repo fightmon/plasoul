@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
 /**
  * /garage · 我的車庫（PRD 入口2）
  * 狀態：backlog 山積 / building 組裝中 / done 完成 / sold 割愛 / wishlist 願望
@@ -7,6 +8,7 @@ import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="我的車庫 · 普拉魂" hideHeaderSearch={true}>
   <main class="gr">
+    <Breadcrumb items={[{ label: '我的車庫' }]} />
     <div id="gr-loading" class="gr-center">載入中…</div>
 
     <div id="gr-main" hidden>

@@ -1,0 +1,26 @@
+---
+/**
+ * 共用麵包屑。用法：<Breadcrumb items={[{label:'搜尋'}]} />
+ * 第一層「首頁」自動帶；最後一項不給 href（當前頁）。
+ */
+interface Crumb { label: string; href?: string; }
+interface Props { items?: Crumb[]; }
+const { items = [] } = Astro.props;
+---
+<nav class="ps-crumb" aria-label="breadcrumb">
+  <a href="/">首頁</a>
+  {items.map((c) => (
+    <>
+      <span class="ps-crumb-sep" aria-hidden="true">›</span>
+      {c.href ? <a href={c.href}>{c.label}</a> : <span class="ps-crumb-cur" aria-current="page">{c.label}</span>}
+    </>
+  ))}
+</nav>
+
+<style>
+  .ps-crumb { font-size: 12.5px; color: var(--color-text-secondary); margin-bottom: 16px; line-height: 1.5; }
+  .ps-crumb a { color: var(--color-text-secondary); text-decoration: none; }
+  .ps-crumb a:hover { color: var(--color-primary); }
+  .ps-crumb-sep { margin: 0 6px; opacity: 0.55; }
+  .ps-crumb-cur { color: var(--color-text); font-weight: 600; }
+</style>

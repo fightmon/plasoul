@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
 /**
  * /account · 登入 / 註冊（email + 密碼）
  * 已登入 → 顯示帳號資訊 + 登出 + 前往車庫
@@ -7,6 +8,7 @@ import Layout from '../layouts/Layout.astro';
 ---
 <Layout title="登入 / 註冊 · 普拉魂" hideHeaderSearch={true}>
   <main class="acc">
+    <Breadcrumb items={[{ label: '帳號' }]} />
     <!-- 載入中 -->
     <div id="acc-loading" class="acc-card acc-center">載入中…</div>
 

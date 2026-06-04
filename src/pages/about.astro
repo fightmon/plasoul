@@ -1,8 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Breadcrumb from "../components/Breadcrumb.astro";
 ---
 <Layout title="關於 · 普拉魂 PuraSoul">
   <main class="ps-page">
+    <Breadcrumb items={[{ label: '關於' }]} />
     <h1 class="ps-page-title">關於普拉魂</h1>
 
     <section class="ps-page-section">

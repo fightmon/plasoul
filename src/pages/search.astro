@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import Breadcrumb from "../components/Breadcrumb.astro";
 
 /**
  * /search · 找便宜（W2）
@@ -11,6 +12,7 @@ import Layout from "../layouts/Layout.astro";
 
 <Layout title="搜尋 · 普拉魂" hideHeaderSearch={true}>
   <main class="ps-search-page">
+    <Breadcrumb items={[{ label: '搜尋' }]} />
     <section class="ps-search-hero">
       <h1 class="ps-search-title" id="ps-search-page-title">搜尋</h1>
       <form action="/search" method="get" class="ps-search-form" role="search">
