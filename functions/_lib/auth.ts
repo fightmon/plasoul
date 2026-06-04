@@ -149,6 +149,21 @@ export async function getAuthUser(
   return verifyJWT(token, secret);
 }
 
+// 任何已登入使用者（user 或 admin 皆可）— 給前台使用者功能用（車庫/點數等）
+export async function requireUser(
+  request: Request,
+  secret: string
+): Promise<JWTPayload | Response> {
+  const user = await getAuthUser(request, secret);
+  if (!user) {
+    return new Response(JSON.stringify({ ok: false, code: 'UNAUTHORIZED', message: '請先登入' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json; charset=utf-8' },
+    });
+  }
+  return user;
+}
+
 export async function requireAdmin(
   request: Request,
   secret: string

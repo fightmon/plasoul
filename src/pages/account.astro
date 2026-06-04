@@ -1,0 +1,157 @@
+---
+import Layout from '../layouts/Layout.astro';
+/**
+ * /account · 登入 / 註冊（email + 密碼）
+ * 已登入 → 顯示帳號資訊 + 登出 + 前往車庫
+ */
+---
+<Layout title="登入 / 註冊 · 普拉魂" hideHeaderSearch={true}>
+  <main class="acc">
+    <!-- 載入中 -->
+    <div id="acc-loading" class="acc-card acc-center">載入中…</div>
+
+    <!-- 已登入 -->
+    <div id="acc-logged" class="acc-card" hidden>
+      <div class="acc-avatar">📦</div>
+      <h1 class="acc-title">嗨，<span id="acc-name"></span></h1>
+      <p class="acc-sub"><span id="acc-email"></span> · <span id="acc-tier" class="acc-tier"></span></p>
+      <a href="/garage" class="acc-btn acc-btn-primary">前往我的車庫 →</a>
+      <button id="acc-logout" class="acc-btn acc-btn-ghost">登出</button>
+    </div>
+
+    <!-- 未登入：登入/註冊 -->
+    <div id="acc-auth" class="acc-card" hidden>
+      <h1 class="acc-title" id="acc-form-title">登入普拉魂</h1>
+      <p class="acc-sub">管理你的車庫、收藏與降價警報</p>
+
+      <div class="acc-tabs">
+        <button class="acc-tab is-active" data-tab="login">登入</button>
+        <button class="acc-tab" data-tab="register">註冊</button>
+      </div>
+
+      <form id="acc-form" class="acc-form">
+        <label class="acc-field" id="acc-name-field" hidden>
+          <span>暱稱（選填）</span>
+          <input type="text" id="f-name" autocomplete="nickname" />
+        </label>
+        <label class="acc-field">
+          <span>Email</span>
+          <input type="email" id="f-email" required autocomplete="email" />
+        </label>
+        <label class="acc-field">
+          <span>密碼<span id="acc-pw-hint" hidden>（至少 6 字）</span></span>
+          <input type="password" id="f-pw" required autocomplete="current-password" minlength="6" />
+        </label>
+        <div id="acc-err" class="acc-err"></div>
+        <button type="submit" id="acc-submit" class="acc-btn acc-btn-primary">登入</button>
+      </form>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .acc { max-width: 420px; margin: 0 auto; padding: 40px 16px 80px; }
+  .acc-card {
+    background: var(--color-card); border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 28px 24px;
+  }
+  .acc-center { text-align: center; color: var(--color-text-secondary); }
+  .acc-avatar { font-size: 44px; text-align: center; margin-bottom: 8px; }
+  .acc-title { font-size: 22px; font-weight: 800; margin: 0 0 6px; color: var(--color-text); }
+  .acc-sub { color: var(--color-text-secondary); font-size: 14px; margin: 0 0 20px; }
+  .acc-tier { color: var(--color-primary); font-weight: 700; }
+
+  .acc-tabs { display: flex; gap: 4px; background: var(--color-bg); border-radius: var(--radius-pill); padding: 4px; margin-bottom: 18px; }
+  .acc-tab { flex: 1; border: none; background: transparent; padding: 8px; border-radius: var(--radius-pill); cursor: pointer; font-weight: 600; color: var(--color-text-secondary); font-family: inherit; }
+  .acc-tab.is-active { background: var(--color-card); color: var(--color-text); box-shadow: var(--shadow-sm); }
+
+  .acc-form { display: flex; flex-direction: column; gap: 14px; }
+  .acc-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--color-text-secondary); }
+  .acc-field input {
+    padding: 11px 13px; font-size: 16px; border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm); background: var(--color-input-bg); color: var(--color-text); outline: none;
+  }
+  .acc-field input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-light); }
+
+  .acc-btn { display: block; width: 100%; text-align: center; padding: 12px; border-radius: var(--radius-pill); font-weight: 700; font-size: 15px; cursor: pointer; border: none; text-decoration: none; font-family: inherit; box-sizing: border-box; }
+  .acc-btn-primary { background: var(--color-primary); color: #fff; }
+  .acc-btn-primary:hover { background: var(--color-primary-dark); }
+  .acc-btn-ghost { background: transparent; color: var(--color-text-secondary); margin-top: 10px; }
+  .acc-btn-ghost:hover { color: var(--color-text); }
+  .acc-logged .acc-btn { margin-top: 12px; }
+  #acc-logged .acc-btn-primary { margin-bottom: 4px; }
+
+  .acc-err { color: var(--color-accent); font-size: 13px; min-height: 16px; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id);
+  const loadingEl = $('acc-loading')!, loggedEl = $('acc-logged')!, authEl = $('acc-auth')!;
+  const errEl = $('acc-err')!, submitBtn = $('acc-submit') as HTMLButtonElement;
+  const nameField = $('acc-name-field')!, pwHint = $('acc-pw-hint')!, formTitle = $('acc-form-title')!;
+  const fEmail = $('f-email') as HTMLInputElement, fPw = $('f-pw') as HTMLInputElement, fName = $('f-name') as HTMLInputElement;
+  let mode: 'login' | 'register' = 'login';
+
+  const show = (el: Element) => el.removeAttribute('hidden');
+  const hide = (el: Element) => el.setAttribute('hidden', '');
+  const tierLabel = (t: string) => ({ free: '免費會員', premium: 'Premium 💎', pro: 'Pro 🏆' }[t] || t);
+
+  // 進站先看是否已登入
+  (async () => {
+    try {
+      const r = await fetch('/api/user/me', { credentials: 'include' });
+      if (r.ok) {
+        const d = await r.json();
+        $('acc-name')!.textContent = d.user.display_name || d.user.email.split('@')[0];
+        $('acc-email')!.textContent = d.user.email;
+        $('acc-tier')!.textContent = tierLabel(d.user.tier);
+        hide(loadingEl); show(loggedEl);
+        return;
+      }
+    } catch {}
+    hide(loadingEl); show(authEl);
+  })();
+
+  $('acc-logout')!.addEventListener('click', async () => {
+    try { await fetch('/api/user/logout', { method: 'POST', credentials: 'include' }); } catch {}
+    location.reload();
+  });
+
+  // tab 切換
+  document.querySelectorAll('.acc-tab').forEach((t) => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.acc-tab').forEach((x) => x.classList.remove('is-active'));
+      t.classList.add('is-active');
+      mode = (t as HTMLElement).dataset.tab as 'login' | 'register';
+      errEl.textContent = '';
+      if (mode === 'register') {
+        show(nameField); show(pwHint); formTitle.textContent = '註冊普拉魂';
+        submitBtn.textContent = '註冊'; fPw.setAttribute('autocomplete', 'new-password');
+      } else {
+        hide(nameField); hide(pwHint); formTitle.textContent = '登入普拉魂';
+        submitBtn.textContent = '登入'; fPw.setAttribute('autocomplete', 'current-password');
+      }
+    });
+  });
+
+  $('acc-form')!.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errEl.textContent = '';
+    const email = fEmail.value.trim(), pw = fPw.value;
+    if (!email || !pw) { errEl.textContent = '請填 email 與密碼'; return; }
+    submitBtn.disabled = true; submitBtn.textContent = '處理中…';
+    const url = mode === 'register' ? '/api/user/register' : '/api/user/login';
+    const body: any = { email, password: pw };
+    if (mode === 'register' && fName.value.trim()) body.display_name = fName.value.trim();
+    try {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok || !d.ok) { errEl.textContent = d.message || '失敗，請再試'; submitBtn.disabled = false; submitBtn.textContent = mode === 'register' ? '註冊' : '登入'; return; }
+      // 成功 → 去車庫（接續的下一個動作）
+      const next = new URLSearchParams(location.search).get('next');
+      location.href = next && next.startsWith('/') ? next : '/garage';
+    } catch {
+      errEl.textContent = '網路錯誤，請再試'; submitBtn.disabled = false; submitBtn.textContent = mode === 'register' ? '註冊' : '登入';
+    }
+  });
+</script>

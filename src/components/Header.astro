@@ -45,6 +45,7 @@ const { showSearch = true } = Astro.props;
         <span class="ps-theme-icon-light">☀️</span>
         <span class="ps-theme-icon-dark">🌙</span>
       </button>
+      <a href="/account" id="ps-account-link" class="ps-icon-btn" aria-label="帳號" title="登入 / 帳號">👤</a>
     </div>
   </div>
 </header>
@@ -174,5 +175,17 @@ const { showSearch = true } = Astro.props;
       html.setAttribute('data-theme', next);
       try { localStorage.setItem('ps_theme', next); } catch (e) {}
     });
+  })();
+
+  // 登入狀態：登入後把「帳號」入口變成「我的車庫」
+  (function () {
+    fetch('/api/user/me', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || !d.ok) return;
+        const link = document.getElementById('ps-account-link');
+        if (link) { link.setAttribute('href', '/garage'); link.setAttribute('title', '我的車庫'); link.textContent = '📦'; }
+      })
+      .catch(() => {});
   })();
 </script>
