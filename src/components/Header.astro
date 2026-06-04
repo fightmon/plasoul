@@ -45,7 +45,7 @@ const { showSearch = true } = Astro.props;
         <span class="ps-theme-icon-light">☀️</span>
         <span class="ps-theme-icon-dark">🌙</span>
       </button>
-      <a href="/account" id="ps-account-link" class="ps-icon-btn" aria-label="帳號" title="登入 / 帳號">👤</a>
+      <a href="/account" id="ps-account-link" class="ps-login-btn" aria-label="登入" title="登入 / 註冊">登入</a>
     </div>
   </div>
 </header>
@@ -144,6 +144,28 @@ const { showSearch = true } = Astro.props;
     border-color: var(--color-primary);
   }
 
+  /* 登入 / 帳號按鈕（明確文字，非純圖示）*/
+  .ps-login-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--color-primary);
+    color: var(--color-primary);
+    background: transparent;
+    border-radius: var(--radius-pill);
+    padding: 7px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .ps-login-btn:hover { background: var(--color-primary); color: #fff; }
+  /* 已登入：改為中性外觀的「車庫」入口 */
+  .ps-login-btn.is-user { border-color: var(--color-border); color: var(--color-text); }
+  .ps-login-btn.is-user:hover { background: var(--color-bg); color: var(--color-text); border-color: var(--color-primary); }
+
   /* Theme icon visibility */
   .ps-theme-icon-light { display: none; }
   .ps-theme-icon-dark { display: inline; }
@@ -161,6 +183,7 @@ const { showSearch = true } = Astro.props;
     .ps-logo-text {
       display: none;
     }
+    .ps-login-btn { padding: 6px 12px; font-size: 13px; }
   }
 </style>
 
@@ -184,7 +207,7 @@ const { showSearch = true } = Astro.props;
       .then((d) => {
         if (!d || !d.ok) return;
         const link = document.getElementById('ps-account-link');
-        if (link) { link.setAttribute('href', '/garage'); link.setAttribute('title', '我的車庫'); link.textContent = '📦'; }
+        if (link) { link.setAttribute('href', '/garage'); link.setAttribute('title', '我的車庫'); link.textContent = '📦 車庫'; link.classList.add('is-user'); }
       })
       .catch(() => {});
   })();

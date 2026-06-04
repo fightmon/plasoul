@@ -64,7 +64,7 @@ ${ld}
     <input type="search" name="q" placeholder="搜尋鋼模型號…" aria-label="搜尋" />
   </form>
   <a class="hdr-nav" href="/gundam">找鋼彈</a>
-  <a class="hdr-nav" id="ps-acct" href="/account" title="登入 / 帳號">👤</a>
+  <a class="hdr-login" id="ps-acct" href="/account" title="登入 / 帳號">登入</a>
   <button id="theme-toggle" class="theme-btn" aria-label="切換主題">🌓</button>
 </header>
 ${o.body}
@@ -73,7 +73,7 @@ ${o.body}
   <p class="ftr-links"><a href="/">首頁</a> · <a href="/gundam">找鋼彈</a> · <a href="/about">關於</a> · <a href="/terms">服務條款</a> · <a href="/privacy">隱私政策</a></p>
 </footer>
 <script>(function(){var b=document.getElementById('theme-toggle');if(!b)return;b.addEventListener('click',function(){var c=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',c);try{localStorage.setItem('ps_theme',c);}catch(e){}});})();
-fetch('/api/user/me',{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(d&&d.ok){var a=document.getElementById('ps-acct');if(a){a.setAttribute('href','/garage');a.title='我的車庫';a.textContent='📦';}}}).catch(function(){});</script>
+fetch('/api/user/me',{credentials:'include'}).then(function(r){return r.ok?r.json():null;}).then(function(d){if(d&&d.ok){var a=document.getElementById('ps-acct');if(a){a.setAttribute('href','/garage');a.title='我的車庫';a.textContent='📦 車庫';a.classList.add('is-user');}}}).catch(function(){});</script>
 </body>
 </html>`;
 }
@@ -100,6 +100,10 @@ a{color:inherit}img{max-width:100%}
 .hdr-search input{width:100%;padding:9px 14px;font-size:16px;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--text);outline:none}
 .hdr-search input:focus{border-color:var(--primary)}
 .hdr-nav{flex-shrink:0;text-decoration:none;font-weight:700;font-size:14px;color:var(--primary-d);padding:8px 10px;white-space:nowrap}
+.hdr-login{flex-shrink:0;text-decoration:none;font-weight:700;font-size:14px;color:var(--primary);border:1px solid var(--primary);border-radius:999px;padding:7px 15px;white-space:nowrap;transition:background-color .15s,color .15s}
+.hdr-login:hover{background:var(--primary);color:#fff}
+.hdr-login.is-user{border-color:var(--border);color:var(--text)}
+.hdr-login.is-user:hover{background:var(--bg);color:var(--text);border-color:var(--primary)}
 .theme-btn{flex-shrink:0;background:transparent;border:1px solid var(--border);border-radius:999px;width:38px;height:38px;cursor:pointer;font-size:16px}
 .wrap{max-width:920px;margin:0 auto;padding:18px 16px 64px}
 .crumb{font-size:12.5px;color:var(--text2);margin-bottom:16px}
