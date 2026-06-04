@@ -28,7 +28,8 @@ import Breadcrumb from '../components/Breadcrumb.astro';
       <h1 class="acc-title" id="acc-form-title">登入普拉魂</h1>
       <p class="acc-sub">管理你的車庫、收藏與降價警報</p>
 
-      <a href="/api/user/oauth/line/start" class="acc-btn acc-line">用 LINE 快速登入</a>
+      <a href="/api/user/oauth/line/start" class="acc-btn acc-social acc-line">用 LINE 快速登入</a>
+      <a href="/api/user/oauth/google/start" class="acc-btn acc-social acc-google"><span class="g-icon">G</span>用 Google 登入</a>
       <div class="acc-or"><span>或用 Email</span></div>
 
       <div class="acc-tabs">
@@ -68,8 +69,12 @@ import Breadcrumb from '../components/Breadcrumb.astro';
   .acc-sub { color: var(--color-text-secondary); font-size: 14px; margin: 0 0 20px; }
   .acc-tier { color: var(--color-primary); font-weight: 700; }
 
+  .acc-social { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
   .acc-line { background: #06C755; color: #fff; }
   .acc-line:hover { filter: brightness(1.06); }
+  .acc-google { background: #fff; color: #3c4043; border: 1px solid var(--color-border); }
+  .acc-google:hover { background: #f7f8f8; }
+  .acc-google .g-icon { font-weight: 800; font-size: 16px; color: #4285F4; font-family: Arial, sans-serif; }
   .acc-or { text-align: center; font-size: 12px; color: var(--color-text-secondary); margin: 14px 0; }
   .acc-tabs { display: flex; gap: 4px; background: var(--color-bg); border-radius: var(--radius-pill); padding: 4px; margin-bottom: 18px; }
   .acc-tab { flex: 1; border: none; background: transparent; padding: 8px; border-radius: var(--radius-pill); cursor: pointer; font-weight: 600; color: var(--color-text-secondary); font-family: inherit; }
