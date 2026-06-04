@@ -94,8 +94,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     .run()
     .catch(() => null);
 
-  // admin 直接進 /admin/listings；一般 user 進 /dashboard
-  const redirect = user.role === 'admin' ? '/admin/listings' : '/dashboard';
+  // admin 進後台首頁（dashboard）；一般 user 進 /dashboard
+  const redirect = user.role === 'admin' ? '/admin' : '/dashboard';
 
   return new Response(JSON.stringify({ ok: true, redirect }), {
     status: 200,

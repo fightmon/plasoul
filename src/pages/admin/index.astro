@@ -1,0 +1,173 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="後台總覽 · 普拉魂 Admin" noIndex={true} bareLayout={true}>
+  <div class="admin-shell">
+    <header class="admin-topbar">
+      <div class="topbar-brand">🤖 普拉魂 Admin</div>
+      <div class="topbar-right">
+        <span id="admin-email" class="admin-email"></span>
+        <button id="logout-btn" class="link-btn">登出</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <h1 class="page-title">後台總覽</h1>
+      <p class="page-sub">目前資料庫裡記錄了多少東西 · <button id="reload-btn" class="link-btn">↻ 重新整理</button></p>
+
+      <!-- 數據卡 -->
+      <section class="stat-grid">
+        <a class="stat-card" href="/admin/members">
+          <div class="stat-num" id="s-members">—</div>
+          <div class="stat-label">👥 會員</div>
+          <div class="stat-extra" id="s-tier">—</div>
+        </a>
+        <div class="stat-card">
+          <div class="stat-num" id="s-products">—</div>
+          <div class="stat-label">📦 品項（型號）</div>
+          <div class="stat-extra">已建立的 catalog 產品</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="s-listings">—</div>
+          <div class="stat-label">🔗 連結（報價）</div>
+          <div class="stat-extra" id="s-avail">—</div>
+        </div>
+        <a class="stat-card stat-card--warn" href="/admin/match">
+          <div class="stat-num" id="s-unmatched">—</div>
+          <div class="stat-label">⏳ 待對應</div>
+          <div class="stat-extra">點我去整理 →</div>
+        </a>
+      </section>
+
+      <!-- 分規格 -->
+      <section class="card">
+        <h2 class="card-title">📊 品項分規格</h2>
+        <div id="series-chips" class="chips"><span class="muted">載入中…</span></div>
+      </section>
+
+      <!-- 功能入口 -->
+      <section class="card">
+        <h2 class="card-title">功能</h2>
+        <div class="nav-grid">
+          <a class="nav-card" href="/admin/listings">
+            <div class="nav-icon">➕</div>
+            <div class="nav-name">新增 FB Listing</div>
+            <div class="nav-desc">貼文 AI 解析 → 保存報價</div>
+          </a>
+          <a class="nav-card" href="/admin/match">
+            <div class="nav-icon">🔗</div>
+            <div class="nav-name">報價對應</div>
+            <div class="nav-desc">未對應報價 → 建立品項</div>
+          </a>
+          <a class="nav-card" href="/admin/members">
+            <div class="nav-icon">👥</div>
+            <div class="nav-name">會員管理</div>
+            <div class="nav-desc">方案 / 角色 / 停權</div>
+          </a>
+        </div>
+      </section>
+    </main>
+  </div>
+</Layout>
+
+<style>
+  .admin-shell { min-height: 100vh; background: var(--admin-bg); color: var(--admin-text); }
+  .admin-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid var(--admin-border); position: sticky; top: 0; z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+  .topbar-brand { font-weight: 700; letter-spacing: 0.05em; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .admin-email { font-size: 13px; color: var(--admin-text-faint); }
+  .link-btn {
+    background: transparent; border: none; color: var(--admin-text-dim);
+    cursor: pointer; font-size: 13px; padding: 6px 10px; border-radius: 6px;
+    text-decoration: none; transition: color 0.15s, background 0.15s;
+  }
+  .link-btn:hover { color: var(--admin-text); background: var(--admin-surface-2); }
+
+  .admin-main { max-width: 980px; margin: 0 auto; padding: 24px 16px 80px; }
+  .page-title { font-size: 24px; font-weight: 700; margin: 8px 0 4px; }
+  .page-sub { color: var(--admin-text-faint); font-size: 14px; margin: 0 0 20px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+  @media (min-width: 720px) { .stat-grid { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+  .stat-card {
+    background: var(--admin-surface); border: 1px solid var(--admin-border);
+    border-radius: 14px; padding: 18px 16px; text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; gap: 4px; transition: border-color 0.15s, transform 0.1s;
+  }
+  a.stat-card:hover { border-color: var(--admin-border-focus); transform: translateY(-1px); }
+  .stat-card--warn .stat-num { color: #fbbf24; }
+  .stat-num { font-size: 34px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stat-label { font-size: 14px; font-weight: 600; }
+  .stat-extra { font-size: 12px; color: var(--admin-text-faint); }
+
+  .card {
+    background: var(--admin-surface); border: 1px solid var(--admin-border);
+    border-radius: 14px; padding: 18px; margin-bottom: 16px;
+  }
+  .card-title { font-size: 15px; font-weight: 700; margin: 0 0 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    background: var(--admin-surface-2); border: 1px solid var(--admin-border-2);
+    border-radius: 999px; padding: 6px 12px; font-size: 13px;
+  }
+  .chip b { font-size: 15px; color: var(--color-primary-dark); font-variant-numeric: tabular-nums; }
+  .muted { color: var(--admin-text-faint); font-size: 13px; }
+
+  .nav-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 12px; }
+  .nav-card {
+    background: var(--admin-surface-2); border: 1px solid var(--admin-border-2);
+    border-radius: 12px; padding: 16px; text-decoration: none; color: inherit;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .nav-card:hover { border-color: var(--admin-border-focus); transform: translateY(-1px); }
+  .nav-icon { font-size: 24px; }
+  .nav-name { font-weight: 700; margin-top: 6px; }
+  .nav-desc { font-size: 12px; color: var(--admin-text-faint); margin-top: 2px; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id);
+  const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+  (async () => {
+    try {
+      const me = await fetch('/api/admin/me', { credentials: 'include' });
+      if (!me.ok) { window.location.href = '/admin/login'; return; }
+      const d = await me.json();
+      if (d?.user?.email) $('admin-email')!.textContent = d.user.email;
+    } catch { window.location.href = '/admin/login'; return; }
+    load();
+  })();
+
+  $('logout-btn')!.addEventListener('click', async () => {
+    try { await fetch('/api/admin/logout', { method: 'POST' }); } catch {}
+    window.location.href = '/admin/login';
+  });
+  $('reload-btn')!.addEventListener('click', load);
+
+  async function load() {
+    try {
+      const res = await fetch('/api/admin/stats', { credentials: 'include' });
+      const d = await res.json();
+      if (!d.ok) return;
+      $('s-members')!.textContent = d.members.toLocaleString();
+      const t = d.members_by_tier || {};
+      $('s-tier')!.textContent = `免費 ${t.free || 0} · Premium ${t.premium || 0} · Pro ${t.pro || 0}`;
+      $('s-products')!.textContent = d.products.toLocaleString();
+      $('s-listings')!.textContent = d.listings.toLocaleString();
+      $('s-avail')!.textContent = `販售中 ${d.listings_available.toLocaleString()} 筆`;
+      $('s-unmatched')!.textContent = d.unmatched.toLocaleString();
+
+      const chips = (d.products_by_series || []);
+      $('series-chips')!.innerHTML = chips.length
+        ? chips.map((s: any) => `<span class="chip">${esc(s.series)} <b>${s.count}</b></span>`).join('')
+        : '<span class="muted">尚無品項</span>';
+    } catch {}
+  }
+</script>

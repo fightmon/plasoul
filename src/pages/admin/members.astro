@@ -1,0 +1,301 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="會員管理 · 普拉魂 Admin" noIndex={true} bareLayout={true}>
+  <div class="admin-shell">
+    <header class="admin-topbar">
+      <div class="topbar-brand">👥 會員管理</div>
+      <div class="topbar-right">
+        <a href="/admin" class="link-btn">🏠 後台首頁</a>
+        <button id="logout-btn" class="link-btn">登出</button>
+      </div>
+    </header>
+
+    <main class="admin-main">
+      <h1 class="page-title">會員管理</h1>
+      <p class="page-sub">沒接金流前，這裡就是人工開通付費方案的地方。</p>
+
+      <div class="toolbar">
+        <input id="q" class="search-input" type="search" placeholder="搜尋 email 或暱稱…" />
+        <button id="search-btn" class="btn-primary">搜尋</button>
+        <span class="count-text">共 <b id="total">—</b> 位</span>
+        <button id="reload-btn" class="link-btn">↻</button>
+      </div>
+
+      <div id="status" class="status-text"></div>
+
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>會員</th><th>方案</th><th>登入</th><th>車庫</th><th>註冊</th><th>狀態</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"><tr><td colspan="7" class="loading-text">載入中…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button id="prev" class="link-btn" disabled>← 上一頁</button>
+        <span id="page-info" class="muted"></span>
+        <button id="next" class="link-btn" disabled>下一頁 →</button>
+      </div>
+    </main>
+
+    <!-- 編輯 modal -->
+    <div id="modal" class="modal" hidden>
+      <div class="modal-box">
+        <div class="modal-head">
+          <div>
+            <div class="modal-title" id="m-email"></div>
+            <div class="modal-sub" id="m-meta"></div>
+          </div>
+          <button id="m-close" class="x-btn" title="關閉">×</button>
+        </div>
+
+        <label class="m-field">
+          <span>方案 tier</span>
+          <select id="m-tier" class="m-input">
+            <option value="free">免費 free</option>
+            <option value="premium">Premium</option>
+            <option value="pro">Pro</option>
+          </select>
+        </label>
+
+        <label class="m-field" id="m-expiry-field">
+          <span>到期日（留空 = 無期限）</span>
+          <input id="m-expiry" type="date" class="m-input" />
+        </label>
+
+        <label class="m-field">
+          <span>角色 role</span>
+          <select id="m-role" class="m-input">
+            <option value="user">一般會員 user</option>
+            <option value="admin">管理員 admin</option>
+          </select>
+        </label>
+
+        <div id="m-status" class="status-text"></div>
+
+        <div class="modal-actions">
+          <button id="m-suspend" class="btn-danger">停權</button>
+          <div class="spacer"></div>
+          <button id="m-cancel" class="link-btn">取消</button>
+          <button id="m-save" class="btn-primary">儲存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .admin-shell { min-height: 100vh; background: var(--admin-bg); color: var(--admin-text); }
+  .admin-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid var(--admin-border); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px);
+  }
+  .topbar-brand { font-weight: 700; letter-spacing: 0.05em; }
+  .topbar-right { display: flex; align-items: center; gap: 14px; }
+  .link-btn {
+    background: transparent; border: none; color: var(--admin-text-dim);
+    cursor: pointer; font-size: 13px; padding: 6px 10px; border-radius: 6px;
+    text-decoration: none; transition: color 0.15s, background 0.15s;
+  }
+  .link-btn:hover:not(:disabled) { color: var(--admin-text); background: var(--admin-surface-2); }
+  .link-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .admin-main { max-width: 1000px; margin: 0 auto; padding: 24px 16px 80px; }
+  .page-title { font-size: 24px; font-weight: 700; margin: 8px 0 4px; }
+  .page-sub { color: var(--admin-text-faint); font-size: 14px; margin: 0 0 18px; }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .search-input {
+    flex: 1; min-width: 180px; padding: 9px 13px; font-size: 14px;
+    background: var(--admin-surface-2); border: 1px solid var(--admin-border-2);
+    border-radius: 8px; color: var(--admin-text); outline: none;
+  }
+  .search-input:focus { border-color: var(--admin-border-focus); }
+  .count-text { font-size: 13px; color: var(--admin-text-dim); }
+  .count-text b { color: var(--admin-text); font-size: 16px; }
+
+  .btn-primary {
+    padding: 9px 16px; font-size: 13px; font-weight: 700; cursor: pointer; color: #fff;
+    background: var(--color-primary); border: none; border-radius: 8px; transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--color-primary-dark); }
+  .btn-danger {
+    padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; color: #fca5a5;
+    background: transparent; border: 1px solid rgba(248,113,113,0.4); border-radius: 8px;
+  }
+  .btn-danger:hover { background: rgba(248,113,113,0.12); }
+
+  .status-text { font-size: 13px; margin: 8px 0; min-height: 18px; }
+  .status-text.success { color: #86efac; }
+  .status-text.error { color: #fca5a5; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--admin-border); border-radius: 12px; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 720px; }
+  .tbl thead th {
+    text-align: left; padding: 11px 14px; font-size: 12px; font-weight: 600;
+    color: var(--admin-text-faint); border-bottom: 1px solid var(--admin-border);
+    background: var(--admin-surface); position: sticky; top: 0;
+  }
+  .tbl td { padding: 11px 14px; border-bottom: 1px solid var(--admin-border-2); vertical-align: middle; }
+  .tbl tbody tr:hover { background: var(--admin-surface); }
+  .tbl tbody tr:last-child td { border-bottom: none; }
+
+  .u-email { font-weight: 600; }
+  .u-name { font-size: 12px; color: var(--admin-text-faint); }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .badge-free { background: var(--admin-surface-2); color: var(--admin-text-dim); }
+  .badge-premium { background: rgba(59,130,246,0.18); color: #93c5fd; }
+  .badge-pro { background: rgba(234,179,8,0.18); color: #fcd34d; }
+  .badge-admin { background: rgba(239,68,68,0.18); color: #fca5a5; margin-left: 5px; }
+  .expiry { font-size: 11px; color: var(--admin-text-faint); display: block; margin-top: 3px; }
+  .methods { display: flex; gap: 4px; flex-wrap: wrap; }
+  .m-tag { font-size: 10px; padding: 2px 6px; border-radius: 5px; background: var(--admin-surface-2); color: var(--admin-text-dim); }
+  .st-ok { color: #86efac; font-size: 12px; }
+  .st-susp { color: #fca5a5; font-size: 12px; font-weight: 700; }
+  .row-edit {
+    padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; color: var(--admin-text);
+    background: var(--admin-surface-2); border: 1px solid var(--admin-border-2); border-radius: 7px;
+  }
+  .row-edit:hover { border-color: var(--admin-border-focus); }
+  .muted { color: var(--admin-text-faint); font-size: 13px; }
+  .loading-text { text-align: center; padding: 32px; color: var(--admin-text-faint); }
+  .pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 16px; }
+
+  /* modal */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+  .modal[hidden] { display: none; }
+  .modal-box {
+    width: 100%; max-width: 420px; background: var(--admin-surface);
+    border: 1px solid var(--admin-border); border-radius: 16px; padding: 20px;
+  }
+  .modal-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .modal-title { font-weight: 700; font-size: 16px; word-break: break-all; }
+  .modal-sub { font-size: 12px; color: var(--admin-text-faint); margin-top: 3px; }
+  .x-btn { background: transparent; border: none; color: var(--admin-text-dim); font-size: 22px; cursor: pointer; line-height: 1; }
+  .m-field { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--admin-text-dim); margin-bottom: 14px; }
+  .m-input {
+    padding: 9px 11px; font-size: 14px; background: var(--admin-surface-2);
+    border: 1px solid var(--admin-border-2); border-radius: 8px; color: var(--admin-text); outline: none;
+  }
+  .m-input:focus { border-color: var(--admin-border-focus); }
+  .modal-actions { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+  .modal-actions .spacer { flex: 1; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id);
+  const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  function applyScope(c: HTMLElement) {
+    const attr = Array.from(c.attributes).map((a) => a.name).find((n) => n.startsWith('data-astro-cid'));
+    if (attr) c.querySelectorAll('*').forEach((el) => el.setAttribute(attr, ''));
+  }
+  const fmtDate = (ms: number) => { const d = new Date(ms); const p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+  const tierLabel: Record<string, string> = { free: '免費', premium: 'Premium', pro: 'Pro' };
+
+  const rowsEl = $('rows')!, statusEl = $('status')!, totalEl = $('total')!;
+  const PAGE = 50;
+  let offset = 0, total = 0, current: any[] = [];
+
+  // auth gate
+  (async () => {
+    try { const me = await fetch('/api/admin/me', { credentials: 'include' }); if (!me.ok) { location.href = '/admin/login'; return; } }
+    catch { location.href = '/admin/login'; return; }
+    load();
+  })();
+
+  $('logout-btn')!.addEventListener('click', async () => { try { await fetch('/api/admin/logout', { method: 'POST' }); } catch {} location.href = '/admin/login'; });
+  $('search-btn')!.addEventListener('click', () => { offset = 0; load(); });
+  $('reload-btn')!.addEventListener('click', load);
+  $('q')!.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { offset = 0; load(); } });
+  $('prev')!.addEventListener('click', () => { if (offset > 0) { offset = Math.max(0, offset - PAGE); load(); } });
+  $('next')!.addEventListener('click', () => { if (offset + PAGE < total) { offset += PAGE; load(); } });
+
+  async function load() {
+    rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">載入中…</td></tr>';
+    const q = ($('q') as HTMLInputElement).value.trim();
+    try {
+      const res = await fetch(`/api/admin/users/list?q=${encodeURIComponent(q)}&limit=${PAGE}&offset=${offset}`, { credentials: 'include' });
+      const d = await res.json();
+      if (!d.ok) { rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">載入失敗</td></tr>'; return; }
+      total = d.total; current = d.users;
+      totalEl.textContent = total.toLocaleString();
+      if (!d.users.length) { rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">查無會員</td></tr>'; }
+      else {
+        rowsEl.innerHTML = d.users.map((u: any, i: number) => {
+          const m: string[] = [];
+          if (u.methods.email) m.push('Email');
+          if (u.methods.line) m.push('LINE');
+          if (u.methods.google) m.push('Google');
+          const expiry = u.tier !== 'free' && u.tier_expires_at ? `<span class="expiry">到期 ${fmtDate(u.tier_expires_at)}</span>` : '';
+          return `<tr>
+            <td><div class="u-email">${esc(u.email)}</div>${u.display_name ? `<div class="u-name">${esc(u.display_name)}</div>` : ''}</td>
+            <td><span class="badge badge-${esc(u.tier)}">${tierLabel[u.tier] || esc(u.tier)}</span>${u.role === 'admin' ? '<span class="badge badge-admin">admin</span>' : ''}${expiry}</td>
+            <td><div class="methods">${m.map((x) => `<span class="m-tag">${x}</span>`).join('') || '<span class="m-tag">—</span>'}</div></td>
+            <td>${u.garage_count}</td>
+            <td>${fmtDate(u.created_at)}</td>
+            <td>${u.suspended ? '<span class="st-susp">已停權</span>' : '<span class="st-ok">正常</span>'}</td>
+            <td><button class="row-edit" data-i="${i}">編輯</button></td>
+          </tr>`;
+        }).join('');
+        applyScope(rowsEl);
+        rowsEl.querySelectorAll('.row-edit').forEach((b) => b.addEventListener('click', () => openModal(current[Number((b as HTMLElement).dataset.i)])));
+      }
+      const from = total ? offset + 1 : 0;
+      $('page-info')!.textContent = `${from}–${Math.min(offset + PAGE, total)} / ${total}`;
+      ($('prev') as HTMLButtonElement).disabled = offset === 0;
+      ($('next') as HTMLButtonElement).disabled = offset + PAGE >= total;
+    } catch { rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">網路錯誤</td></tr>'; }
+  }
+
+  // ---- modal ----
+  let editing: any = null;
+  const modal = $('modal')!, mStatus = $('m-status')!;
+  function openModal(u: any) {
+    editing = u;
+    $('m-email')!.textContent = u.email;
+    $('m-meta')!.textContent = `車庫 ${u.garage_count} 盒 · 註冊 ${fmtDate(u.created_at)}${u.suspended ? ' · 已停權' : ''}`;
+    ($('m-tier') as HTMLSelectElement).value = u.tier;
+    ($('m-role') as HTMLSelectElement).value = u.role;
+    ($('m-expiry') as HTMLInputElement).value = u.tier_expires_at ? fmtDate(u.tier_expires_at) : '';
+    ($('m-suspend') as HTMLButtonElement).textContent = u.suspended ? '復原帳號' : '停權';
+    mStatus.textContent = ''; mStatus.className = 'status-text';
+    modal.removeAttribute('hidden');
+  }
+  function closeModal() { modal.setAttribute('hidden', ''); editing = null; }
+  $('m-close')!.addEventListener('click', closeModal);
+  $('m-cancel')!.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  $('m-save')!.addEventListener('click', async () => {
+    if (!editing) return;
+    const tier = ($('m-tier') as HTMLSelectElement).value;
+    const role = ($('m-role') as HTMLSelectElement).value;
+    const expVal = ($('m-expiry') as HTMLInputElement).value;
+    let tier_expires_at: number | null = null;
+    if (tier !== 'free' && expVal) tier_expires_at = new Date(expVal + 'T23:59:59').getTime();
+    const body: any = { id: editing.id, tier, role, tier_expires_at };
+    await doUpdate(body, '已儲存');
+  });
+
+  $('m-suspend')!.addEventListener('click', async () => {
+    if (!editing) return;
+    const action = editing.suspended ? 'restore' : 'suspend';
+    await doUpdate({ id: editing.id, action }, action === 'suspend' ? '已停權' : '已復原');
+  });
+
+  async function doUpdate(body: any, okMsg: string) {
+    mStatus.textContent = '處理中…'; mStatus.className = 'status-text';
+    try {
+      const res = await fetch('/api/admin/users/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+      const d = await res.json();
+      if (!res.ok || !d.ok) { mStatus.textContent = '❌ ' + (d.message || '失敗'); mStatus.className = 'status-text error'; return; }
+      closeModal();
+      statusEl.textContent = '✅ ' + okMsg; statusEl.className = 'status-text success';
+      load();
+    } catch { mStatus.textContent = '❌ 網路錯誤'; mStatus.className = 'status-text error'; }
+  }
+</script>
