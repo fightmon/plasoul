@@ -143,6 +143,18 @@ export const IMAGE_PROMPT = `你是一個模型/玩具二手買賣資訊萃取�
 `;
 
 /**
+ * 拍盒辨識專用「精簡」Prompt（給使用者拍自己的盒/成品用）
+ * 只需辨識型號 → 短輸入短輸出，避免 IMAGE_PROMPT 過長導致 Groq 生太久 → CF 函式逾時 502。
+ */
+export const SCAN_PROMPT = `你是鋼普拉模型辨識助手。看這張使用者拍的鋼普拉「盒子或成品」照片，辨識其中的鋼彈/機器人模型，以 JSON 回傳：
+{"items":[{"model":"型號或品名（繁體中文，盡量用常見官方名，如「RX-78-2 鋼彈」「自由鋼彈」；不確定就填看到的字樣）","series":"只能填 HG/RG/MG/MGEX/MGSD/MG Ver.Ka/PG/RE/100/SD/ROBOT魂/METAL ROBOT魂/超合金/好微笑/METAL BUILD 其一，不確定留空","scale":"如 1/144、1/100，不確定留空"}]}
+規則：
+1. 只回傳 JSON，不要任何說明文字、不要 markdown code fence。
+2. 看不出任何模型就回 {"items":[]}。
+3. 最多辨識 5 項。
+`;
+
+/**
  * AI 解析結果單筆 schema
  */
 export interface ParsedItem {

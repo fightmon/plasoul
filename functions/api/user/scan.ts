@@ -9,7 +9,7 @@
  * 法律：只辨識使用者自己的盒，不涉賣家資料
  */
 import { requireUser } from '../../_lib/auth';
-import { IMAGE_PROMPT } from '../../_lib/ai-prompts';
+import { SCAN_PROMPT } from '../../_lib/ai-prompts';
 
 export interface Env {
   DB: D1Database;
@@ -92,7 +92,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
 async function analyze(img: any, workerUrl: string): Promise<{ items: any[]; error?: string }> {
   const content = [
-    { type: 'text', text: IMAGE_PROMPT },
+    { type: 'text', text: SCAN_PROMPT },
     { type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.base64}` } },
   ];
   let resp: Response;
@@ -100,7 +100,7 @@ async function analyze(img: any, workerUrl: string): Promise<{ items: any[]; err
     resp = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, messages: [{ role: 'user', content }], temperature: 0.1, max_tokens: 3000 }),
+      body: JSON.stringify({ model: MODEL, messages: [{ role: 'user', content }], temperature: 0.1, max_tokens: 1200 }),
     });
   } catch (e: any) { return { items: [], error: 'AI 連線錯誤' }; }
   if (!resp.ok) return { items: [], error: `AI HTTP ${resp.status}` };
