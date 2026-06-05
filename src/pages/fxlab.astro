@@ -1,0 +1,304 @@
+---
+// 招式實驗室（純前端表演層測試頁，不影響正式戰鬥）
+// 開 /fxlab：點按鈕放招、可重複看、切暴擊/MISS、換方向、隨機、依序全播
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0a0e1a" />
+  <title>招式實驗室 · 普拉魂</title>
+</head>
+<body>
+  <div class="fl-wrap">
+    <div class="fl-top">
+      <a class="fl-back" href="/arena/">← 競技場</a>
+      <span class="fl-title">招式實驗室</span>
+      <button class="fl-dir" id="fl-dir">攻方：我方 ▶</button>
+    </div>
+
+    <div class="fl-field" id="fl-field">
+      <div class="fl-u my-side" id="fl-my"><div class="fl-noimg t-my">🤖</div><span class="fl-name">我方測試卡</span></div>
+      <div class="fl-u foe-side" id="fl-foe"><div class="fl-noimg t-foe">👾</div><span class="fl-name">敵方測試卡</span></div>
+      <div class="fl-fx" id="fl-fx"></div>
+    </div>
+
+    <div class="fl-toggles">
+      <label class="fl-chk"><input type="checkbox" id="fl-crit" /> 暴擊</label>
+      <label class="fl-chk"><input type="checkbox" id="fl-miss" /> MISS</label>
+      <button class="fl-act" id="fl-rand">🎲 隨機一招</button>
+      <button class="fl-act" id="fl-seq">▶ 依序全播</button>
+    </div>
+
+    <div class="fl-sec">射擊類</div>
+    <div class="fl-grid">
+      <button class="fl-btn" data-fx="laser">雷射光束</button>
+      <button class="fl-btn" data-fx="cannon">炮彈</button>
+      <button class="fl-btn" data-fx="shot">散彈連發</button>
+      <button class="fl-btn" data-fx="charge">蓄力光束砲</button>
+      <button class="fl-btn" data-fx="homing">追蹤飛彈</button>
+      <button class="fl-btn" data-fx="wave">能量波</button>
+      <button class="fl-btn" data-fx="snipe">狙擊</button>
+    </div>
+
+    <div class="fl-sec">斬擊／近身類</div>
+    <div class="fl-grid">
+      <button class="fl-btn" data-fx="slash">直線斬</button>
+      <button class="fl-btn" data-fx="arc">月牙弧斬</button>
+      <button class="fl-btn" data-fx="iai">居合連斬</button>
+      <button class="fl-btn" data-fx="thrust">突刺</button>
+      <button class="fl-btn" data-fx="cross">十字爆裂斬</button>
+      <button class="fl-btn" data-fx="spin">迴旋斬</button>
+      <button class="fl-btn" data-fx="impact">重擊衝撞</button>
+    </div>
+
+    <p class="fl-hint">提示：先勾「暴擊／MISS」再點招式，可看不同狀態下的表現。近身類會自動衝刺。</p>
+  </div>
+
+  <style is:global>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #07090f; color: #e8ecf5; font-family: -apple-system, "Noto Sans TC", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+    .fl-wrap { max-width: 520px; margin: 0 auto; padding: 10px 12px 40px; }
+    .fl-top { display: flex; align-items: center; gap: 10px; padding: 6px 2px 12px; }
+    .fl-back { color: #9fb0d0; text-decoration: none; font-size: 14px; }
+    .fl-title { font-weight: 800; font-size: 16px; }
+    .fl-dir { margin-left: auto; background: #18203a; color: #cfe; border: 1px solid #2c3a5e; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+    .fl-field { position: relative; height: 360px; background: radial-gradient(circle at 50% 45%, #1a2447, #070a14); border-radius: 14px; overflow: hidden; border: 1px solid #20294a; }
+    .fl-field.fl-shake { animation: fl-shake .3s; }
+    @keyframes fl-shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px);} 40%{transform:translateX(7px);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
+
+    .fl-u { position: absolute; width: 94px; aspect-ratio: 3/4; top: 36%; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; background: #141c34; z-index: 2; }
+    #fl-my { left: 9%; } #fl-foe { right: 9%; }
+    .fl-noimg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 38px; }
+    .fl-noimg.t-my { background: #1c3a66; } .fl-noimg.t-foe { background: #5a2a1c; }
+    .fl-name { position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; text-align: center; background: rgba(0,0,0,.6); padding: 2px; }
+
+    .fl-u.fl-hit { animation: fl-hit .42s; }
+    @keyframes fl-hit { 30%{ transform: translateX(var(--rec,10px)) rotate(3deg); filter: brightness(1) saturate(2.5) sepia(.6) hue-rotate(-30deg);} }
+    .fl-u.fl-hop { animation: fl-hop .44s ease; }
+    @keyframes fl-hop { 35%{ transform: translate(var(--hx,0), 30px);} 62%{ transform: translate(var(--hx,0), 30px);} }
+
+    .fl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
+
+    .fl-dmg { position: absolute; font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 2px 6px #000; transform: translate(-50%,-50%); animation: fl-pop .85s ease-out forwards; white-space: nowrap; }
+    .fl-dmg.crit { font-size: 32px; color: #ffd23d; } .fl-dmg.miss { color: #cfcfcf; font-size: 18px; }
+    @keyframes fl-pop { 0%{opacity:0;transform:translate(-50%,-20%) scale(.6);} 25%{opacity:1;transform:translate(-50%,-80%) scale(1.1);} 100%{opacity:0;transform:translate(-50%,-200%) scale(1);} }
+
+    .fl-ring { position: absolute; width: 44px; height: 44px; border: 3px solid #fff; border-radius: 50%; opacity: .95; transform: translate(-50%,-50%) scale(.2); animation: fl-ring .6s ease-out forwards; }
+    @keyframes fl-ring { to { transform: translate(-50%,-50%) scale(var(--rs,1.7)); opacity: 0; } }
+
+    /* 雷射 */
+    .fl-laser { position: absolute; height: 6px; transform-origin: left center; }
+    .fl-laser.big { height: 16px; }
+    .fl-laser i { display: block; width: 100%; height: 100%; border-radius: 6px; transform-origin: left center; animation: fl-beam .5s ease-out forwards; }
+    .fl-laser.c-my i { background: linear-gradient(90deg,#9fe8ff,#2f9bff); box-shadow: 0 0 12px #2f9bff; }
+    .fl-laser.c-foe i { background: linear-gradient(90deg,#ffd0d0,#ff4d4d); box-shadow: 0 0 12px #ff4d4d; }
+    @keyframes fl-beam { 0%{transform:scaleX(0);opacity:.5;} 45%{transform:scaleX(1);opacity:1;} 100%{transform:scaleX(1);opacity:0;} }
+
+    /* 炮彈／光球 */
+    .fl-ball { position: absolute; width: 18px; height: 18px; border-radius: 50%; transform: translate(-50%,-50%); }
+    .fl-ball.big { width: 28px; height: 28px; }
+    .fl-ball.c-my { background: radial-gradient(circle,#dff4ff,#2f9bff); box-shadow: 0 0 16px #2f9bff; }
+    .fl-ball.c-foe { background: radial-gradient(circle,#ffe0e0,#ff4d4d); box-shadow: 0 0 16px #ff4d4d; }
+    .fl-bolt { position: absolute; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle,#fff,#ffd24d); box-shadow: 0 0 8px #ffd24d; }
+
+    /* 蓄力 */
+    .fl-charge { position: absolute; width: 24px; height: 24px; border-radius: 50%; transform: translate(-50%,-50%); animation: fl-charge .4s ease-in forwards; }
+    .fl-charge.c-my { background: radial-gradient(circle,#dff4ff,rgba(47,155,255,.15)); box-shadow: 0 0 20px #2f9bff; }
+    .fl-charge.c-foe { background: radial-gradient(circle,#ffe0e0,rgba(255,77,77,.15)); box-shadow: 0 0 20px #ff4d4d; }
+    @keyframes fl-charge { 0%{transform:translate(-50%,-50%) scale(.3);opacity:.3;} 100%{transform:translate(-50%,-50%) scale(2.4);opacity:1;} }
+
+    /* 追蹤飛彈 */
+    .fl-missile { position: absolute; left: 0; top: 0; width: 16px; height: 7px; border-radius: 4px; background: linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow: 0 0 10px #ff9a3d; offset-rotate: auto; }
+
+    /* 能量波 */
+    .fl-wave { position: absolute; width: 54px; height: 88px; border-radius: 50%; }
+    .fl-wave.c-my { background: radial-gradient(circle,rgba(120,180,255,.7),transparent 70%); }
+    .fl-wave.c-foe { background: radial-gradient(circle,rgba(255,140,140,.7),transparent 70%); }
+
+    /* 狙擊準星 */
+    .fl-cross { position: absolute; width: 46px; height: 46px; transform: translate(-50%,-50%); border: 2px solid #ff5a5a; border-radius: 50%; animation: fl-crossk .5s ease-out forwards; }
+    .fl-cross::before, .fl-cross::after { content: ''; position: absolute; background: #ff5a5a; }
+    .fl-cross::before { left: 50%; top: -8px; bottom: -8px; width: 2px; transform: translateX(-50%); }
+    .fl-cross::after { top: 50%; left: -8px; right: -8px; height: 2px; transform: translateY(-50%); }
+    @keyframes fl-crossk { 0%{opacity:0;transform:translate(-50%,-50%) scale(1.7);} 40%{opacity:1;transform:translate(-50%,-50%) scale(1);} 100%{opacity:.5;} }
+
+    /* 直線斬（交叉） */
+    .fl-slash { position: absolute; width: 122px; height: 10px; transform: translate(-50%,-50%); animation: fl-slashk .5s ease-out forwards; }
+    .fl-slash.big { width: 162px; height: 14px; }
+    .fl-slash::before, .fl-slash::after { content: ''; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(90deg,transparent 6%,#fff 50%,transparent 94%); filter: drop-shadow(0 0 9px #fff) drop-shadow(0 0 18px #9bdcff); }
+    .fl-slash::after { transform: rotate(76deg); }
+    @keyframes fl-slashk { 0%{opacity:0;transform:translate(-50%,-50%) rotate(-46deg) scale(.25);} 35%{opacity:1;transform:translate(-50%,-50%) rotate(-34deg) scale(1.35);} 100%{opacity:0;transform:translate(-50%,-50%) rotate(-24deg) scale(1.05);} }
+
+    /* 月牙弧斬 */
+    .fl-arc { position: absolute; transform: translate(-50%,-50%) rotate(-18deg); }
+    .fl-arc path { fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 6px #9bdcff) drop-shadow(0 0 12px #fff); stroke-dasharray: 210; stroke-dashoffset: 210; animation: fl-draw .45s ease-out forwards; }
+    @keyframes fl-draw { 0%{stroke-dashoffset:210;opacity:1;} 55%{stroke-dashoffset:0;opacity:1;} 100%{stroke-dashoffset:0;opacity:0;} }
+
+    /* 突刺 */
+    .fl-thrust { position: absolute; height: 6px; transform-origin: left center; }
+    .fl-thrust.big { height: 10px; }
+    .fl-thrust i { display: block; width: 100%; height: 100%; border-radius: 6px; background: linear-gradient(90deg,transparent,#fff 80%,#fff); box-shadow: 0 0 10px #fff; transform-origin: left; animation: fl-thrustk .35s ease-out forwards; }
+    @keyframes fl-thrustk { 0%{transform:scaleX(.15);opacity:0;} 45%{transform:scaleX(1);opacity:1;} 100%{transform:scaleX(1);opacity:0;} }
+
+    /* 迴旋斬 */
+    .fl-spin { position: absolute; width: 92px; height: 92px; border-radius: 50%; transform: translate(-50%,-50%); background: conic-gradient(from 0deg, transparent, #fff, transparent 55%); -webkit-mask: radial-gradient(transparent 54%, #000 56%); mask: radial-gradient(transparent 54%, #000 56%); animation: fl-spink .5s ease-out forwards; }
+    @keyframes fl-spink { 0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.5);} 40%{opacity:1;} 100%{opacity:0;transform:translate(-50%,-50%) rotate(330deg) scale(1.25);} }
+
+    /* 控制 */
+    .fl-toggles { display: flex; align-items: center; gap: 10px; margin: 14px 2px 6px; flex-wrap: wrap; }
+    .fl-chk { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
+    .fl-chk input { width: 18px; height: 18px; }
+    .fl-act { margin-left: 0; background: #1f2a48; color: #dfe; border: 1px solid #34466e; border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .fl-act:last-child { margin-left: auto; }
+    .fl-sec { margin: 16px 2px 8px; font-size: 13px; font-weight: 800; color: #8fa3c8; }
+    .fl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    @media (max-width: 360px) { .fl-grid { grid-template-columns: repeat(2, 1fr); } }
+    .fl-btn { background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; border-radius: 10px; padding: 13px 6px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .fl-btn:active { background: #233156; transform: scale(.97); }
+    .fl-hint { color: #7c8bab; font-size: 12px; line-height: 1.6; margin: 16px 2px 0; }
+  </style>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const field = () => $('fl-field');
+    const fxL = () => $('fl-fx');
+    let atk = 'my';
+
+    const atkEl = () => $(atk === 'my' ? 'fl-my' : 'fl-foe');
+    const defEl = () => $(atk === 'my' ? 'fl-foe' : 'fl-my');
+    const critOn = () => $('fl-crit').checked;
+    const missOn = () => $('fl-miss').checked;
+
+    function cen(el) { const fr = field().getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; }
+    function add(cls, life) { const n = document.createElement('div'); n.className = cls; fxL().appendChild(n); if (life) setTimeout(() => n.remove(), life); return n; }
+    function shake() { const f = field(); f.classList.add('fl-shake'); setTimeout(() => f.classList.remove('fl-shake'), 320); }
+    function ring(x, y, color, big) { const n = add('fl-ring', 650); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '2.8' : '1.7'); }
+
+    function dmg(el, txt, cls) { const c = cen(el); const n = add('fl-dmg ' + cls, 850); n.textContent = txt; n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; }
+    function resolve(el) {
+      if (missOn()) { el.style.setProperty('--hx', el.id === 'fl-foe' ? '14px' : '-14px'); el.classList.add('fl-hop'); setTimeout(() => el.classList.remove('fl-hop'), 440); dmg(el, 'MISS', 'miss'); return; }
+      el.style.setProperty('--rec', el.id === 'fl-foe' ? '13px' : '-13px'); el.classList.add('fl-hit'); setTimeout(() => el.classList.remove('fl-hit'), 420);
+      const big = critOn(); dmg(el, '-' + (big ? '999' : '350') + (big ? '!' : ''), big ? 'crit' : '');
+      if (big) shake();
+    }
+
+    const cc = () => atk === 'my' ? 'c-my' : 'c-foe';
+
+    function beam(a, b, big, miss) { if (miss) { b = { x: b.x + (atk === 'my' ? 24 : -24), y: b.y - 38 }; } const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) + (miss ? 34 : 0); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; }
+
+    // 近身衝刺：把攻方卡衝到對方卡前再回來，callback 在落招瞬間呼叫
+    function lunge(cb, ratio) {
+      const aEl = atkEl(); const a = cen(aEl), b = cen(defEl());
+      const r = missOn() ? 0.55 : (ratio || 0.78);
+      const dx = (b.x - a.x) * r, dy = (b.y - a.y) * r;
+      aEl.style.zIndex = '9';
+      aEl.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.15)', offset: .42 }, { transform: 'translate(0,0) scale(1)' }], { duration: 560, easing: 'ease-out' });
+      setTimeout(cb, 210);
+      setTimeout(() => { aEl.style.zIndex = ''; }, 560);
+    }
+
+    // ---- 射擊類 ----
+    function eLaser() { const a = cen(atkEl()), b = cen(defEl()); beam(a, b, critOn(), missOn()); setTimeout(() => resolve(defEl()), 230); }
+    function eCannon() {
+      const a = cen(atkEl()), b = cen(defEl()); const big = critOn();
+      const tx = missOn() ? b.x + (atk === 'my' ? 30 : -30) : b.x, ty = missOn() ? b.y - 40 : b.y;
+      const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
+      const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px)) scale(1)' }], { duration: 300, easing: 'ease-in' });
+      an.onfinish = () => { ball.remove(); if (!missOn()) ring(b.x, b.y, atk === 'my' ? '#7fd0ff' : '#ff8a8a', big); resolve(defEl()); };
+    }
+    function eShot() {
+      const a = cen(atkEl()), b = cen(defEl());
+      for (let k = 0; k < 5; k++) setTimeout(() => {
+        const off = (k - 2) * 11; const tx = (missOn() ? b.x + (atk === 'my' ? 28 : -28) : b.x), ty = b.y + off - (missOn() ? 30 : 0);
+        const bo = add('fl-bolt', 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
+        const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
+        an.onfinish = () => { bo.remove(); if (!missOn()) ring(tx, ty, '#ffd24d', false); };
+      }, k * 70);
+      setTimeout(() => resolve(defEl()), 380);
+    }
+    function eCharge() {
+      const a = cen(atkEl()); const g = add('fl-charge ' + cc(), 420); g.style.left = a.x + 'px'; g.style.top = a.y + 'px';
+      setTimeout(() => { const b = cen(defEl()); beam(a, b, true, missOn()); if (!missOn()) { ring(b.x, b.y, '#fff', true); shake(); } resolve(defEl()); }, 410);
+    }
+    function eHoming() {
+      const a = cen(atkEl()), b = cen(defEl());
+      for (let k = 0; k < 2; k++) {
+        const dir = k === 0 ? -1 : 1; const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2 + dir * 75;
+        const tx = missOn() ? b.x + (atk === 'my' ? 28 : -28) : b.x, ty = missOn() ? b.y - 34 : b.y;
+        const m = add('fl-missile', 0); try { m.style.offsetPath = "path('M " + a.x + " " + a.y + " Q " + cx + " " + cy + " " + tx + " " + ty + "')"; } catch (e) {}
+        const an = m.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: 540, easing: 'ease-in', delay: k * 110 });
+        an.onfinish = () => { m.remove(); if (!missOn()) ring(tx, ty, '#ff9a3d', false); };
+      }
+      setTimeout(() => resolve(defEl()), 650);
+    }
+    function eWave() {
+      const a = cen(atkEl()), b = cen(defEl()); const big = critOn();
+      const w = add('fl-wave ' + cc(), 0); w.style.left = a.x + 'px'; w.style.top = a.y + 'px';
+      const an = w.animate([{ transform: 'translate(-50%,-50%) scale(.4,.7)', opacity: .2 }, { transform: 'translate(calc(-50% + ' + (b.x - a.x) + 'px), calc(-50% + ' + (b.y - a.y) + 'px)) scale(1.5,1.3)', opacity: .9, offset: .8 }, { opacity: 0 }], { duration: 440, easing: 'ease-out' });
+      an.onfinish = () => { w.remove(); if (!missOn()) ring(b.x, b.y, '#9b6bff', true); resolve(defEl()); };
+    }
+    function eSnipe() {
+      const b = cen(defEl()); const c = add('fl-cross', 520); c.style.left = b.x + 'px'; c.style.top = b.y + 'px';
+      setTimeout(() => { const a = cen(atkEl()); beam(a, b, false, missOn()); if (!missOn()) { ring(b.x, b.y, '#fff', true); shake(); } resolve(defEl()); }, 360);
+    }
+
+    // ---- 斬擊／近身類 ----
+    function slashAt(c, big) { const s = add('fl-slash' + (big ? ' big' : ''), 520); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; }
+    function eSlash() { lunge(() => { if (!missOn()) slashAt(cen(defEl()), critOn()); resolve(defEl()); }); }
+    function eArc() {
+      lunge(() => {
+        if (!missOn()) { const c = cen(defEl()); const big = critOn(); const size = big ? 158 : 116;
+          const ns = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('class', 'fl-arc'); svg.setAttribute('width', size); svg.setAttribute('height', size); svg.setAttribute('viewBox', '0 0 100 100');
+          const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M14 82 A 58 58 0 0 1 86 22'); svg.appendChild(p);
+          svg.style.position = 'absolute'; svg.style.left = c.x + 'px'; svg.style.top = c.y + 'px'; fxL().appendChild(svg); setTimeout(() => svg.remove(), 540);
+        }
+        resolve(defEl());
+      });
+    }
+    function eIai() {
+      lunge(() => {
+        if (!missOn()) { const c = cen(defEl()); [0, 1, 2].forEach((k) => setTimeout(() => slashAt({ x: c.x + (k - 1) * 9, y: c.y + (k - 1) * 11 }, false), k * 120)); }
+        resolve(defEl());
+      });
+    }
+    function eThrust() {
+      lunge(() => {
+        if (!missOn()) { const a = cen(atkEl()), c = cen(defEl()); const dx = c.x - a.x, dy = c.y - a.y; const len = Math.hypot(dx, dy) * 0.7; const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+          const t = add('fl-thrust' + (critOn() ? ' big' : ''), 420); t.style.left = a.x + 'px'; t.style.top = a.y + 'px'; t.style.width = len + 'px'; t.style.transform = 'rotate(' + ang + 'deg)'; t.innerHTML = '<i></i>'; ring(c.x, c.y, '#fff', critOn()); }
+        resolve(defEl());
+      }, 0.65);
+    }
+    function eCross() {
+      lunge(() => {
+        if (!missOn()) { const c = cen(defEl()); slashAt(c, critOn()); setTimeout(() => { ring(c.x, c.y, '#ffb13d', true); shake(); }, 170); }
+        resolve(defEl());
+      });
+    }
+    function eSpin() {
+      lunge(() => {
+        if (!missOn()) { const c = cen(defEl()); const s = add('fl-spin', 560); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; }
+        resolve(defEl());
+      });
+    }
+    function eImpact() {
+      lunge(() => {
+        if (!missOn()) { const c = cen(defEl()); ring(c.x, c.y, '#fff', true); setTimeout(() => ring(c.x, c.y, '#ffd24d', true), 110); shake(); }
+        resolve(defEl());
+      });
+    }
+
+    const FX = { laser: eLaser, cannon: eCannon, shot: eShot, charge: eCharge, homing: eHoming, wave: eWave, snipe: eSnipe, slash: eSlash, arc: eArc, iai: eIai, thrust: eThrust, cross: eCross, spin: eSpin, impact: eImpact };
+    const NAMES = Object.keys(FX);
+
+    document.querySelectorAll('.fl-btn').forEach((b) => b.addEventListener('click', () => { const f = FX[b.dataset.fx]; if (f) f(); }));
+    $('fl-dir').addEventListener('click', () => { atk = atk === 'my' ? 'foe' : 'my'; $('fl-dir').textContent = '攻方：' + (atk === 'my' ? '我方 ▶' : '敵方 ◀'); });
+    $('fl-rand').addEventListener('click', () => { FX[NAMES[Math.floor(Math.random() * NAMES.length)]](); });
+    $('fl-seq').addEventListener('click', () => { NAMES.forEach((n, i) => setTimeout(() => FX[n](), i * 1100)); });
+  </script>
+</body>
+</html>
