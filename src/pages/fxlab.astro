@@ -188,7 +188,7 @@
     .fl-slash::after { transform: rotate(76deg); }
     @keyframes fl-slashk { 0%{opacity:0;transform:translate(-50%,-50%) rotate(-46deg) scale(.25);} 35%{opacity:1;transform:translate(-50%,-50%) rotate(-34deg) scale(1.35);} 100%{opacity:0;transform:translate(-50%,-50%) rotate(-24deg) scale(1.05);} }
 
-    .fl-arc { position: absolute; transform: translate(-50%,-50%) rotate(-18deg); }
+    .fl-arc { position: absolute; }
     .fl-arc path { fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 6px #9bdcff) drop-shadow(0 0 12px #fff); stroke-dasharray: 210; stroke-dashoffset: 210; animation: fl-draw .45s ease-out forwards; }
     @keyframes fl-draw { 0%{stroke-dashoffset:210;opacity:1;} 55%{stroke-dashoffset:0;opacity:1;} 100%{stroke-dashoffset:0;opacity:0;} }
 
@@ -336,8 +336,8 @@
       lunge(() => {
         if (!missOn()) { const c = cen(defEl()); const big = critOn(); const size = big ? 158 : 116;
           const ns = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('class', 'fl-arc'); svg.setAttribute('width', size); svg.setAttribute('height', size); svg.setAttribute('viewBox', '0 0 100 100');
-          const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M14 82 A 58 58 0 0 1 86 22'); svg.appendChild(p);
-          svg.style.position = 'absolute'; svg.style.left = c.x + 'px'; svg.style.top = c.y + 'px'; fxL().appendChild(svg); setTimeout(() => svg.remove(), 540);
+          const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M 78 16 A 60 60 0 0 0 22 84'); svg.appendChild(p);
+          svg.style.position = 'absolute'; svg.style.left = c.x + 'px'; svg.style.top = c.y + 'px'; svg.style.transform = 'translate(-50%,-50%)' + (atk === 'my' ? ' scaleX(-1)' : ''); fxL().appendChild(svg); setTimeout(() => svg.remove(), 540);
         }
         resolve(defEl());
       });
