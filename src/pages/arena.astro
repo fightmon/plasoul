@@ -244,29 +244,43 @@ import Layout from '../layouts/Layout.astro';
   .ar-bar { height:12px; background:var(--ar-bg); border-radius:999px; overflow:hidden; margin:4px 0; }
   .ar-bar i { display:block; height:100%; background:linear-gradient(90deg,#3ddc84,#7ee0a0); transition:width .35s; }
   .ar-bar.foe i { background:linear-gradient(90deg,#ff5a5a,#ff8a8a); }
-  /* 卡片對撞 */
-  .bt-arena { position:relative; height:230px; background:radial-gradient(circle at 50% 40%, #1a2447, #0a0e1a); border-radius:12px; overflow:hidden; margin-bottom:10px; }
-  .bt-arena.shake { animation:bt-shake .3s; }
-  @keyframes bt-shake { 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-6px); } 40%{ transform:translateX(6px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(4px); } }
-  .bt-card { position:absolute; top:50%; transform:translateY(-50%); width:40%; max-width:140px; aspect-ratio:3/4; border-radius:12px; overflow:hidden; border:2px solid var(--ar-line); background:var(--ar-card2); transition:left .3s cubic-bezier(.3,1.4,.5,1), right .3s cubic-bezier(.3,1.4,.5,1); }
-  .bt-my { left:-46%; } .bt-foe { right:-46%; }
-  .bt-my.in { left:5%; } .bt-foe.in { right:5%; }
-  .bt-card img { width:100%; height:100%; object-fit:cover; }
-  .bt-noimg { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:46px; }
+  /* 戰鬥・雙排佈陣 */
+  .bt-field { position:relative; height:300px; background:radial-gradient(circle at 50% 45%, #1a2447, #070a14); border-radius:12px; overflow:hidden; margin-bottom:10px; }
+  .bt-field.shake { animation:bt-shake .3s; }
+  @keyframes bt-shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px);} 40%{transform:translateX(7px);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
+  .bt-u { position:absolute; width:25%; max-width:98px; aspect-ratio:3/4; border-radius:10px; overflow:hidden; border:2px solid var(--ar-line); background:var(--ar-card2); filter:brightness(.62); transition:top .32s cubic-bezier(.3,1.3,.5,1), left .32s cubic-bezier(.3,1.3,.5,1), right .32s cubic-bezier(.3,1.3,.5,1), transform .25s, filter .2s; z-index:2; }
+  .bt-u img { width:100%; height:100%; object-fit:cover; }
+  .bt-u.active { filter:brightness(1.05) drop-shadow(0 0 10px rgba(120,170,255,.85)); transform:scale(1.18); z-index:5; }
+  .bt-u.hit { filter:brightness(1) saturate(2.5) sepia(.6) hue-rotate(-30deg); }
+  .my-side.hit { animation:bt-recoil-l .4s; } .foe-side.hit { animation:bt-recoil-r .4s; }
+  @keyframes bt-recoil-l { 30%{ transform:scale(1.18) translateX(-15px) rotate(-5deg);} }
+  @keyframes bt-recoil-r { 30%{ transform:scale(1.18) translateX(15px) rotate(5deg);} }
+  .my-side.lunge { transform:scale(1.2) translateX(42px); } .foe-side.lunge { transform:scale(1.2) translateX(-42px); }
+  .my-side.dodge { transform:scale(1.18) translate(-12px,-36px); } .foe-side.dodge { transform:scale(1.18) translate(12px,-36px); }
+  .bt-u.ult { filter:brightness(1.1) drop-shadow(0 0 14px rgba(255,210,61,.9)); transform:scale(1.12); z-index:6; }
+  .bt-noimg { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:34px; }
   .bt-noimg.t-ranged{ background:#1c3a66; } .bt-noimg.t-melee{ background:#5a2a1c; } .bt-noimg.t-evade{ background:#3a1c5a; }
-  .bt-tb { position:absolute; left:5px; bottom:5px; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; }
-  .bt-mid { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); z-index:3; }
-  .bt-badge { font-size:24px; font-weight:900; padding:4px 14px; border-radius:10px; background:rgba(0,0,0,.6); }
-  .bt-badge.win { color:#7ee0a0; } .bt-badge.lose { color:#ff8a8a; }
-  .bt-dmg { position:absolute; top:14px; left:50%; transform:translateX(-50%); font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 6px #000; animation:bt-pop .85s ease-out forwards; z-index:4; white-space:nowrap; }
-  .bt-dmg.crit { font-size:30px; color:#ffd23d; } .bt-dmg.block { color:#9ad0ff; } .bt-dmg.miss { color:#bbb; font-size:18px; }
-  @keyframes bt-pop { 0%{ opacity:0; transform:translate(-50%,8px) scale(.6);} 25%{ opacity:1; transform:translate(-50%,-6px) scale(1.1);} 100%{ opacity:0; transform:translate(-50%,-34px) scale(1);} }
-  .bt-ult { position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; pointer-events:none; animation:bt-flash .9s ease-out; }
-  @keyframes bt-flash { 0%{ background:rgba(255,210,61,0);} 15%{ background:rgba(255,210,61,.35);} 100%{ background:rgba(255,210,61,0);} }
-  .bt-ult-in { text-align:center; font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 12px #000; animation:ar-pop .5s; }
-  .bt-ult-in b { font-size:40px; display:block; color:#ffd23d; }
-  .bt-ult-in.foe b { color:#ff8a8a; }
-  .bt-skip { display:block; margin:0 auto 8px; background:transparent; border:1px solid var(--ar-line); color:var(--ar-dim); padding:6px 16px; border-radius:999px; font-size:12px; cursor:pointer; }
+  .bt-tb { position:absolute; left:4px; bottom:16px; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; z-index:2; }
+  .bt-uname { position:absolute; left:0; right:0; bottom:0; font-size:9px; text-align:center; background:rgba(0,0,0,.6); padding:1px 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bt-fx { position:absolute; inset:0; pointer-events:none; z-index:7; }
+  .bt-laser { position:absolute; top:44%; height:8px; border-radius:8px; box-shadow:0 0 12px currentColor; animation:bt-beam .42s ease-out; }
+  .bt-laser.to-r { left:32%; right:18%; background:linear-gradient(90deg,#9fe8ff,#2f9bff); color:#2f9bff; transform-origin:left; }
+  .bt-laser.to-l { left:18%; right:32%; background:linear-gradient(270deg,#ffb0b0,#ff4d4d); color:#ff4d4d; transform-origin:right; }
+  .bt-laser.big { height:18px; }
+  @keyframes bt-beam { 0%{ transform:scaleX(0); opacity:.4;} 45%{ transform:scaleX(1); opacity:1;} 100%{ transform:scaleX(1); opacity:0;} }
+  .bt-slash { position:absolute; top:30%; width:92px; height:8px; background:linear-gradient(90deg,transparent,#fff,transparent); transform:rotate(-35deg); filter:drop-shadow(0 0 6px #fff); animation:bt-slashk .4s ease-out; }
+  .bt-slash.on-foe { right:18%; } .bt-slash.on-my { left:18%; }
+  .bt-slash.big { width:134px; height:12px; }
+  @keyframes bt-slashk { 0%{ opacity:0; transform:rotate(-35deg) scale(.4);} 40%{ opacity:1; transform:rotate(-35deg) scale(1.1);} 100%{ opacity:0; transform:rotate(-35deg) scale(1);} }
+  .bt-dmg { position:absolute; top:24%; font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 6px #000; animation:bt-pop .85s ease-out forwards; z-index:9; white-space:nowrap; }
+  .bt-dmg.on-my { left:22%; } .bt-dmg.on-foe { right:22%; }
+  .bt-dmg.crit { font-size:32px; color:#ffd23d; } .bt-dmg.block { color:#9ad0ff; } .bt-dmg.miss { color:#cfcfcf; font-size:17px; }
+  @keyframes bt-pop { 0%{ opacity:0; transform:translateY(10px) scale(.6);} 25%{ opacity:1; transform:translateY(-6px) scale(1.1);} 100%{ opacity:0; transform:translateY(-40px) scale(1);} }
+  .bt-darken { position:absolute; inset:0; background:#000; opacity:0; transition:opacity .25s; z-index:4; pointer-events:none; }
+  .bt-darken.on { opacity:.55; }
+  .bt-banner { position:absolute; left:0; right:0; top:44%; text-align:center; font-size:22px; font-weight:900; color:#ffd23d; text-shadow:0 2px 12px #000; opacity:0; transform:scale(.6); transition:opacity .2s, transform .2s; z-index:8; pointer-events:none; }
+  .bt-banner.on { opacity:1; transform:scale(1); }
+  .bt-skip { display:block; margin:0 auto 8px; background:transparent; border:1px solid var(--ar-line); color:var(--ar-dim); padding:7px 18px; border-radius:999px; font-size:12px; cursor:pointer; }
   .ar-bt-result { text-align:center; font-size:24px; font-weight:800; margin:12px 0 6px; }
   .ar-bt-result.win { color:#ffd23d; } .ar-bt-result.lose { color:#9aa3bd; }
   .ar-bt-rw { text-align:center; font-size:14px; margin-bottom:12px; }
@@ -396,53 +410,80 @@ import Layout from '../layouts/Layout.astro';
   function animateBattle(d: any) {
     const el = $('ar-battle')!;
     const myMax = d.my.maxHP, foeMax = d.foe.maxHP;
+    const myTeam = d.my.team || [], foeTeam = d.foe.team || [];
+    const tcls = (t: string) => t === 'ranged' ? 't-ranged' : t === 'melee' ? 't-melee' : 't-evade';
+    const tlab = (t: string) => ({ ranged: '射', melee: '近', evade: '閃' } as any)[t] || '?';
+    const unit = (c: any, side: string, k: number) => `<div class="bt-u ${side}-side" id="bt-${side}-${k}">${c.photo ? `<img src="${esc(c.photo)}"/>` : `<div class="bt-noimg ${tcls(c.type)}">${side === 'foe' ? '👾' : '🤖'}</div>`}<span class="bt-tb ${tcls(c.type)}">${tlab(c.type)}</span><span class="bt-uname">${esc(c.name)}</span></div>`;
     el.innerHTML = `<div class="ar-bt-box">
-      <div class="ar-bt-bars">
-        <div class="ar-bt-side"><span>我方</span><div class="ar-bar"><i id="bt-my" style="width:100%"></i></div><small id="bt-myn">${myMax}</small></div>
-        <div class="ar-bt-vs" id="bt-round">VS</div>
-        <div class="ar-bt-side"><span>${esc(d.foe.name)}</span><div class="ar-bar foe"><i id="bt-foe" style="width:100%"></i></div><small id="bt-foen">${foeMax}</small></div>
-      </div>
-      <div class="bt-arena" id="bt-arena"><div class="bt-card bt-my" id="bt-cm"></div><div class="bt-mid" id="bt-mid"></div><div class="bt-card bt-foe" id="bt-cf"></div></div>
+      <div class="ar-bt-bars"><div class="ar-bt-side"><span>我方</span><div class="ar-bar"><i id="bt-my" style="width:100%"></i></div><small id="bt-myn">${myMax}</small></div><div class="ar-bt-vs" id="bt-round">VS</div><div class="ar-bt-side"><span>${esc(d.foe.name)}</span><div class="ar-bar foe"><i id="bt-foe" style="width:100%"></i></div><small id="bt-foen">${foeMax}</small></div></div>
+      <div class="bt-field" id="bt-field"><div class="bt-darken" id="bt-darken"></div>${myTeam.map((c: any, k: number) => unit(c, 'my', k)).join('')}${foeTeam.map((c: any, k: number) => unit(c, 'foe', k)).join('')}<div class="bt-fx" id="bt-fx"></div><div class="bt-banner" id="bt-banner"></div></div>
       <button class="bt-skip" id="bt-skip">跳過 ⏩</button>
       <div id="bt-end"></div>
     </div>`;
-    const lines = d.log || []; let i = 0; const timers: any[] = []; let skipped = false;
-    const tcls = (t: string) => t === 'ranged' ? 't-ranged' : t === 'melee' ? 't-melee' : 't-evade';
-    const tlab = (t: string) => ({ ranged: '射', melee: '近', evade: '閃' } as any)[t] || '?';
-    const cardInner = (c: any, foe: boolean) => `${c.photo ? `<img src="${esc(c.photo)}"/>` : `<div class="bt-noimg ${tcls(c.type)}">${foe ? '👾' : '🤖'}</div>`}<span class="bt-tb ${tcls(c.type)}">${tlab(c.type)}</span>`;
+    const lines = d.log || []; let i = 0; const timers: any[] = []; let skipped = false; let aMy = 0, aFoe = 0;
+    const SLOT = ['7%', '38%', '69%'];
+    const U = (side: string, k: number) => $(`bt-${side}-${k}`);
+    const place = (side: string, k: number, active: boolean) => { const u = U(side, k); if (!u) return; u.classList.remove('hit', 'dodge', 'lunge', 'ult'); u.classList.toggle('active', active); u.style.top = active ? '38%' : SLOT[k]; if (side === 'my') u.style.left = active ? '27%' : '4%'; else u.style.right = active ? '27%' : '4%'; };
+    const reset = () => { [0, 1, 2].forEach((k) => { place('my', k, false); place('foe', k, false); }); $('bt-fx')!.innerHTML = ''; };
+    const fx = (cls: string) => { const n = document.createElement('div'); n.className = cls; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 600); return n; };
     const setHP = (my: number, foe: number) => { ($('bt-my') as HTMLElement).style.width = Math.max(0, Math.round(my / myMax * 100)) + '%'; ($('bt-foe') as HTMLElement).style.width = Math.max(0, Math.round(foe / foeMax * 100)) + '%'; $('bt-myn')!.textContent = String(my); $('bt-foen')!.textContent = String(foe); };
-    const popDmg = (cardEl: HTMLElement, h: any, side: string) => {
-      if (!h) return;
-      const s = document.createElement('span'); s.className = 'bt-dmg ' + (side === 'my' ? 'dmg-my' : 'dmg-foe');
-      if (h.dodge) { s.textContent = 'MISS'; s.classList.add('miss'); }
-      else { s.textContent = '-' + h.dmg + (h.crit ? '!' : ''); if (h.crit) s.classList.add('crit'); if (h.block) s.classList.add('block'); }
-      cardEl.appendChild(s); setTimeout(() => s.remove(), 850);
+    const shake = () => { const f = $('bt-field')!; f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 320); };
+    const laser = (side: string, big: boolean) => fx(`bt-laser ${side === 'my' ? 'to-r' : 'to-l'} ${big ? 'big' : ''}`);
+    const slash = (onSide: string, big: boolean) => fx(`bt-slash ${onSide === 'my' ? 'on-my' : 'on-foe'} ${big ? 'big' : ''}`);
+    const lunge = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('lunge'); setTimeout(() => u && u.classList.remove('lunge'), 400); } };
+    const dodge = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('dodge'); setTimeout(() => u && u.classList.remove('dodge'), 520); } };
+    const dmgNum = (side: string, text: string, cls: string) => { const n = document.createElement('div'); n.className = 'bt-dmg ' + (side === 'my' ? 'on-my' : 'on-foe') + ' ' + cls; n.textContent = text; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 850); };
+    const hitCard = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('hit'); setTimeout(() => u && u.classList.remove('hit'), 420); } };
+    const applyHit = (defSide: string, k: number, h: any) => { if (!h) return; if (h.dodge) { dmgNum(defSide, 'MISS', 'miss'); return; } hitCard(defSide, k); dmgNum(defSide, '-' + h.dmg + (h.crit ? '!' : ''), h.crit ? 'crit' : (h.block ? 'block' : '')); };
+    const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any) => {
+      const big = !!(h && h.crit);
+      if (atkType === 'ranged') laser(atkSide, big);
+      else if (atkType === 'melee') { lunge(atkSide, atkK); slash(defSide, big); }
+      else laser(atkSide, big);
+      if (big) shake();
+      applyHit(defSide, defK, h);
     };
-    const showUlt = (u: any) => { const o = document.createElement('div'); o.className = 'bt-ult'; o.innerHTML = `<div class="bt-ult-in ${u.side === 'my' ? 'my' : 'foe'}">💥 ${esc(u.name)}<br><b>${u.dmg}</b></div>`; el.appendChild(o); setTimeout(() => o.remove(), 950); };
     const end = () => {
       const rw = d.rewards; const sk = $('bt-skip'); if (sk) sk.style.display = 'none';
       $('bt-end')!.innerHTML = `<div class="ar-bt-result ${d.win ? 'win' : 'lose'}">${d.win ? '🎉 勝利！' : '💧 雖敗猶榮'}</div><div class="ar-bt-rw">🔩+${rw.parts}　🪙+${rw.coins}　段位 ${rw.rank_delta >= 0 ? '+' : ''}${rw.rank_delta}</div><div class="ar-bt-acts"><button class="ar-edit" id="bt-again">再戰</button><button class="ar-rv-close" id="bt-close" style="flex:1">返回大廳</button></div>`;
       $('bt-again')!.addEventListener('click', () => doBattle());
       $('bt-close')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; loadData(); });
     };
+    const playUlt = (ult: any) => {
+      const side = ult.side, other = side === 'my' ? 'foe' : 'my';
+      $('bt-darken')!.classList.add('on');
+      $('bt-banner')!.textContent = '⚡ 覺醒・' + ult.name; $('bt-banner')!.classList.add('on');
+      const team = side === 'my' ? myTeam : foeTeam;
+      [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.add('ult'); });
+      [0, 1, 2].forEach((k) => setTimeout(() => { const t = team[k] ? team[k].type : 'ranged'; if (t === 'melee') slash(other, true); else laser(side, true); }, k * 130));
+      shake();
+      setTimeout(() => { [0, 1, 2].forEach((k) => hitCard(other, k)); dmgNum(other, '-' + ult.dmg + '!!', 'crit'); shake(); }, 560);
+      setTimeout(() => { $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on'); [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.remove('ult'); }); }, 1500);
+    };
     const play = () => {
       if (skipped) return;
       if (i >= lines.length) { end(); return; }
       const ev = lines[i++];
-      if (ev.intro) { $('bt-round')!.textContent = '開戰！'; setHP(ev.myHP, ev.foeHP); timers.push(setTimeout(play, 650)); return; }
+      if (ev.intro) { $('bt-round')!.textContent = '開戰！'; setHP(ev.myHP, ev.foeHP); reset(); timers.push(setTimeout(play, 700)); return; }
       $('bt-round')!.textContent = '第 ' + ev.round + ' 回';
-      const cm = $('bt-cm')!, cf = $('bt-cf')!, mid = $('bt-mid')!;
-      cm.className = 'bt-card bt-my'; cf.className = 'bt-card bt-foe'; mid.innerHTML = '';
-      cm.innerHTML = cardInner(ev.my, false); cf.innerHTML = cardInner(ev.foe, true);
-      void (cm as HTMLElement).offsetWidth; cm.classList.add('in'); cf.classList.add('in');
+      reset(); aMy = ev.myIdx; aFoe = ev.foeIdx;
+      place('my', aMy, true); place('foe', aFoe, true);
       timers.push(setTimeout(() => {
-        mid.innerHTML = ev.rps === 1 ? '<span class="bt-badge win">剋!</span>' : ev.rps === -1 ? '<span class="bt-badge lose">被剋!</span>' : '<span class="bt-badge">對撞</span>';
-        popDmg(cf, ev.toFoe, 'foe'); popDmg(cm, ev.toMe, 'my');
-        if ((ev.toFoe && ev.toFoe.crit) || (ev.toMe && ev.toMe.crit) || ev.ult) { const a = $('bt-arena')!; a.classList.add('shake'); setTimeout(() => a.classList.remove('shake'), 320); }
+        const myType = (myTeam[aMy] || {}).type, foeType = (foeTeam[aFoe] || {}).type;
+        if (ev.rps === 1) {
+          if (myType === 'evade') { if (foeType === 'ranged') laser('foe', false); else slash('my', false); dodge('my', aMy); timers.push(setTimeout(() => { lunge('my', aMy); slash('foe', !!(ev.toFoe && ev.toFoe.crit)); applyHit('foe', aFoe, ev.toFoe); }, 280)); }
+          else attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
+        } else if (ev.rps === -1) {
+          if (foeType === 'evade') { if (myType === 'ranged') laser('my', false); else slash('foe', false); dodge('foe', aFoe); timers.push(setTimeout(() => { lunge('foe', aFoe); slash('my', !!(ev.toMe && ev.toMe.crit)); applyHit('my', aMy, ev.toMe); }, 280)); }
+          else attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
+        } else {
+          attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
+          attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
+        }
         setHP(ev.myHP, ev.foeHP);
-        if (ev.ult) showUlt(ev.ult);
-      }, 320));
-      timers.push(setTimeout(play, ev.ult ? 1250 : 820));
+        if (ev.ult) timers.push(setTimeout(() => playUlt(ev.ult), 520));
+      }, 400));
+      timers.push(setTimeout(play, ev.ult ? 1900 : 1100));
     };
     $('bt-skip')!.addEventListener('click', () => { skipped = true; timers.forEach(clearTimeout); const last = lines[lines.length - 1]; if (last) setHP(last.myHP, last.foeHP); end(); });
     timers.push(setTimeout(play, 350));

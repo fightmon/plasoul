@@ -52,7 +52,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   return new Response(JSON.stringify({
     ok: true, win: sim.win, log: sim.log,
-    my: { maxHP: sim.myMax }, foe: { name: foeName, maxHP: sim.foeMax },
+    my: { maxHP: sim.myMax, team: myTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo })) },
+    foe: { name: foeName, maxHP: sim.foeMax, team: foeTeam.map((c) => ({ name: c.name, type: c.type })) },
     rewards: { parts, coins, rank_delta: rankDelta, rank_score: newRank },
   }), { status: 200, headers: hdr() });
 };
@@ -65,16 +66,16 @@ function simulate(my: any[], myBase: number, foe: any[], foeBase: number, foeNam
   const log: any[] = [{ round: 0, intro: true, foeName, myHP, foeHP }];
 
   for (let round = 1; round <= 24 && myHP > 0 && foeHP > 0; round++) {
-    const a = pick(my), b = pick(foe);
+    const ai = ri(my.length), bi = ri(foe.length); const a = my[ai], b = foe[bi];
     const r = rps(a.type, b.type);
-    const ev: any = { round, my: { name: a.name, type: a.type, photo: a.photo || null }, foe: { name: b.name, type: b.type }, rps: r, toFoe: null, toMe: null, ult: null };
+    const ev: any = { round, myIdx: ai, foeIdx: bi, rps: r, toFoe: null, toMe: null, ult: null };
 
-    if (r === 1) { const h = hit(a, b, true); foeHP -= h.dmg; myHP -= h.reflect; ev.toFoe = pub(h); if (h.reflect) ev.toMe = { dmg: h.reflect, crit: false, block: false, dodge: false, reflect: true }; }
-    else if (r === -1) { const h = hit(b, a, true); myHP -= h.dmg; foeHP -= h.reflect; ev.toMe = pub(h); if (h.reflect) ev.toFoe = { dmg: h.reflect, crit: false, block: false, dodge: false, reflect: true }; }
+    if (r === 1) { const h = hit(a, b, true); foeHP -= h.dmg; myHP -= h.reflect; ev.toFoe = pub(h); if (h.reflect) ev.toMe = { dmg: h.reflect, crit: false, block: false, dodge: false }; }
+    else if (r === -1) { const h = hit(b, a, true); myHP -= h.dmg; foeHP -= h.reflect; ev.toMe = pub(h); if (h.reflect) ev.toFoe = { dmg: h.reflect, crit: false, block: false, dodge: false }; }
     else { const ha = hit(a, b, false), hb = hit(b, a, false); foeHP -= ha.dmg + hb.reflect; myHP -= hb.dmg + ha.reflect; ev.toFoe = pub(ha); ev.toMe = pub(hb); }
 
-    if (!myUlt && myHP > 0 && myHP <= myMax * 0.3) { myUlt = true; const u = pick(my); const d = u.atk * 2; foeHP -= d; ev.ult = { side: 'my', name: u.special_name || u.name, dmg: d }; }
-    else if (!foeUlt && foeHP > 0 && foeHP <= foeMax * 0.3) { foeUlt = true; const u = pick(foe); const d = u.atk * 2; myHP -= d; ev.ult = { side: 'foe', name: u.special_name || u.name, dmg: d }; }
+    if (!myUlt && myHP > 0 && myHP <= myMax * 0.3) { myUlt = true; const d = Math.round(sum(my, 'atk') * 1.2); foeHP -= d; ev.ult = { side: 'my', name: my[0].special_name || '總攻擊', dmg: d }; }
+    else if (!foeUlt && foeHP > 0 && foeHP <= foeMax * 0.3) { foeUlt = true; const d = Math.round(sum(foe, 'atk') * 1.2); myHP -= d; ev.ult = { side: 'foe', name: '總攻擊', dmg: d }; }
 
     myHP = Math.max(0, Math.round(myHP)); foeHP = Math.max(0, Math.round(foeHP));
     ev.myHP = myHP; ev.foeHP = foeHP;
@@ -102,6 +103,7 @@ function genGhost() {
 function sum(arr: any[], k: string) { return arr.reduce((s, c) => s + (c[k] || 0), 0); }
 function pick<T>(a: T[]): T { return a[Math.floor(rand() * a.length)]; }
 function rnd(lo: number, hi: number) { return lo + Math.floor(rand() * (hi - lo + 1)); }
+function ri(n: number) { return Math.floor(rand() * n); }
 function rand() { return crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32; }
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)); }
 function hdr() { return { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }; }
