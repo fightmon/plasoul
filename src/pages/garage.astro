@@ -187,10 +187,24 @@ import Breadcrumb from '../components/Breadcrumb.astro';
   const modal = $('scan-modal')!, scanBody = $('scan-body')!, scanAdd = $('scan-add') as HTMLButtonElement;
   let scanMatched: any[] = [];
 
-  const fileToB64 = (f: File) => new Promise<{ mime: string; base64: string }>((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res({ mime: f.type, base64: (r.result as string).split(',')[1] || '' });
-    r.onerror = rej; r.readAsDataURL(f);
+  // 上傳前先縮圖（桌機/手機原圖常 8~12MB，直接送會超過上限 → 縮到 max 1280px JPEG）
+  const fileToB64 = (f: File) => new Promise<{ mime: string; base64: string }>((resolve, reject) => {
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX = 1280;
+      let w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+      if (Math.max(w, h) > MAX) { const s = MAX / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+      try {
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        resolve({ mime: 'image/jpeg', base64: c.toDataURL('image/jpeg', 0.85).split(',')[1] || '' });
+      } catch (e) { reject(e); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('讀圖失敗')); };
+    img.src = url;
   });
   const closeModal = () => { modal.setAttribute('hidden', ''); scanBody.innerHTML = ''; scanAdd.setAttribute('hidden', ''); scanMatched = []; };
 
