@@ -268,7 +268,7 @@
     function vibrate(el, dur) { el.animate([{ transform: 'translate(0,0) rotate(0)' }, { transform: 'translate(-3px,2px) rotate(-2deg)', offset: .15 }, { transform: 'translate(3px,-2px) rotate(2deg)', offset: .35 }, { transform: 'translate(-3px,1px) rotate(-2deg)', offset: .55 }, { transform: 'translate(3px,-1px) rotate(2deg)', offset: .75 }, { transform: 'translate(0,0) rotate(0)' }], { duration: dur || 520, easing: 'linear' }); }
     function glowPulse(el, color) { el.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.5) drop-shadow(0 0 16px ' + (color || '#9b6bff') + ')', offset: .4 }, { filter: 'brightness(1)' }], { duration: 560, easing: 'ease-out' }); }
     function frontEdge(el) { const fr = field().getBoundingClientRect(), r = el.getBoundingClientRect(); const fwd = atk === 'my' ? 1 : -1; return { x: (r.left - fr.left) + r.width / 2 + fwd * (r.width / 2), y: (r.top - fr.top) + r.height / 2 }; }
-    function muzzle(el, big) { const p = frontEdge(el); const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; }
+    function muzzle(el, big, color) { const p = frontEdge(el); const col = color || (atk === 'my' ? '#3aa0ff' : '#ff5a5a'); const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; m.style.background = 'radial-gradient(circle,#fff,' + col + ' 55%,transparent 74%)'; }
 
     // 近身衝刺（單招用中央卡；ult 用指定卡）
     function lunge(cb, ratio) {
@@ -297,9 +297,9 @@
     }
 
     // ---- 射擊類 ----
-    function eLaser() { const a = cen(atkEl()), b = cen(defEl()); maybeDodge(defEl(), 230); beam(a, b, critOn(), missOn()); muzzle(atkEl()); setTimeout(() => resolve(defEl()), 230); }
+    function eLaser() { const a = frontEdge(atkEl()), b = cen(defEl()); maybeDodge(defEl(), 230); beam(a, b, critOn(), missOn()); muzzle(atkEl()); setTimeout(() => resolve(defEl()), 230); }
     function eCannon() {
-      const a = cen(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 300);
+      const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 300);
       recoil(atkEl(), 16); muzzle(atkEl(), true);
       const tx = missOn() ? b.x + (atk === 'my' ? 30 : -30) : b.x, ty = missOn() ? b.y - 44 : b.y;
       const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
@@ -307,10 +307,10 @@
       an.onfinish = () => { ball.remove(); if (!missOn()) burst(b.x, b.y, atk === 'my' ? '#7fd0ff' : '#ff8a8a', big); resolve(defEl()); };
     }
     function eShot() {
-      const a = cen(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), impact);
+      const a = frontEdge(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), impact);
       vibrate(atkEl(), impact);
       for (let k = 0; k < cnt; k++) setTimeout(() => {
-        muzzle(atkEl());
+        muzzle(atkEl(), false, '#ffd24d');
         const off = (k - (cnt - 1) / 2) * 10; const tx = (missOn() ? b.x + (atk === 'my' ? 28 : -28) : b.x), ty = b.y + off - (missOn() ? 32 : 0);
         const bo = add('fl-bolt' + (critOn() ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
         const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
@@ -325,15 +325,14 @@
       }, k * (dur / (n + 1)));
     }
     function eCharge() {
-      const big = critOn(); const a = cen(atkEl()); const chargeT = big ? 680 : 460;
-      const p = frontEdge(atkEl());
-      chargeRings(p.x, p.y, atk === 'my' ? '#9fe8ff' : '#ffd0d0', chargeT);
+      const big = critOn(); const a = frontEdge(atkEl()); const chargeT = big ? 680 : 460;
+      chargeRings(a.x, a.y, atk === 'my' ? '#9fe8ff' : '#ffd0d0', chargeT);
       glowPulse(atkEl(), '#fff');
       maybeDodge(defEl(), chargeT + 40);
       setTimeout(() => { const b = cen(defEl()); chargeBeam(a, b, big, missOn()); if (!missOn()) { burst(b.x, b.y, '#fff', true); shake(); if (big) setTimeout(shake, 90); } resolve(defEl()); }, chargeT);
     }
     function eHoming() {
-      const a = cen(atkEl()), b = cen(defEl()); const n = critOn() ? 6 : 2; const impact = critOn() ? 840 : 650; const back = atk === 'my' ? -1 : 1;
+      const a = frontEdge(atkEl()), b = cen(defEl()); const n = critOn() ? 6 : 2; const impact = critOn() ? 840 : 650; const back = atk === 'my' ? -1 : 1;
       maybeDodge(defEl(), impact);
       for (let k = 0; k < n; k++) {
         const spread = n === 1 ? 0 : (k / (n - 1) - 0.5); const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2 + spread * 160;
@@ -347,7 +346,7 @@
       setTimeout(() => resolve(defEl()), impact);
     }
     function eWave() {
-      const a = cen(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = critOn() ? 4 : 3; maybeDodge(defEl(), 540);
+      const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = critOn() ? 4 : 3; maybeDodge(defEl(), 540);
       glowPulse(atkEl(), atk === 'my' ? '#7fd0ff' : '#ff8a8a');
       for (let k = 0; k < n; k++) setTimeout(() => {
         const s = add('fl-sonic ' + side + ' ' + cc(), 620); s.style.left = a.x + 'px'; s.style.top = a.y + 'px';
@@ -357,7 +356,7 @@
     }
     function eSnipe() {
       const b = cen(defEl()); const c = add('fl-cross', 520); c.style.left = b.x + 'px'; c.style.top = b.y + 'px'; maybeDodge(defEl(), 360);
-      setTimeout(() => { const a = cen(atkEl()); beam(a, b, critOn(), missOn()); recoil(atkEl(), 8); muzzle(atkEl()); if (!missOn()) { burst(b.x, b.y, '#fff', true); shake(); if (critOn()) setTimeout(() => burst(b.x, b.y, '#ffd24d', true), 120); } resolve(defEl()); }, 360);
+      setTimeout(() => { const a = frontEdge(atkEl()); beam(a, b, critOn(), missOn()); recoil(atkEl(), 8); muzzle(atkEl()); if (!missOn()) { burst(b.x, b.y, '#fff', true); shake(); if (critOn()) setTimeout(() => burst(b.x, b.y, '#ffd24d', true), 120); } resolve(defEl()); }, 360);
     }
 
     // ---- 斬擊／近身類 ----
