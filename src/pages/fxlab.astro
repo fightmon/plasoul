@@ -174,9 +174,9 @@
     @keyframes fl-charge { 0%{transform:translate(-50%,-50%) scale(.3);opacity:.3;} 100%{transform:translate(-50%,-50%) scale(2.4);opacity:1;} }
     .fl-cring { position: absolute; width: 50px; height: 50px; border: 3px solid #fff; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 10px rgba(255,255,255,.5); }
     .fl-ering { position: absolute; width: 40px; height: 40px; border: 3px solid #fff; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 10px rgba(255,255,255,.45); }
-    .fl-ap { position: absolute; width: 16px; height: 42px; border: 3px solid #3aa0ff; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 12px currentColor; color: #3aa0ff; animation: fl-ap .5s ease-out forwards; }
-    .fl-ap::before { content: ''; position: absolute; left: 50%; top: 50%; width: 9px; height: 9px; border-radius: 50%; background: #fff; transform: translate(-50%,-50%); box-shadow: 0 0 8px #fff; }
-    @keyframes fl-ap { 0%{opacity:0; transform:translate(-50%,-50%) scaleX(.4) scaleY(.6);} 24%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) scale(1);} }
+    .fl-ap { position: absolute; width: 26px; height: 64px; border: 3px solid #3aa0ff; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 14px currentColor; color: #3aa0ff; animation: fl-ap .55s ease-out forwards; }
+    .fl-ap::before { content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; border-radius: 50%; background: #fff; transform: translate(-50%,-50%); box-shadow: 0 0 10px #fff; }
+    @keyframes fl-ap { 0%{opacity:.3; transform:translate(-50%,-50%) scale(.25);} 42%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) scale(1);} }
 
     .fl-missile { position: absolute; left: 0; top: 0; width: 16px; height: 7px; border-radius: 4px; background: linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow: 0 0 10px #ff9a3d; offset-rotate: auto; }
 
@@ -305,10 +305,10 @@
     // ---- 射擊類 ----
     function eLaser() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const col = atk === 'my' ? '#3aa0ff' : '#ff5a5a';
-      maybeDodge(defEl(), 390);
-      muzzle(atkEl()); expandRing(a.x, a.y, col);
-      setTimeout(() => { beam(a, b, big, missOn()); aperture(a.x, a.y, col); }, 160);
-      setTimeout(() => resolve(defEl()), 390);
+      maybeDodge(defEl(), 400);
+      muzzle(atkEl()); aperture(a.x, a.y, col);
+      setTimeout(() => { beam(a, b, big, missOn()); }, 210);
+      setTimeout(() => resolve(defEl()), 400);
     }
     function eCannon() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 300);
