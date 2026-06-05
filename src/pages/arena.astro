@@ -483,10 +483,10 @@ import Layout from '../layouts/Layout.astro';
       timers.push(setTimeout(() => {
         const myType = (myTeam[aMy] || {}).type, foeType = (foeTeam[aFoe] || {}).type;
         if (ev.rps === 1) {
-          if (myType === 'evade') { dodge('my', aMy); dmgNum(U('my', aMy), '閃避', 'miss'); timers.push(setTimeout(() => { laserFx(U('my', aMy), U('foe', aFoe), !!(ev.toFoe && ev.toFoe.crit), 'my'); applyHit('foe', aFoe, ev.toFoe); }, 300)); }
+          if (myType === 'evade') { if (foeType === 'ranged') laserFx(U('foe', aFoe), U('my', aMy), false, 'foe'); else slashFx(U('my', aMy), false); dodge('my', aMy); dmgNum(U('my', aMy), '閃避', 'miss'); timers.push(setTimeout(() => { lungeTo('my', aMy, 'foe', aFoe, 0.82); setTimeout(() => slashFx(U('foe', aFoe), !!(ev.toFoe && ev.toFoe.crit)), 200); applyHit('foe', aFoe, ev.toFoe); }, 320)); }
           else attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
         } else if (ev.rps === -1) {
-          if (foeType === 'evade') { dodge('foe', aFoe); dmgNum(U('foe', aFoe), '閃避', 'miss'); timers.push(setTimeout(() => { laserFx(U('foe', aFoe), U('my', aMy), !!(ev.toMe && ev.toMe.crit), 'foe'); applyHit('my', aMy, ev.toMe); }, 300)); }
+          if (foeType === 'evade') { if (myType === 'ranged') laserFx(U('my', aMy), U('foe', aFoe), false, 'my'); else slashFx(U('foe', aFoe), false); dodge('foe', aFoe); dmgNum(U('foe', aFoe), '閃避', 'miss'); timers.push(setTimeout(() => { lungeTo('foe', aFoe, 'my', aMy, 0.82); setTimeout(() => slashFx(U('my', aMy), !!(ev.toMe && ev.toMe.crit)), 200); applyHit('my', aMy, ev.toMe); }, 320)); }
           else attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
         } else {
           const bothMelee = myType === 'melee' && foeType === 'melee';
