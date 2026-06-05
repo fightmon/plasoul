@@ -50,6 +50,11 @@ import Layout from '../layouts/Layout.astro';
           <div id="ar-cards" class="ar-grid"></div>
         </section>
 
+        <!-- 戰績 -->
+        <section id="tab-record" class="ar-tab" hidden>
+          <div id="ar-record"></div>
+        </section>
+
         <!-- 其他分頁 placeholder -->
         <section id="tab-soon" class="ar-tab" hidden>
           <div class="ar-soon">🚧 即將推出</div>
@@ -72,7 +77,7 @@ import Layout from '../layouts/Layout.astro';
           <span class="ar-en-line"><b id="ar-en">20/20</b> · <span id="ar-en-time">已滿</span></span>
         </button>
         <button class="ar-nav-btn" data-soon="商店"><span class="ar-ni">🛒</span><span class="ar-nl">商店</span></button>
-        <button class="ar-nav-btn" data-soon="戰績"><span class="ar-ni">📊</span><span class="ar-nl">戰績</span></button>
+        <button class="ar-nav-btn" data-tab="record"><span class="ar-ni">📊</span><span class="ar-nl">戰績</span></button>
       </nav>
     </div>
 
@@ -161,6 +166,31 @@ import Layout from '../layouts/Layout.astro';
   .ar-empty-hangar { text-align:center; color:var(--ar-dim); padding:50px 16px; line-height:1.8; grid-column:1/-1; }
 
   .ar-soon { text-align:center; color:var(--ar-dim); padding:80px 16px; font-size:18px; }
+
+  /* 戰績 */
+  .ar-rec-ov { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .ar-rec-stat { background:var(--ar-card); border:1px solid var(--ar-line); border-radius:10px; padding:12px 6px; text-align:center; }
+  .ar-rec-stat b { display:block; font-size:22px; font-weight:800; }
+  .ar-rec-stat span { font-size:11px; color:var(--ar-dim); }
+  .ar-rec-mvp { display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,rgba(255,194,61,.16),rgba(255,176,31,.05)); border:1px solid rgba(255,194,61,.4); border-radius:12px; padding:12px; margin-bottom:16px; }
+  .ar-rec-mvp-img { width:56px; height:56px; border-radius:8px; overflow:hidden; background:var(--ar-card2); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0; }
+  .ar-rec-mvp-img img { width:100%; height:100%; object-fit:cover; }
+  .ar-rec-mvp-tag { font-size:12px; font-weight:800; color:#ffc23d; }
+  .ar-rec-mvp-name { font-size:15px; font-weight:700; margin:2px 0; }
+  .ar-rec-mvp-sub { font-size:12px; color:var(--ar-dim); }
+  .ar-rec-h { font-size:13px; font-weight:700; color:var(--ar-dim); margin:0 2px 8px; }
+  .ar-rec-list { display:flex; flex-direction:column; gap:8px; }
+  .ar-rec-row { display:flex; align-items:center; gap:10px; background:var(--ar-card); border:1px solid var(--ar-line); border-radius:10px; padding:8px 10px; }
+  .ar-rec-c { position:relative; width:42px; height:42px; border-radius:7px; overflow:hidden; background:var(--ar-card2); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .ar-rec-c img { width:100%; height:100%; object-fit:cover; }
+  .ar-rec-c .ar-tbadge { position:absolute; left:2px; bottom:2px; width:16px; height:16px; font-size:9px; }
+  .ar-rec-cn { flex:1; min-width:0; }
+  .ar-rec-cname { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ar-rec-cbar { height:6px; background:var(--ar-card2); border-radius:6px; margin-top:5px; overflow:hidden; }
+  .ar-rec-cbar i { display:block; height:100%; background:linear-gradient(90deg,#3b82f6,#7ee0a0); }
+  .ar-rec-cstat { text-align:right; flex-shrink:0; }
+  .ar-rec-cstat b { display:block; font-size:15px; font-weight:800; }
+  .ar-rec-cstat span { font-size:10px; color:var(--ar-dim); }
 
   /* fab */
   .ar-fab { position:fixed; left:50%; transform:translateX(-50%); bottom:112px; z-index:30; padding:14px 30px; border:none; border-radius:999px; background:var(--ar-red); color:#fff; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 8px 24px rgba(238,34,51,.45); }
@@ -516,6 +546,33 @@ import Layout from '../layouts/Layout.astro';
     timers.push(setTimeout(play, 350));
   }
 
+  // 戰績
+  function pct(n: number, d: number) { return d ? Math.round((n / d) * 100) : 0; }
+  function renderRecord() {
+    const w = player.wins || 0, l = player.losses || 0, tot = w + l, wr = pct(w, tot);
+    const fought = cards.filter((c) => (c.battles || 0) > 0).sort((a, b) => (b.battles || 0) - (a.battles || 0));
+    const mvp = fought.slice().sort((a, b) => (b.wins || 0) - (a.wins || 0) || pct(b.wins, b.battles) - pct(a.wins, a.battles))[0];
+    const ov = `
+      <div class="ar-rec-ov">
+        <div class="ar-rec-stat"><b>${w}</b><span>勝場</span></div>
+        <div class="ar-rec-stat"><b>${l}</b><span>敗場</span></div>
+        <div class="ar-rec-stat"><b>${wr}%</b><span>勝率</span></div>
+        <div class="ar-rec-stat"><b>${player.rank_score || 0}</b><span>段位分</span></div>
+      </div>`;
+    const mvpHtml = mvp ? `
+      <div class="ar-rec-mvp">
+        <div class="ar-rec-mvp-img">${mvp.photo_url ? `<img src="${esc(mvp.photo_url)}" alt=""/>` : '<span>🤖</span>'}</div>
+        <div class="ar-rec-mvp-info"><div class="ar-rec-mvp-tag">🏆 MVP 機體</div><div class="ar-rec-mvp-name">${esc(mvp.name)}</div><div class="ar-rec-mvp-sub">${mvp.wins || 0} 勝 / ${mvp.battles || 0} 戰 · 勝率 ${pct(mvp.wins, mvp.battles)}%</div></div>
+      </div>` : '';
+    const rows = fought.length ? fought.map((c) => `
+      <div class="ar-rec-row">
+        <div class="ar-rec-c">${c.photo_url ? `<img src="${esc(c.photo_url)}" alt=""/>` : '<span>🤖</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span></div>
+        <div class="ar-rec-cn"><div class="ar-rec-cname">${esc(c.name)}</div><div class="ar-rec-cbar"><i style="width:${pct(c.wins, c.battles)}%"></i></div></div>
+        <div class="ar-rec-cstat"><b>${pct(c.wins, c.battles)}%</b><span>${c.wins || 0}/${c.battles || 0}</span></div>
+      </div>`).join('') : '<div class="ar-empty-hangar">還沒有出擊紀錄 ⚔️<br>到大廳按「出擊」開始你的第一場戰鬥！</div>';
+    $('ar-record')!.innerHTML = `<h2 class="ar-h2">📊 戰績</h2>${ov}${mvpHtml}<div class="ar-rec-h">卡片戰績</div><div class="ar-rec-list">${rows}</div>`;
+  }
+
   // tabs
   document.querySelectorAll('.ar-nav-btn').forEach((b) => {
     b.addEventListener('click', () => {
@@ -523,9 +580,9 @@ import Layout from '../layouts/Layout.astro';
       if (soon) { toast(soon + ' 即將推出 🚧'); return; }
       const tab = (b as HTMLElement).dataset.tab!;
       document.querySelectorAll('.ar-nav-btn').forEach((x) => x.classList.toggle('is-active', x === b));
-      $('tab-lobby')!.toggleAttribute('hidden', tab !== 'lobby');
-      $('tab-hangar')!.toggleAttribute('hidden', tab !== 'hangar');
+      document.querySelectorAll('.ar-tab').forEach((s) => s.toggleAttribute('hidden', s.id !== 'tab-' + tab));
       $('ar-create-fab')!.toggleAttribute('hidden', tab !== 'hangar');
+      if (tab === 'record') renderRecord();
     });
   });
 
