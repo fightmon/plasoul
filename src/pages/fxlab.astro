@@ -172,6 +172,7 @@
     .fl-charge.c-my { background: radial-gradient(circle,#dff4ff,rgba(47,155,255,.15)); box-shadow: 0 0 20px #2f9bff; }
     .fl-charge.c-foe { background: radial-gradient(circle,#ffe0e0,rgba(255,77,77,.15)); box-shadow: 0 0 20px #ff4d4d; }
     @keyframes fl-charge { 0%{transform:translate(-50%,-50%) scale(.3);opacity:.3;} 100%{transform:translate(-50%,-50%) scale(2.4);opacity:1;} }
+    .fl-cring { position: absolute; width: 50px; height: 50px; border: 3px solid #fff; border-radius: 50%; transform: translate(-50%,-50%); box-shadow: 0 0 10px rgba(255,255,255,.5); }
 
     .fl-missile { position: absolute; left: 0; top: 0; width: 16px; height: 7px; border-radius: 4px; background: linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow: 0 0 10px #ff9a3d; offset-rotate: auto; }
 
@@ -266,7 +267,8 @@
     function recoil(el, s) { const fwd = atk === 'my' ? 1 : -1; el.animate([{ transform: 'translate(0,0) rotate(0)' }, { transform: 'translate(' + (-fwd * (s || 12)) + 'px,0) rotate(' + (-fwd * 6) + 'deg)', offset: .18 }, { transform: 'translate(0,0) rotate(0)' }], { duration: 360, easing: 'ease-out' }); }
     function vibrate(el, dur) { el.animate([{ transform: 'translate(0,0) rotate(0)' }, { transform: 'translate(-3px,2px) rotate(-2deg)', offset: .15 }, { transform: 'translate(3px,-2px) rotate(2deg)', offset: .35 }, { transform: 'translate(-3px,1px) rotate(-2deg)', offset: .55 }, { transform: 'translate(3px,-1px) rotate(2deg)', offset: .75 }, { transform: 'translate(0,0) rotate(0)' }], { duration: dur || 520, easing: 'linear' }); }
     function glowPulse(el, color) { el.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.5) drop-shadow(0 0 16px ' + (color || '#9b6bff') + ')', offset: .4 }, { filter: 'brightness(1)' }], { duration: 560, easing: 'ease-out' }); }
-    function muzzle(el, big) { const c = cen(el); const fwd = atk === 'my' ? 1 : -1; const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = (c.x + fwd * 30) + 'px'; m.style.top = c.y + 'px'; }
+    function frontEdge(el) { const fr = field().getBoundingClientRect(), r = el.getBoundingClientRect(); const fwd = atk === 'my' ? 1 : -1; return { x: (r.left - fr.left) + r.width / 2 + fwd * (r.width / 2), y: (r.top - fr.top) + r.height / 2 }; }
+    function muzzle(el, big) { const p = frontEdge(el); const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; }
 
     // 近身衝刺（單招用中央卡；ult 用指定卡）
     function lunge(cb, ratio) {
@@ -295,7 +297,7 @@
     }
 
     // ---- 射擊類 ----
-    function eLaser() { const a = cen(atkEl()), b = cen(defEl()); maybeDodge(defEl(), 230); beam(a, b, critOn(), missOn()); recoil(atkEl(), 9); muzzle(atkEl()); setTimeout(() => resolve(defEl()), 230); }
+    function eLaser() { const a = cen(atkEl()), b = cen(defEl()); maybeDodge(defEl(), 230); beam(a, b, critOn(), missOn()); muzzle(atkEl()); setTimeout(() => resolve(defEl()), 230); }
     function eCannon() {
       const a = cen(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 300);
       recoil(atkEl(), 16); muzzle(atkEl(), true);
@@ -316,18 +318,23 @@
       }, k * 55);
       setTimeout(() => resolve(defEl()), impact);
     }
+    function chargeRings(x, y, color, dur) {
+      const n = 4; for (let k = 0; k < n; k++) setTimeout(() => {
+        const c = add('fl-cring', 460); c.style.left = x + 'px'; c.style.top = y + 'px'; if (color) c.style.borderColor = color;
+        c.animate([{ transform: 'translate(-50%,-50%) scale(2.6)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(2.6)', opacity: .85, offset: .18 }, { transform: 'translate(-50%,-50%) scale(.25)', opacity: 1 }], { duration: 440, easing: 'ease-in' });
+      }, k * (dur / (n + 1)));
+    }
     function eCharge() {
-      const big = critOn(); const a = cen(atkEl()); const chargeT = big ? 660 : 420;
-      const g = add('fl-charge ' + cc(), chargeT + 30); g.style.left = a.x + 'px'; g.style.top = a.y + 'px'; g.style.animationDuration = (chargeT / 1000) + 's';
-      const aEl = atkEl(), fwd = atk === 'my' ? 1 : -1;
-      aEl.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (-fwd * 12) + 'px,0) rotate(' + (-fwd * 5) + 'deg)', offset: .72 }, { transform: 'translate(' + (fwd * 12) + 'px,0) rotate(' + (fwd * 4) + 'deg)', offset: .9 }, { transform: 'translate(0,0)' }], { duration: chargeT + 220, easing: 'ease-in' });
-      glowPulse(aEl, '#fff');
+      const big = critOn(); const a = cen(atkEl()); const chargeT = big ? 680 : 460;
+      const p = frontEdge(atkEl());
+      chargeRings(p.x, p.y, atk === 'my' ? '#9fe8ff' : '#ffd0d0', chargeT);
+      glowPulse(atkEl(), '#fff');
       maybeDodge(defEl(), chargeT + 40);
       setTimeout(() => { const b = cen(defEl()); chargeBeam(a, b, big, missOn()); if (!missOn()) { burst(b.x, b.y, '#fff', true); shake(); if (big) setTimeout(shake, 90); } resolve(defEl()); }, chargeT);
     }
     function eHoming() {
       const a = cen(atkEl()), b = cen(defEl()); const n = critOn() ? 6 : 2; const impact = critOn() ? 840 : 650; const back = atk === 'my' ? -1 : 1;
-      maybeDodge(defEl(), impact); recoil(atkEl(), 8);
+      maybeDodge(defEl(), impact);
       for (let k = 0; k < n; k++) {
         const spread = n === 1 ? 0 : (k / (n - 1) - 0.5); const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2 + spread * 160;
         const tx = missOn() ? b.x + (atk === 'my' ? 28 : -28) : b.x, ty = missOn() ? b.y - 34 : b.y + spread * 18;
