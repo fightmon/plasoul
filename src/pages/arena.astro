@@ -445,11 +445,13 @@ import Layout from '../layouts/Layout.astro';
     const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any, meleeRatio = 0.82) => {
       const big = !!(h && h.crit);
       const attEl = U(atkSide, atkK), defEl = U(defSide, defK);
-      if (atkType === 'ranged') laserFx(attEl, defEl, big, atkSide);
-      else if (atkType === 'melee') { lungeTo(atkSide, atkK, defSide, defK, meleeRatio); setTimeout(() => slashFx(defEl, big), 200); }
-      else laserFx(attEl, defEl, big, atkSide);
-      if (big) shake();
-      applyHit(defSide, defK, h);
+      let impact = 240;
+      if (atkType === 'ranged') { laserFx(attEl, defEl, big, atkSide); impact = 240; }
+      else if (atkType === 'melee') { lungeTo(atkSide, atkK, defSide, defK, meleeRatio); timers.push(setTimeout(() => slashFx(defEl, big), 200)); impact = 320; }
+      else { laserFx(attEl, defEl, big, atkSide); impact = 240; }
+      // 命中瞬間才結算：扣血數字 + 震動
+      timers.push(setTimeout(() => { if (big) shake(); applyHit(defSide, defK, h); }, impact));
+      return impact;
     };
     const end = () => {
       reset();
@@ -482,20 +484,23 @@ import Layout from '../layouts/Layout.astro';
       place('my', aMy, true); place('foe', aFoe, true);
       timers.push(setTimeout(() => {
         const myType = (myTeam[aMy] || {}).type, foeType = (foeTeam[aFoe] || {}).type;
+        let resolveAt = 280;
         if (ev.rps === 1) {
-          if (myType === 'evade') { if (foeType === 'ranged') laserFx(U('foe', aFoe), U('my', aMy), false, 'foe'); else slashFx(U('my', aMy), false); dodge('my', aMy); dmgNum(U('my', aMy), '閃避', 'miss'); timers.push(setTimeout(() => { lungeTo('my', aMy, 'foe', aFoe, 0.82); setTimeout(() => slashFx(U('foe', aFoe), !!(ev.toFoe && ev.toFoe.crit)), 200); applyHit('foe', aFoe, ev.toFoe); }, 320)); }
-          else attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
+          if (myType === 'evade') { if (foeType === 'ranged') laserFx(U('foe', aFoe), U('my', aMy), false, 'foe'); else slashFx(U('my', aMy), false); dodge('my', aMy); dmgNum(U('my', aMy), '閃避', 'miss'); timers.push(setTimeout(() => { lungeTo('my', aMy, 'foe', aFoe, 0.82); timers.push(setTimeout(() => slashFx(U('foe', aFoe), !!(ev.toFoe && ev.toFoe.crit)), 200)); timers.push(setTimeout(() => { applyHit('foe', aFoe, ev.toFoe); if (!ev.ult) setHP(ev.myHP, ev.foeHP); }, 300)); }, 320)); resolveAt = -1; }
+          else resolveAt = attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
         } else if (ev.rps === -1) {
-          if (foeType === 'evade') { if (myType === 'ranged') laserFx(U('my', aMy), U('foe', aFoe), false, 'my'); else slashFx(U('foe', aFoe), false); dodge('foe', aFoe); dmgNum(U('foe', aFoe), '閃避', 'miss'); timers.push(setTimeout(() => { lungeTo('foe', aFoe, 'my', aMy, 0.82); setTimeout(() => slashFx(U('my', aMy), !!(ev.toMe && ev.toMe.crit)), 200); applyHit('my', aMy, ev.toMe); }, 320)); }
-          else attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
+          if (foeType === 'evade') { if (myType === 'ranged') laserFx(U('my', aMy), U('foe', aFoe), false, 'my'); else slashFx(U('foe', aFoe), false); dodge('foe', aFoe); dmgNum(U('foe', aFoe), '閃避', 'miss'); timers.push(setTimeout(() => { lungeTo('foe', aFoe, 'my', aMy, 0.82); timers.push(setTimeout(() => slashFx(U('my', aMy), !!(ev.toMe && ev.toMe.crit)), 200)); timers.push(setTimeout(() => { applyHit('my', aMy, ev.toMe); if (!ev.ult) setHP(ev.myHP, ev.foeHP); }, 300)); }, 320)); resolveAt = -1; }
+          else resolveAt = attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
         } else {
           const bothMelee = myType === 'melee' && foeType === 'melee';
           const r = bothMelee ? 0.5 : 0.82;
-          attack('my', myType, aMy, 'foe', aFoe, ev.toFoe, r);
-          attack('foe', foeType, aFoe, 'my', aMy, ev.toMe, r);
+          const d1 = attack('my', myType, aMy, 'foe', aFoe, ev.toFoe, r);
+          const d2 = attack('foe', foeType, aFoe, 'my', aMy, ev.toMe, r);
+          resolveAt = Math.max(d1, d2);
         }
-        setHP(ev.myHP, ev.foeHP);
-        if (ev.ult) timers.push(setTimeout(() => playUlt(ev.ult), 520));
+        // 血條在命中瞬間才更新（與斬擊/雷射同步）
+        if (ev.ult) timers.push(setTimeout(() => { playUlt(ev.ult); timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), 600)); }, 520));
+        else if (resolveAt >= 0) timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), resolveAt));
       }, 400));
       timers.push(setTimeout(play, ev.ult ? 1900 : 1100));
     };
