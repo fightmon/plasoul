@@ -42,7 +42,6 @@ import Layout from '../layouts/Layout.astro';
         <!-- 大廳 -->
         <section id="tab-lobby" class="ar-tab">
           <div id="ar-fleet"></div>
-          <div class="ar-marquee"><span id="ar-marquee-text">歡迎來到創鬥卡！拍下你的鋼彈成品，組成戰鬥卡出擊吧 ⚔️</span></div>
         </section>
 
         <!-- 格納庫 -->
@@ -61,13 +60,20 @@ import Layout from '../layouts/Layout.astro';
       <button id="ar-create-fab" class="ar-fab" hidden>＋ 拍照創卡</button>
       <input type="file" id="ar-file" accept="image/*" hidden />
 
+      <!-- 跑馬燈（固定在 nav 上方）-->
+      <div class="ar-marquee-bar"><span id="ar-marquee-text">📣 歡迎來到創鬥卡！拍下你的鋼彈成品，組成戰鬥卡出擊吧 ⚔️</span></div>
+
       <!-- 底部 nav -->
       <nav class="ar-nav">
-        <button class="ar-nav-btn is-active" data-tab="lobby">🏠<span>大廳</span></button>
-        <button class="ar-nav-btn" data-tab="hangar">🎴<span>格納庫</span></button>
-        <button class="ar-nav-btn ar-nav-en" data-soon="EN">⚡<span id="ar-en">20/20</span></button>
-        <button class="ar-nav-btn" data-soon="商店">🛒<span>商店</span></button>
-        <button class="ar-nav-btn" data-soon="戰績">📊<span>戰績</span></button>
+        <button class="ar-nav-btn is-active" data-tab="lobby"><span class="ar-ni">🏠</span><span class="ar-nl">大廳</span></button>
+        <button class="ar-nav-btn" data-tab="hangar"><span class="ar-ni">🎴</span><span class="ar-nl">格納庫</span></button>
+        <button class="ar-en-center" id="ar-en-btn">
+          <span class="ar-en-icon">⚡</span>
+          <span class="ar-en-val" id="ar-en">20/20</span>
+          <span class="ar-en-time" id="ar-en-time">已滿</span>
+        </button>
+        <button class="ar-nav-btn" data-soon="商店"><span class="ar-ni">🛒</span><span class="ar-nl">商店</span></button>
+        <button class="ar-nav-btn" data-soon="戰績"><span class="ar-ni">📊</span><span class="ar-nl">戰績</span></button>
       </nav>
     </div>
 
@@ -109,7 +115,7 @@ import Layout from '../layouts/Layout.astro';
   .ar-cur b { color:#fff; }
   .ar-cog { text-decoration:none; font-size:18px; }
 
-  .ar-content { padding:14px 14px 90px; }
+  .ar-content { padding:14px 14px 124px; }
   .ar-h2 { font-size:16px; margin:4px 0 12px; }
   .ar-h2 small { color:var(--ar-dim); font-weight:400; font-size:12px; }
 
@@ -152,15 +158,26 @@ import Layout from '../layouts/Layout.astro';
   .ar-soon { text-align:center; color:var(--ar-dim); padding:80px 16px; font-size:18px; }
 
   /* fab */
-  .ar-fab { position:fixed; left:50%; transform:translateX(-50%); bottom:84px; z-index:30; padding:13px 26px; border:none; border-radius:999px; background:var(--ar-red); color:#fff; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 8px 24px rgba(238,34,51,.4); }
+  .ar-fab { position:fixed; left:50%; transform:translateX(-50%); bottom:112px; z-index:30; padding:14px 30px; border:none; border-radius:999px; background:var(--ar-red); color:#fff; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 8px 24px rgba(238,34,51,.45); }
 
-  /* bottom nav */
-  .ar-nav { position:fixed; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; display:flex; background:rgba(12,16,30,.96); backdrop-filter:blur(10px); border-top:1px solid var(--ar-line); z-index:25; }
-  .ar-nav-btn { flex:1; background:transparent; border:none; color:var(--ar-dim); font-size:18px; padding:8px 0 10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; }
-  .ar-nav-btn span { font-size:10px; }
+  /* 跑馬燈（固定在 nav 上方）*/
+  .ar-marquee-bar { position:fixed; left:0; right:0; bottom:64px; max-width:520px; margin:0 auto; height:34px; line-height:34px; background:rgba(20,26,46,.97); border-top:1px solid var(--ar-line); overflow:hidden; white-space:nowrap; z-index:24; font-size:13px; color:var(--ar-dim); }
+  .ar-marquee-bar span { display:inline-block; padding-left:100%; animation:ar-marq 18s linear infinite; }
+  @keyframes ar-marq { 0%{ transform:translateX(0); } 100%{ transform:translateX(-100%); } }
+
+  /* bottom nav（手機友善，加大）*/
+  .ar-nav { position:fixed; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; height:64px; display:flex; align-items:stretch; background:rgba(12,16,30,.98); backdrop-filter:blur(10px); border-top:1px solid var(--ar-line); z-index:25; }
+  .ar-nav-btn { flex:1; background:transparent; border:none; color:var(--ar-dim); cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+  .ar-ni { font-size:24px; line-height:1; }
+  .ar-nl { font-size:11px; }
   .ar-nav-btn.is-active { color:#fff; }
-  .ar-nav-en { color:#ffd23d; }
-  .ar-nav-en span { color:#ffd23d; font-weight:700; }
+  .ar-nav-btn.is-active .ar-ni { transform:translateY(-1px); }
+
+  /* 中央 EN（30%，凸起圓鈕 + 回復倒數）*/
+  .ar-en-center { flex:0 0 30%; background:transparent; border:none; cursor:pointer; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:7px; }
+  .ar-en-icon { position:absolute; top:-24px; width:62px; height:62px; border-radius:50%; background:radial-gradient(circle at 50% 32%, #3a4d92, #141a2e); border:3px solid #ffd23d; box-shadow:0 0 18px rgba(255,210,61,.45); display:flex; align-items:center; justify-content:center; font-size:28px; }
+  .ar-en-val { font-size:14px; font-weight:800; color:#ffd23d; line-height:1.1; }
+  .ar-en-time { font-size:10px; color:var(--ar-dim); }
 
   /* reveal */
   .ar-reveal { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.86); display:flex; align-items:center; justify-content:center; padding:24px; }
@@ -283,6 +300,8 @@ import Layout from '../layouts/Layout.astro';
       $('ar-create-fab')!.toggleAttribute('hidden', tab !== 'hangar');
     });
   });
+
+  $('ar-en-btn')!.addEventListener('click', () => toast('EN 體力系統開發中 ⚡'));
 
   // 創卡
   $('ar-create-fab')!.addEventListener('click', () => ($('ar-file') as HTMLInputElement).click());
