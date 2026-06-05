@@ -64,6 +64,7 @@ ${ld}
     <input type="search" name="q" placeholder="搜尋鋼模型號…" aria-label="搜尋" />
   </form>
   <a class="hdr-nav" href="/gundam">找鋼彈</a>
+  <a class="hdr-game" href="/arena" title="創鬥卡競技場">🎴 創鬥卡</a>
   <a class="hdr-login" id="ps-acct" href="/account" title="登入 / 帳號">登入</a>
   <button id="theme-toggle" class="theme-btn" aria-label="切換主題">🌓</button>
 </header>
@@ -100,6 +101,8 @@ a{color:inherit}img{max-width:100%}
 .hdr-search input{width:100%;padding:9px 14px;font-size:16px;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--text);outline:none}
 .hdr-search input:focus{border-color:var(--primary)}
 .hdr-nav{flex-shrink:0;text-decoration:none;font-weight:700;font-size:14px;color:var(--primary-d);padding:8px 10px;white-space:nowrap}
+.hdr-game{flex-shrink:0;text-decoration:none;font-weight:800;font-size:14px;color:#fff;background:linear-gradient(135deg,#ff5566,#e4002b);border-radius:999px;padding:7px 14px;white-space:nowrap;box-shadow:0 4px 14px rgba(228,0,43,.35)}
+@media(max-width:520px){.hdr-game{padding:6px 10px;font-size:0}.hdr-game::before{content:"🎴";font-size:15px}}
 .hdr-login{flex-shrink:0;text-decoration:none;font-weight:700;font-size:14px;color:var(--primary);border:1px solid var(--primary);border-radius:999px;padding:7px 15px;white-space:nowrap;transition:background-color .15s,color .15s}
 .hdr-login:hover{background:var(--primary);color:#fff}
 .hdr-login.is-user{border-color:var(--border);color:var(--text)}

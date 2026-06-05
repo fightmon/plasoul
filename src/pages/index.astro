@@ -84,6 +84,26 @@ const SECONDARY_SERIES = [
     </section>
 
     {/* ============================================
+        創鬥卡主軸帶（找便宜 × 創鬥卡 雙主軸）
+        ============================================ */}
+    <section class="ps-game-band" aria-label="創鬥卡">
+      <div class="ps-game-bg" aria-hidden="true"></div>
+      <div class="ps-game-inner">
+        <div class="ps-game-content">
+          <span class="ps-game-eyebrow">🎴 NEW · 創鬥卡 ARENA</span>
+          <h2 class="ps-game-title">拍下你的鋼彈，<br />生成<span class="ps-game-accent">專屬戰鬥卡</span></h2>
+          <p class="ps-game-sub">拍照 → AI 生成能力卡 → 組艦對戰、炫耀你親手做的鋼彈</p>
+          <a href="/arena" class="ps-game-cta">進入競技場 <span class="ps-cta-arrow">→</span></a>
+        </div>
+        <div class="ps-game-cards" aria-hidden="true">
+          <div class="ps-gc ps-gc-1">SSR</div>
+          <div class="ps-gc ps-gc-2">SR</div>
+          <div class="ps-gc ps-gc-3">R</div>
+        </div>
+      </div>
+    </section>
+
+    {/* ============================================
         Stats (GAME8LA 風 4 格大字)
         ============================================ */}
     <section class="ps-stats" aria-label="資料統計">
@@ -430,6 +450,108 @@ const SECONDARY_SERIES = [
     background: var(--accent-amber-soft);
     border-color: var(--accent-amber);
   }
+
+  /* ============================================
+     創鬥卡主軸帶
+     ============================================ */
+  .ps-game-band {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #0c1020;
+    padding: clamp(44px, 6vw, 76px) 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .ps-game-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 50vw 40vh at 82% 28%, rgba(228, 0, 43, 0.22) 0%, transparent 60%),
+      radial-gradient(ellipse 40vw 30vh at 8% 82%, rgba(30, 80, 229, 0.18) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .ps-game-inner {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: clamp(28px, 4vw, 48px);
+    align-items: center;
+  }
+  @media (min-width: 900px) {
+    .ps-game-inner { grid-template-columns: 1.2fr 1fr; }
+  }
+  .ps-game-content { text-align: center; }
+  @media (min-width: 900px) {
+    .ps-game-content { text-align: left; }
+  }
+  .ps-game-eyebrow {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(228, 0, 43, 0.16);
+    color: #ff9aa8;
+    border: 1px solid rgba(228, 0, 43, 0.40);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+  }
+  .ps-game-title {
+    font-size: clamp(28px, 4.5vw, 44px);
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.25;
+    margin: 0 0 14px;
+    letter-spacing: -0.5px;
+  }
+  .ps-game-accent { color: #ff4d5e; text-shadow: 0 0 28px rgba(228, 0, 43, 0.6); }
+  .ps-game-sub {
+    font-size: clamp(14px, 1.6vw, 17px);
+    color: #aeb8d0;
+    margin: 0 auto 26px;
+    max-width: 460px;
+    line-height: 1.7;
+  }
+  @media (min-width: 900px) {
+    .ps-game-sub { margin-left: 0; margin-right: 0; }
+  }
+  .ps-game-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #ff5566, #e4002b);
+    color: #fff;
+    border-radius: 999px;
+    padding: 14px 30px;
+    font-weight: 800;
+    font-size: 16px;
+    text-decoration: none;
+    box-shadow: 0 10px 28px rgba(228, 0, 43, 0.45);
+    transition: transform 0.18s, box-shadow 0.18s;
+  }
+  .ps-game-cta:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(228, 0, 43, 0.6); }
+  .ps-game-cta:hover .ps-cta-arrow { transform: translateX(2px); }
+  .ps-game-cards { display: flex; justify-content: center; gap: 14px; perspective: 800px; }
+  .ps-gc {
+    width: 84px;
+    aspect-ratio: 3 / 4;
+    border-radius: 12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    font-weight: 900;
+    font-size: 15px;
+    color: #101010;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+  }
+  .ps-gc-1 { background: linear-gradient(135deg, #ffe07a, #ffb01f); transform: rotate(-8deg) translateY(6px); }
+  .ps-gc-2 { background: linear-gradient(135deg, #d6a3ff, #b15bff); color: #fff; transform: rotate(0) translateY(-6px); z-index: 1; }
+  .ps-gc-3 { background: linear-gradient(135deg, #9fc0ff, #5b86ff); color: #fff; transform: rotate(8deg) translateY(6px); }
+  @media (max-width: 480px) { .ps-gc { width: 68px; font-size: 13px; } }
 
   /* ============================================
      Stats（4 漸層卡 暗底暖光暈）
