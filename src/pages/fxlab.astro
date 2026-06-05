@@ -55,7 +55,18 @@
       <button class="fl-btn" data-fx="impact">重擊衝撞</button>
     </div>
 
-    <p class="fl-hint">提示：先勾「暴擊／MISS」再點招式，可看不同狀態下的表現。近身類會自動衝刺。</p>
+    <div class="fl-sec">閃避類（受攻擊方示範，可用「換方向」切換）</div>
+    <div class="fl-grid">
+      <button class="fl-btn" data-fx="dduck">下蹲閃</button>
+      <button class="fl-btn" data-fx="dback">後撤閃</button>
+      <button class="fl-btn" data-fx="dside">側移閃</button>
+      <button class="fl-btn" data-fx="dafter">殘影閃</button>
+      <button class="fl-btn" data-fx="dblink">瞬移閃</button>
+      <button class="fl-btn" data-fx="dspin">旋身閃</button>
+      <button class="fl-btn" data-fx="droll">翻滾閃</button>
+    </div>
+
+    <p class="fl-hint">提示：先勾「暴擊／MISS」再點招式，可看不同狀態下的表現。近身類會自動衝刺。閃避類示範的是「受攻擊方」的閃法，用上方「換方向」可切換是哪一方閃。</p>
   </div>
 
   <style is:global>
@@ -83,6 +94,7 @@
     @keyframes fl-hop { 35%{ transform: translate(var(--hx,0), 30px);} 62%{ transform: translate(var(--hx,0), 30px);} }
 
     .fl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
+    .fl-ghost { position: absolute; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; pointer-events: none; filter: brightness(.8) saturate(.6); }
 
     .fl-dmg { position: absolute; font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 2px 6px #000; transform: translate(-50%,-50%); animation: fl-pop .85s ease-out forwards; white-space: nowrap; }
     .fl-dmg.crit { font-size: 32px; color: #ffd23d; } .fl-dmg.miss { color: #cfcfcf; font-size: 18px; }
@@ -317,7 +329,29 @@
       });
     }
 
-    const FX = { laser: eLaser, cannon: eCannon, shot: eShot, charge: eCharge, homing: eHoming, wave: eWave, snipe: eSnipe, slash: eSlash, arc: eArc, iai: eIai, thrust: eThrust, cross: eCross, spin: eSpin, impact: eImpact };
+    // ---- 閃避類（受攻擊方示範）----
+    const awayOf = (el) => el.id === 'fl-foe' ? 1 : -1;
+    function spawnGhost(el, dx, dy) {
+      const g = el.cloneNode(true); g.removeAttribute('id'); g.classList.add('fl-ghost');
+      const r = el.getBoundingClientRect(), fr = field().getBoundingClientRect();
+      g.style.left = (r.left - fr.left) + 'px'; g.style.top = (r.top - fr.top) + 'px'; g.style.width = r.width + 'px'; g.style.zIndex = '1';
+      field().appendChild(g);
+      g.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: .45 }, { transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: 0 }], { duration: 380, easing: 'ease-out' });
+      setTimeout(() => g.remove(), 400);
+    }
+    function dDuck(el) { el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(38px)', offset: .4 }, { transform: 'translateY(38px)', offset: .62 }, { transform: 'translateY(0)' }], { duration: 520, easing: 'ease' }); }
+    function dBack(el) { const a = awayOf(el); el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + (a * 46) + 'px)', offset: .4 }, { transform: 'translateX(' + (a * 46) + 'px)', offset: .62 }, { transform: 'translateX(0)' }], { duration: 520, easing: 'ease' }); }
+    function dSide(el) { el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-38px)', offset: .4 }, { transform: 'translateY(-38px)', offset: .62 }, { transform: 'translateY(0)' }], { duration: 520, easing: 'ease' }); }
+    function dAfter(el) { const a = awayOf(el); for (let k = 0; k < 3; k++) setTimeout(() => spawnGhost(el, a * 24 * (k + 1), -9 * (k + 1)), k * 55); el.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (a * 74) + 'px,-16px) scale(1.05)', offset: .45 }, { transform: 'translate(0,0)' }], { duration: 520, easing: 'ease-out' }); }
+    function dBlink(el) { const a = awayOf(el); const dx = a * 48; el.animate([{ opacity: 1, transform: 'translate(0,0)' }, { opacity: 0, transform: 'translate(0,0)', offset: .22 }, { opacity: 0, transform: 'translate(' + dx + 'px,-12px)', offset: .3 }, { opacity: 1, transform: 'translate(' + dx + 'px,-12px)', offset: .52 }, { opacity: 1, transform: 'translate(' + dx + 'px,-12px)', offset: .74 }, { opacity: 1, transform: 'translate(0,0)' }], { duration: 620, easing: 'ease' }); const c = cen(el); setTimeout(() => ring(c.x + dx, c.y - 12, '#9bdcff', false), 180); }
+    function dSpin(el) { el.animate([{ transform: 'rotate(0) translateY(0)' }, { transform: 'rotate(360deg) translateY(-24px)', offset: .5 }, { transform: 'rotate(360deg) translateY(0)' }], { duration: 560, easing: 'ease-in-out' }); }
+    function dRoll(el) { const a = awayOf(el); el.animate([{ transform: 'translateX(0) rotate(0)' }, { transform: 'translateX(' + (a * 50) + 'px) rotate(' + (a * 360) + 'deg)', offset: .5 }, { transform: 'translateX(0) rotate(0)' }], { duration: 600, easing: 'ease-in-out' }); }
+
+    const FX = {
+      laser: eLaser, cannon: eCannon, shot: eShot, charge: eCharge, homing: eHoming, wave: eWave, snipe: eSnipe,
+      slash: eSlash, arc: eArc, iai: eIai, thrust: eThrust, cross: eCross, spin: eSpin, impact: eImpact,
+      dduck: () => dDuck(defEl()), dback: () => dBack(defEl()), dside: () => dSide(defEl()), dafter: () => dAfter(defEl()), dblink: () => dBlink(defEl()), dspin: () => dSpin(defEl()), droll: () => dRoll(defEl()),
+    };
     const NAMES = Object.keys(FX);
 
     document.querySelectorAll('.fl-btn').forEach((b) => b.addEventListener('click', () => { const f = FX[b.dataset.fx]; if (f) f(); }));
