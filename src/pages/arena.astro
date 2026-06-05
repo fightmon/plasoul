@@ -1,0 +1,371 @@
+---
+import Layout from '../layouts/Layout.astro';
+/**
+ * 普拉魂創鬥卡 · 大廳 /arena（Phase1 A 片：大廳 + 格納庫 + 創卡 + 開卡演出）
+ * 手機優先手遊風。戰鬥/編成為下一片。
+ */
+---
+<Layout title="普拉魂創鬥卡" noIndex={true} bareLayout={true}>
+  <div class="ar-app" id="ar-app">
+
+    <!-- 需登入 -->
+    <div id="ar-login" class="ar-login" hidden>
+      <div class="ar-login-box">
+        <div class="ar-logo">⚔️</div>
+        <h1>普拉魂創鬥卡</h1>
+        <p>把你的鋼彈，變成戰鬥卡。</p>
+        <a href="/account?next=/arena" class="ar-btn ar-btn-primary">登入 / 註冊開始玩</a>
+        <a href="/" class="ar-btn ar-btn-ghost">回普拉魂</a>
+      </div>
+    </div>
+
+    <!-- 主畫面 -->
+    <div id="ar-main" hidden>
+      <!-- 頂部狀態列 -->
+      <header class="ar-top">
+        <div class="ar-top-l">
+          <span class="ar-avatar">🐶</span>
+          <div>
+            <div class="ar-name" id="ar-name">玩家</div>
+            <div class="ar-rank" id="ar-rank">段位 F</div>
+          </div>
+        </div>
+        <div class="ar-top-r">
+          <span class="ar-cur">🔩 <b id="ar-parts">0</b></span>
+          <span class="ar-cur">🪙 <b id="ar-coins">0</b></span>
+          <a href="/" class="ar-cog" title="回普拉魂">⚙️</a>
+        </div>
+      </header>
+
+      <!-- 內容區 -->
+      <main class="ar-content">
+        <!-- 大廳 -->
+        <section id="tab-lobby" class="ar-tab">
+          <div id="ar-fleet"></div>
+          <div class="ar-marquee"><span id="ar-marquee-text">歡迎來到創鬥卡！拍下你的鋼彈成品，組成戰鬥卡出擊吧 ⚔️</span></div>
+        </section>
+
+        <!-- 格納庫 -->
+        <section id="tab-hangar" class="ar-tab" hidden>
+          <h2 class="ar-h2">🎴 格納庫 <small id="ar-card-count"></small></h2>
+          <div id="ar-cards" class="ar-grid"></div>
+        </section>
+
+        <!-- 其他分頁 placeholder -->
+        <section id="tab-soon" class="ar-tab" hidden>
+          <div class="ar-soon">🚧 即將推出</div>
+        </section>
+      </main>
+
+      <!-- 浮動：拍照創卡（格納庫分頁顯示）-->
+      <button id="ar-create-fab" class="ar-fab" hidden>＋ 拍照創卡</button>
+      <input type="file" id="ar-file" accept="image/*" hidden />
+
+      <!-- 底部 nav -->
+      <nav class="ar-nav">
+        <button class="ar-nav-btn is-active" data-tab="lobby">🏠<span>大廳</span></button>
+        <button class="ar-nav-btn" data-tab="hangar">🎴<span>格納庫</span></button>
+        <button class="ar-nav-btn ar-nav-en" data-soon="EN">⚡<span id="ar-en">20/20</span></button>
+        <button class="ar-nav-btn" data-soon="商店">🛒<span>商店</span></button>
+        <button class="ar-nav-btn" data-soon="戰績">📊<span>戰績</span></button>
+      </nav>
+    </div>
+
+    <!-- 開卡演出 overlay -->
+    <div id="ar-reveal" class="ar-reveal" hidden></div>
+
+    <!-- 卡片詳情 -->
+    <div id="ar-detail" class="ar-modal" hidden></div>
+
+    <!-- toast -->
+    <div id="ar-toast" class="ar-toast" hidden></div>
+  </div>
+</Layout>
+
+<style is:global>
+  :root { --ar-bg:#0a0e1a; --ar-card:#141a2e; --ar-card2:#1c2440; --ar-line:rgba(120,140,200,.18); --ar-text:#e8ecf6; --ar-dim:#8a93b0; --ar-blue:#3b82f6; --ar-red:#e23; }
+  .ar-app { min-height:100vh; background:var(--ar-bg); color:var(--ar-text); font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif; max-width:520px; margin:0 auto; position:relative; }
+
+  /* login */
+  .ar-login { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .ar-login-box { text-align:center; }
+  .ar-login-box .ar-logo { font-size:56px; }
+  .ar-login-box h1 { font-size:24px; margin:10px 0 4px; }
+  .ar-login-box p { color:var(--ar-dim); margin:0 0 24px; }
+  .ar-btn { display:block; width:100%; max-width:280px; margin:10px auto 0; padding:13px; border-radius:999px; font-weight:700; text-decoration:none; text-align:center; border:none; cursor:pointer; font-size:15px; }
+  .ar-btn-primary { background:var(--ar-red); color:#fff; }
+  .ar-btn-ghost { background:transparent; color:var(--ar-dim); border:1px solid var(--ar-line); }
+
+  /* top */
+  .ar-top { position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:rgba(10,14,26,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--ar-line); }
+  .ar-top-l { display:flex; align-items:center; gap:10px; }
+  .ar-avatar { width:38px; height:38px; border-radius:50%; background:var(--ar-card2); display:flex; align-items:center; justify-content:center; font-size:20px; }
+  .ar-name { font-weight:700; font-size:14px; }
+  .ar-rank { font-size:11px; color:var(--ar-dim); }
+  .ar-top-r { display:flex; align-items:center; gap:10px; font-size:13px; }
+  .ar-cur b { color:#fff; }
+  .ar-cog { text-decoration:none; font-size:18px; }
+
+  .ar-content { padding:14px 14px 90px; }
+  .ar-h2 { font-size:16px; margin:4px 0 12px; }
+  .ar-h2 small { color:var(--ar-dim); font-weight:400; font-size:12px; }
+
+  /* fleet / ship */
+  .ar-ship { background:linear-gradient(160deg,var(--ar-card),var(--ar-card2)); border:1px solid var(--ar-line); border-radius:16px; padding:14px; margin-bottom:14px; }
+  .ar-ship-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .ar-ship-name { font-weight:800; font-size:16px; }
+  .ar-ship-hp { font-size:12px; color:var(--ar-dim); }
+  .ar-ship-hp b { color:#7ee0a0; font-size:14px; }
+  .ar-slots { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .ar-slot { aspect-ratio:3/4; border-radius:10px; background:var(--ar-bg); border:1px dashed var(--ar-line); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+  .ar-slot img { width:100%; height:100%; object-fit:cover; }
+  .ar-slot .ar-empty { color:var(--ar-dim); font-size:11px; text-align:center; padding:4px; }
+  .ar-slot .ar-tbadge { position:absolute; left:4px; bottom:4px; }
+  .ar-ship-acts { display:flex; gap:8px; }
+  .ar-sortie { flex:1; padding:11px; border:none; border-radius:10px; background:var(--ar-red); color:#fff; font-weight:800; font-size:15px; cursor:pointer; }
+  .ar-edit { padding:11px 16px; border:1px solid var(--ar-line); border-radius:10px; background:transparent; color:var(--ar-text); font-weight:700; font-size:14px; cursor:pointer; }
+
+  .ar-tbadge { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; font-size:11px; font-weight:800; color:#fff; }
+  .t-ranged { background:#2f7ae0; } .t-melee { background:#e0562f; } .t-evade { background:#9b2fe0; }
+
+  .ar-marquee { margin-top:6px; padding:10px 14px; background:var(--ar-card); border:1px solid var(--ar-line); border-radius:10px; font-size:12.5px; color:var(--ar-dim); overflow:hidden; white-space:nowrap; }
+
+  /* grid / cards */
+  .ar-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  @media (max-width:380px){ .ar-grid { grid-template-columns:repeat(2,1fr); } }
+  .ar-c { border-radius:12px; overflow:hidden; background:var(--ar-card); border:2px solid var(--ar-line); cursor:pointer; position:relative; }
+  .ar-c-img { aspect-ratio:1/1; background:var(--ar-bg); overflow:hidden; }
+  .ar-c-img img { width:100%; height:100%; object-fit:cover; }
+  .ar-c-img .ph { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .ar-c-body { padding:6px 7px 8px; }
+  .ar-c-name { font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ar-c-sub { display:flex; align-items:center; justify-content:space-between; margin-top:3px; }
+  .ar-c-pow { font-size:11px; color:var(--ar-dim); }
+  .ar-rar { position:absolute; top:5px; right:5px; font-size:10px; font-weight:800; padding:1px 6px; border-radius:6px; color:#101010; }
+  .r-N{ background:#9aa3bd; } .r-R{ background:#5b86ff; color:#fff; } .r-SR{ background:#b15bff; color:#fff; } .r-SSR{ background:linear-gradient(135deg,#ffe07a,#ffb01f); }
+  .c-N{ border-color:#444c66; } .c-R{ border-color:#5b86ff; } .c-SR{ border-color:#b15bff; } .c-SSR{ border-color:#ffc23d; box-shadow:0 0 14px rgba(255,194,61,.35); }
+  .ar-empty-hangar { text-align:center; color:var(--ar-dim); padding:50px 16px; line-height:1.8; grid-column:1/-1; }
+
+  .ar-soon { text-align:center; color:var(--ar-dim); padding:80px 16px; font-size:18px; }
+
+  /* fab */
+  .ar-fab { position:fixed; left:50%; transform:translateX(-50%); bottom:84px; z-index:30; padding:13px 26px; border:none; border-radius:999px; background:var(--ar-red); color:#fff; font-weight:800; font-size:15px; cursor:pointer; box-shadow:0 8px 24px rgba(238,34,51,.4); }
+
+  /* bottom nav */
+  .ar-nav { position:fixed; left:0; right:0; bottom:0; max-width:520px; margin:0 auto; display:flex; background:rgba(12,16,30,.96); backdrop-filter:blur(10px); border-top:1px solid var(--ar-line); z-index:25; }
+  .ar-nav-btn { flex:1; background:transparent; border:none; color:var(--ar-dim); font-size:18px; padding:8px 0 10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .ar-nav-btn span { font-size:10px; }
+  .ar-nav-btn.is-active { color:#fff; }
+  .ar-nav-en { color:#ffd23d; }
+  .ar-nav-en span { color:#ffd23d; font-weight:700; }
+
+  /* reveal */
+  .ar-reveal { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.86); display:flex; align-items:center; justify-content:center; padding:24px; }
+  .ar-reveal[hidden]{ display:none; }
+  .ar-reveal-card { width:100%; max-width:300px; border-radius:18px; overflow:hidden; border:3px solid; background:var(--ar-card); animation:ar-pop .5s cubic-bezier(.2,1.2,.4,1); }
+  @keyframes ar-pop { 0%{ transform:scale(.6) rotate(-6deg); opacity:0; } 100%{ transform:scale(1) rotate(0); opacity:1; } }
+  .ar-rv-flash { position:absolute; inset:0; pointer-events:none; }
+  .ar-rv-img { aspect-ratio:1/1; background:var(--ar-bg); }
+  .ar-rv-img img { width:100%; height:100%; object-fit:cover; }
+  .ar-rv-body { padding:14px 16px 18px; }
+  .ar-rv-rar { font-size:13px; font-weight:800; }
+  .ar-rv-name { font-size:20px; font-weight:800; margin:4px 0; }
+  .ar-rv-flavor { font-size:12px; color:var(--ar-dim); margin-bottom:12px; }
+  .ar-rv-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:10px; text-align:center; }
+  .ar-rv-stat { background:var(--ar-bg); border-radius:8px; padding:6px 2px; }
+  .ar-rv-stat b { display:block; font-size:15px; }
+  .ar-rv-stat small { font-size:10px; color:var(--ar-dim); }
+  .ar-rv-special { font-size:12.5px; background:var(--ar-bg); border-radius:8px; padding:8px 10px; }
+  .ar-rv-special b { color:#ffd23d; }
+  .ar-rv-close { display:block; width:100%; margin-top:14px; padding:12px; border:none; border-radius:999px; background:var(--ar-red); color:#fff; font-weight:800; cursor:pointer; }
+
+  /* loading overlay */
+  .ar-loading { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.8); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:#fff; }
+  .ar-spin { width:46px; height:46px; border:4px solid rgba(255,255,255,.2); border-top-color:var(--ar-red); border-radius:50%; animation:ar-rot 1s linear infinite; }
+  @keyframes ar-rot { to{ transform:rotate(360deg); } }
+
+  /* detail modal */
+  .ar-modal { position:fixed; inset:0; z-index:55; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .ar-modal[hidden]{ display:none; }
+  .ar-modal-box { width:100%; max-width:340px; background:var(--ar-card); border-radius:16px; overflow:hidden; border:2px solid var(--ar-line); }
+
+  .ar-toast { position:fixed; left:50%; bottom:100px; transform:translateX(-50%); z-index:70; background:rgba(0,0,0,.9); color:#fff; padding:10px 18px; border-radius:999px; font-size:13px; }
+  .ar-toast[hidden]{ display:none; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id);
+  const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const TYPE: any = { ranged: { t: '射', c: 't-ranged' }, melee: { t: '近', c: 't-melee' }, evade: { t: '閃', c: 't-evade' } };
+  const RANK = (s: number) => 'F'; // MVP：簡單，之後做 F-SS
+
+  let cards: any[] = [];
+  let player: any = {};
+
+  function toast(msg: string) {
+    const t = $('ar-toast')!; t.textContent = msg; t.removeAttribute('hidden');
+    setTimeout(() => t.setAttribute('hidden', ''), 1800);
+  }
+
+  // 進站：檢查登入
+  (async () => {
+    let me: any = null;
+    try { const r = await fetch('/api/user/me', { credentials: 'include' }); if (r.ok) me = await r.json(); } catch {}
+    if (!me || !me.ok) { $('ar-login')!.removeAttribute('hidden'); return; }
+    $('ar-main')!.removeAttribute('hidden');
+    $('ar-name')!.textContent = me.user.display_name || me.user.email.split('@')[0];
+    await loadData();
+  })();
+
+  async function loadData() {
+    try {
+      const r = await fetch('/api/card/list', { credentials: 'include' });
+      const d = await r.json();
+      if (!d.ok) return;
+      cards = d.cards || []; player = d.player || {};
+      $('ar-parts')!.textContent = player.parts ?? 0;
+      $('ar-coins')!.textContent = (player.coins ?? 0).toLocaleString();
+      $('ar-rank')!.textContent = '段位 ' + RANK(player.rank_score || 0);
+      renderFleet(); renderHangar();
+    } catch {}
+  }
+
+  // 大廳：MVP 1 艘戰艦，顯示最近 3 張卡（編成下一片才做）
+  function renderFleet() {
+    const lineup = cards.slice(0, 3);
+    const hp = (player.ship_base_hp || 800) + lineup.reduce((s, c) => s + (c.hp || 0), 0);
+    const slot = (c: any) => c
+      ? `<div class="ar-slot">${c.photo_url ? `<img src="${esc(c.photo_url)}" alt=""/>` : '<span class="ar-empty">🤖</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span></div>`
+      : `<div class="ar-slot"><span class="ar-empty">空格<br>去格納庫創卡</span></div>`;
+    $('ar-fleet')!.innerHTML = `
+      <div class="ar-ship">
+        <div class="ar-ship-head"><span class="ar-ship-name">🚀 我的戰艦</span><span class="ar-ship-hp">HP <b>${hp.toLocaleString()}</b></span></div>
+        <div class="ar-slots">${slot(lineup[0])}${slot(lineup[1])}${slot(lineup[2])}</div>
+        <div class="ar-ship-acts">
+          <button class="ar-sortie" id="ar-sortie">⚔️ 出擊</button>
+          <button class="ar-edit" id="ar-edit">編成</button>
+        </div>
+      </div>`;
+    $('ar-sortie')!.addEventListener('click', () => toast(lineup.length ? '戰鬥系統開發中（下一階段）⚔️' : '先去格納庫創一張卡吧！'));
+    $('ar-edit')!.addEventListener('click', () => toast('編成系統開發中（下一階段）'));
+  }
+
+  function renderHangar() {
+    $('ar-card-count')!.textContent = cards.length ? `（${cards.length} 張）` : '';
+    if (!cards.length) {
+      $('ar-cards')!.innerHTML = '<div class="ar-empty-hangar">還沒有戰鬥卡 🎴<br>按下方「＋ 拍照創卡」<br>拍你的鋼彈成品變成卡！</div>';
+      return;
+    }
+    $('ar-cards')!.innerHTML = cards.map((c, i) => `
+      <div class="ar-c c-${esc(c.rarity)}" data-i="${i}">
+        <span class="ar-rar r-${esc(c.rarity)}">${esc(c.rarity)}</span>
+        <div class="ar-c-img">${c.photo_url ? `<img src="${esc(c.photo_url)}" alt=""/>` : '<span class="ph">🤖</span>'}</div>
+        <div class="ar-c-body">
+          <div class="ar-c-name">${esc(c.name)}</div>
+          <div class="ar-c-sub"><span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span><span class="ar-c-pow">戰力 ${(c.hp + c.atk + c.def + c.mob)}</span></div>
+        </div>
+      </div>`).join('');
+    $('ar-cards')!.querySelectorAll('.ar-c').forEach((el) => el.addEventListener('click', () => showDetail(cards[parseInt((el as HTMLElement).dataset.i!, 10)])));
+  }
+
+  // tabs
+  document.querySelectorAll('.ar-nav-btn').forEach((b) => {
+    b.addEventListener('click', () => {
+      const soon = (b as HTMLElement).dataset.soon;
+      if (soon) { toast(soon + ' 即將推出 🚧'); return; }
+      const tab = (b as HTMLElement).dataset.tab!;
+      document.querySelectorAll('.ar-nav-btn').forEach((x) => x.classList.toggle('is-active', x === b));
+      $('tab-lobby')!.toggleAttribute('hidden', tab !== 'lobby');
+      $('tab-hangar')!.toggleAttribute('hidden', tab !== 'hangar');
+      $('ar-create-fab')!.toggleAttribute('hidden', tab !== 'hangar');
+    });
+  });
+
+  // 創卡
+  $('ar-create-fab')!.addEventListener('click', () => ($('ar-file') as HTMLInputElement).click());
+  ($('ar-file') as HTMLInputElement).addEventListener('change', async function () {
+    const f = this.files?.[0]; this.value = '';
+    if (!f) return;
+    showLoading();
+    try {
+      const img = await resize(f);
+      const r = await fetch('/api/card/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ image: img }) });
+      let d: any = null; try { d = await r.json(); } catch {}
+      hideLoading();
+      if (!r.ok || !d || !d.ok) { toast((d && d.message) || (r.status >= 500 ? 'AI 忙線中，稍後再試' : '生成失敗')); return; }
+      reveal(d.card);
+      await loadData();
+    } catch { hideLoading(); toast('讀圖或網路錯誤'); }
+  });
+
+  function resize(f: File): Promise<{ mime: string; base64: string }> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(f); const im = new Image();
+      im.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1280; let w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
+        if (Math.max(w, h) > MAX) { const s = MAX / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+        try { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d')!.drawImage(im, 0, 0, w, h); resolve({ mime: 'image/jpeg', base64: c.toDataURL('image/jpeg', 0.85).split(',')[1] || '' }); } catch (e) { reject(e); }
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('讀圖失敗')); };
+      im.src = url;
+    });
+  }
+
+  let loadingEl: HTMLElement | null = null;
+  function showLoading() { loadingEl = document.createElement('div'); loadingEl.className = 'ar-loading'; loadingEl.innerHTML = '<div class="ar-spin"></div><div>AI 組裝中…</div>'; document.body.appendChild(loadingEl); }
+  function hideLoading() { if (loadingEl) { loadingEl.remove(); loadingEl = null; } }
+
+  // 開卡演出
+  function reveal(c: any) {
+    const pow = c.hp + c.atk + c.def + c.mob;
+    const rarLabel: any = { N: '★ N', R: '★★ R', SR: '★★★ SR', SSR: '☆☆☆☆ SSR ☆☆☆☆' };
+    const el = $('ar-reveal')!;
+    el.innerHTML = `
+      <div class="ar-reveal-inner">
+        <div class="ar-reveal-card c-${esc(c.rarity)}">
+          <div class="ar-rv-img">${c.photo_url ? `<img src="${esc(c.photo_url)}" alt=""/>` : ''}</div>
+          <div class="ar-rv-body">
+            <div class="ar-rv-rar r-${esc(c.rarity)}" style="color:inherit">${rarLabel[c.rarity] || c.rarity}　<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span>　🌍${esc(c.terrain)}</div>
+            <div class="ar-rv-name">${esc(c.name)}</div>
+            <div class="ar-rv-flavor">${esc(c.flavor)}</div>
+            <div class="ar-rv-stats">
+              <div class="ar-rv-stat"><b>${c.hp}</b><small>HP</small></div>
+              <div class="ar-rv-stat"><b>${c.atk}</b><small>攻</small></div>
+              <div class="ar-rv-stat"><b>${c.def}</b><small>防</small></div>
+              <div class="ar-rv-stat"><b>${c.mob}</b><small>機動</small></div>
+            </div>
+            <div class="ar-rv-special">💥 <b>${esc(c.special_name)}</b>　${esc(c.special_desc)}</div>
+            <button class="ar-rv-close" id="ar-rv-close">收進格納庫！（戰力 ${pow}）</button>
+          </div>
+        </div>
+      </div>`;
+    el.removeAttribute('hidden');
+    $('ar-rv-close')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; });
+  }
+
+  // 卡詳情
+  function showDetail(c: any) {
+    const pow = c.hp + c.atk + c.def + c.mob;
+    const el = $('ar-detail')!;
+    el.innerHTML = `
+      <div class="ar-modal-box c-${esc(c.rarity)}">
+        <div class="ar-rv-img" style="position:relative"><span class="ar-rar r-${esc(c.rarity)}">${esc(c.rarity)}</span>${c.photo_url ? `<img src="${esc(c.photo_url)}" alt=""/>` : ''}</div>
+        <div class="ar-rv-body">
+          <div class="ar-rv-name">${esc(c.name)} <span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span></div>
+          <div class="ar-rv-flavor">${esc(c.flavor)} · 🌍${esc(c.terrain)} · 戰歷 ${c.wins}/${c.battles}</div>
+          <div class="ar-rv-stats">
+            <div class="ar-rv-stat"><b>${c.hp}</b><small>HP</small></div>
+            <div class="ar-rv-stat"><b>${c.atk}</b><small>攻</small></div>
+            <div class="ar-rv-stat"><b>${c.def}</b><small>防</small></div>
+            <div class="ar-rv-stat"><b>${c.mob}</b><small>機動</small></div>
+          </div>
+          <div class="ar-rv-special">💥 <b>${esc(c.special_name)}</b>　${esc(c.special_desc)}</div>
+          <button class="ar-rv-close" id="ar-dt-close">關閉（戰力 ${pow}）</button>
+        </div>
+      </div>`;
+    el.removeAttribute('hidden');
+    $('ar-dt-close')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; });
+    el.addEventListener('click', (e) => { if (e.target === el) { el.setAttribute('hidden', ''); el.innerHTML = ''; } });
+  }
+</script>
