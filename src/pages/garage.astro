@@ -34,6 +34,14 @@ import Breadcrumb from '../components/Breadcrumb.astro';
           <button id="scan-close" class="scan-x" aria-label="關閉">✕</button>
         </div>
         <div id="scan-body" class="scan-body"></div>
+        <div class="scan-manual">
+          <div class="scan-manual-label">🔧 AI 認錯了？自己輸入型號找：</div>
+          <div class="scan-manual-row">
+            <input id="scan-q" class="scan-q" type="search" placeholder="例：薩克 / 自由 / RX-78-2" />
+            <button id="scan-q-btn" class="gr-scan">搜尋型錄</button>
+          </div>
+          <div id="scan-q-results" class="scan-q-results"></div>
+        </div>
         <div class="scan-foot">
           <button id="scan-add" class="gr-scan" hidden>加入勾選的</button>
         </div>
@@ -95,6 +103,21 @@ import Breadcrumb from '../components/Breadcrumb.astro';
   .scan-item .nm small { display: block; font-weight: 400; color: var(--color-text-secondary); font-size: 11px; }
   .scan-unmatched { margin-top: 14px; font-size: 13px; color: var(--color-text); line-height: 1.8; }
   .scan-unmatched a { color: var(--color-primary); font-weight: 700; text-decoration: underline; }
+
+  .scan-manual { padding: 12px 18px; border-top: 1px solid var(--color-border-subtle); }
+  .scan-manual-label { font-size: 12.5px; color: var(--color-text); font-weight: 600; margin-bottom: 8px; }
+  .scan-manual-row { display: flex; gap: 8px; }
+  .scan-q { flex: 1; min-width: 0; padding: 9px 12px; font-size: 14px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-input-bg); color: var(--color-text); outline: none; }
+  .scan-q:focus { border-color: var(--color-primary); }
+  .scan-manual .gr-scan { margin-top: 0; flex-shrink: 0; white-space: nowrap; }
+  .scan-q-results { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+  .scan-qr { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--color-border-subtle); }
+  .scan-qr img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+  .scan-qr .ph { width: 40px; height: 40px; border-radius: 8px; background: var(--color-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .scan-qr .nm { flex: 1; min-width: 0; font-size: 13.5px; color: var(--color-text); font-weight: 600; }
+  .scan-qr .nm small { display: block; font-weight: 400; color: var(--color-text-secondary); font-size: 11px; }
+  .scan-qr-add { flex-shrink: 0; padding: 6px 12px; font-size: 12px; font-weight: 700; border: none; border-radius: var(--radius-pill); background: var(--color-primary); color: #fff; cursor: pointer; }
+  .scan-qr-add:disabled { opacity: .5; }
 </style>
 
 <script>
@@ -206,11 +229,42 @@ import Breadcrumb from '../components/Breadcrumb.astro';
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('讀圖失敗')); };
     img.src = url;
   });
-  const closeModal = () => { modal.setAttribute('hidden', ''); scanBody.innerHTML = ''; scanAdd.setAttribute('hidden', ''); scanMatched = []; };
+  const scanQ = $('scan-q') as HTMLInputElement, scanQResults = $('scan-q-results')!;
+  const closeModal = () => { modal.setAttribute('hidden', ''); scanBody.innerHTML = ''; scanAdd.setAttribute('hidden', ''); scanMatched = []; scanQ.value = ''; scanQResults.innerHTML = ''; };
 
   scanBtn?.addEventListener('click', () => scanInput.click());
   $('scan-close')!.addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  // 手動輸入型號 → 搜型錄 → 加入車庫（AI 認錯時的人工覆蓋）
+  async function manualSearch() {
+    const q = scanQ.value.trim();
+    if (!q) return;
+    scanQResults.innerHTML = '<div class="scan-loading">搜尋中…</div>';
+    try {
+      const r = await fetch('/api/user/catalog-search?q=' + encodeURIComponent(q), { credentials: 'include' });
+      const d = await r.json();
+      const list = (d && d.results) || [];
+      if (!list.length) { scanQResults.innerHTML = '<div class="scan-loading">型錄裡找不到，換個關鍵字（或這台還沒收錄）</div>'; return; }
+      scanQResults.innerHTML = list.map((c: any) => {
+        const img = c.image_r2_key ? `<img src="/api/screenshot/${encodeURIComponent(c.image_r2_key)}" alt="" />` : '<span class="ph">🤖</span>';
+        return `<div class="scan-qr">${img}<span class="nm">${esc(c.full_name)}<small>${esc(c.series || '')}</small></span><button class="scan-qr-add" data-slug="${esc(c.slug)}">加入</button></div>`;
+      }).join('');
+    } catch { scanQResults.innerHTML = '<div class="scan-loading">搜尋失敗，請再試</div>'; }
+  }
+  $('scan-q-btn')!.addEventListener('click', manualSearch);
+  scanQ.addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') manualSearch(); });
+  scanQResults.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement).closest('.scan-qr-add') as HTMLButtonElement;
+    if (!btn) return;
+    btn.disabled = true; btn.textContent = '加入中…';
+    try {
+      const r = await fetch('/api/user/garage/add', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ slug: btn.dataset.slug, status: 'backlog' }) });
+      const d = await r.json().catch(() => null);
+      if (r.ok && d && d.ok) { btn.textContent = '✓ 已加入'; load(); }
+      else { btn.disabled = false; btn.textContent = (d && d.message) || '失敗'; }
+    } catch { btn.disabled = false; btn.textContent = '失敗'; }
+  });
 
   scanInput?.addEventListener('change', async () => {
     const files = Array.from(scanInput.files || []).slice(0, 3);
