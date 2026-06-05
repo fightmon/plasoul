@@ -182,11 +182,11 @@
     .fl-cross::after { top: 50%; left: -8px; right: -8px; height: 2px; transform: translateY(-50%); }
     @keyframes fl-crossk { 0%{opacity:0;transform:translate(-50%,-50%) scale(1.7);} 40%{opacity:1;transform:translate(-50%,-50%) scale(1);} 100%{opacity:.5;} }
 
-    .fl-slash { position: absolute; width: 122px; height: 10px; transform: translate(-50%,-50%); animation: fl-slashk .5s ease-out forwards; }
+    .fl-slash { position: absolute; width: 122px; height: 10px; transform: translate(-50%,-50%); animation: fl-slashk .42s ease-out forwards; }
     .fl-slash.big { width: 162px; height: 14px; }
     .fl-slash::before, .fl-slash::after { content: ''; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(90deg,transparent 6%,#fff 50%,transparent 94%); filter: drop-shadow(0 0 9px #fff) drop-shadow(0 0 18px #9bdcff); }
     .fl-slash::after { transform: rotate(76deg); }
-    @keyframes fl-slashk { 0%{opacity:0;transform:translate(-50%,-50%) rotate(-46deg) scale(.25);} 35%{opacity:1;transform:translate(-50%,-50%) rotate(-34deg) scale(1.35);} 100%{opacity:0;transform:translate(-50%,-50%) rotate(-24deg) scale(1.05);} }
+    @keyframes fl-slashk { 0%{opacity:0;transform:translate(-50%,-50%) rotate(-46deg) scale(.25);} 24%{opacity:1;transform:translate(-50%,-50%) rotate(-34deg) scale(1.35);} 100%{opacity:0;transform:translate(-50%,-50%) rotate(-24deg) scale(1.05);} }
 
     .fl-arc { position: absolute; }
     .fl-arc path { fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 6px #9bdcff) drop-shadow(0 0 12px #fff); stroke-dasharray: 210; stroke-dashoffset: 210; animation: fl-draw .45s ease-out forwards; }
@@ -266,11 +266,16 @@
       const r = missOn() ? 0.5 : (ratio || 0.78);
       const dx = (b.x - a.x) * r, dy = (b.y - a.y) * r;
       aEl.style.zIndex = '9';
-      aEl.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.12)', offset: .42 }, { transform: 'translate(0,0) scale(1)' }], { duration: 560, easing: 'ease-out' });
-      setTimeout(cb, 210);
-      setTimeout(() => { aEl.style.zIndex = ''; }, 560);
+      aEl.animate([
+        { transform: 'translate(0,0) scale(1)' },
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.14)', offset: .2 },
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.12)', offset: .58 },
+        { transform: 'translate(0,0) scale(1)' }
+      ], { duration: 520, easing: 'ease-out' });
+      setTimeout(cb, 110);
+      setTimeout(() => { aEl.style.zIndex = ''; }, 520);
     }
-    function lungeIdx(s, i, ds, j, ratio, cb) { const aEl = card(s, i), dEl = card(ds, j); if (!aEl || !dEl) { cb && cb(); return; } const a = cen(aEl), b = cen(dEl); const dx = (b.x - a.x) * ratio, dy = (b.y - a.y) * ratio; aEl.style.zIndex = '9'; aEl.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.12)', offset: .45 }, { transform: 'translate(0,0)' }], { duration: 520, easing: 'ease-out' }); setTimeout(() => cb && cb(), 200); setTimeout(() => { aEl.style.zIndex = ''; }, 520); }
+    function lungeIdx(s, i, ds, j, ratio, cb) { const aEl = card(s, i), dEl = card(ds, j); if (!aEl || !dEl) { cb && cb(); return; } const a = cen(aEl), b = cen(dEl); const dx = (b.x - a.x) * ratio, dy = (b.y - a.y) * ratio; aEl.style.zIndex = '9'; aEl.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.12)', offset: .25 }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.1)', offset: .6 }, { transform: 'translate(0,0)' }], { duration: 520, easing: 'ease-out' }); setTimeout(() => cb && cb(), 130); setTimeout(() => { aEl.style.zIndex = ''; }, 520); }
 
     // 蓄力光束
     function chargeBeam(a, b, big, miss) {
@@ -346,7 +351,37 @@
     function eThrust() { lunge(() => { if (!missOn()) { const a = cen(atkEl()), c = cen(defEl()); const dx = c.x - a.x, dy = c.y - a.y; const len = Math.hypot(dx, dy) * 0.7; const ang = Math.atan2(dy, dx) * 180 / Math.PI; const t = add('fl-thrust' + (critOn() ? ' big' : ''), 420); t.style.left = a.x + 'px'; t.style.top = a.y + 'px'; t.style.width = len + 'px'; t.style.transform = 'rotate(' + ang + 'deg)'; t.innerHTML = '<i></i>'; ring(c.x, c.y, '#fff', critOn()); } resolve(defEl()); }, 0.65); }
     function eCross() { lunge(() => { if (!missOn()) { const c = cen(defEl()); slashAt(c, critOn()); setTimeout(() => { ring(c.x, c.y, '#ffb13d', true); shake(); }, 170); } resolve(defEl()); }); }
     function eSpin() { lunge(() => { if (!missOn()) { const c = cen(defEl()); const big = critOn(); const s = add('fl-spin', 560); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; if (big) { s.style.width = '124px'; s.style.height = '124px'; burst(c.x, c.y, '#fff', true); shake(); } } resolve(defEl()); }); }
-    function eImpact() { lunge(() => { if (!missOn()) { const c = cen(defEl()); const big = critOn(); ring(c.x, c.y, '#fff', true); setTimeout(() => ring(c.x, c.y, '#ffd24d', true), 110); if (big) setTimeout(() => { ring(c.x, c.y, '#fff', true); burst(c.x, c.y, '#ffd24d', true); shake(); }, 220); shake(); } resolve(defEl()); }); }
+    function topple(dEl) {
+      const fwd = atk === 'my' ? 1 : -1;
+      dEl.animate([
+        { transform: 'translate(0,0) rotate(0)', filter: 'none' },
+        { transform: 'translate(' + (fwd * 18) + 'px,5px) rotate(' + (fwd * 24) + 'deg)', filter: 'brightness(1) saturate(2.5) sepia(.6) hue-rotate(-30deg)', offset: .3 },
+        { transform: 'translate(' + (fwd * 10) + 'px,3px) rotate(' + (fwd * 14) + 'deg)', filter: 'none', offset: .62 },
+        { transform: 'translate(0,0) rotate(0)', filter: 'none' }
+      ], { duration: 620, easing: 'ease-out' });
+    }
+    function eImpact() {
+      const aEl = atkEl(), dEl = defEl(); const a = cen(aEl), b = cen(dEl); const big = critOn();
+      const fwd = atk === 'my' ? 1 : -1;
+      const dx = (b.x - a.x) * (missOn() ? 0.5 : 0.72), dy = (b.y - a.y) * (missOn() ? 0.5 : 0.72);
+      aEl.style.zIndex = '9';
+      aEl.animate([
+        { transform: 'translate(0,0) rotate(0)' },
+        { transform: 'translate(' + (-fwd * 24) + 'px,-7px) rotate(' + (-fwd * 11) + 'deg)', offset: .35 },   // 後仰蓄力
+        { transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (fwd * 17) + 'deg) scale(1.16)', offset: .64 }, // 前傾衝撞
+        { transform: 'translate(0,0) rotate(0)' }
+      ], { duration: 700, easing: 'ease-in' });
+      if (missOn()) setTimeout(() => missDodge(dEl), 380);
+      setTimeout(() => {
+        if (missOn()) { dmg(dEl, 'MISS', 'miss'); return; }
+        const c = cen(dEl);
+        ring(c.x, c.y, '#fff', true); setTimeout(() => ring(c.x, c.y, '#ffd24d', true), 100);
+        if (big) setTimeout(() => { ring(c.x, c.y, '#fff', true); burst(c.x, c.y, '#ffd24d', true); }, 190);
+        topple(dEl); shake(); if (big) setTimeout(shake, 90);
+        dmg(dEl, '-' + (big ? '999!' : '350'), big ? 'crit' : '');
+      }, 450);
+      setTimeout(() => { aEl.style.zIndex = ''; }, 700);
+    }
 
     // ---- 閃避類 ----
     const awayOf = (el) => el.id.indexOf('foe') >= 0 ? 1 : -1;
