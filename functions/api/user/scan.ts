@@ -95,22 +95,30 @@ async function analyze(img: any, workerUrl: string): Promise<{ items: any[]; err
     { type: 'text', text: SCAN_PROMPT },
     { type: 'image_url', image_url: { url: `data:${img.mime};base64,${img.base64}` } },
   ];
-  let resp: Response;
-  try {
-    resp = await fetch(workerUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, messages: [{ role: 'user', content }], temperature: 0.1, max_tokens: 1200 }),
-    });
-  } catch (e: any) { return { items: [], error: 'AI 連線錯誤' }; }
-  if (!resp.ok) return { items: [], error: `AI HTTP ${resp.status}` };
-  let json: any;
-  try { json = await resp.json(); } catch { return { items: [], error: 'AI 回傳非 JSON' }; }
-  const c = json?.choices?.[0]?.message?.content || '';
-  let parsed: any = null;
-  try { parsed = JSON.parse(c); } catch { const m = c.match(/\{[\s\S]*\}/); if (m) { try { parsed = JSON.parse(m[0]); } catch {} } }
-  if (!parsed) return { items: [], error: 'AI 回傳無法解析' };
-  return { items: Array.isArray(parsed.items) ? parsed.items : [] };
+  const payload = JSON.stringify({ model: MODEL, messages: [{ role: 'user', content }], temperature: 0.1, max_tokens: 1200 });
+
+  // 逾時保護 + 重試一次（Groq 偶爾過載/慢，避免整個函式拖到 CF 逾時回非 JSON 5xx）
+  let lastErr = 'AI 連線錯誤';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const resp = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!resp.ok) { lastErr = `AI HTTP ${resp.status}`; continue; }
+      let json: any;
+      try { json = await resp.json(); } catch { lastErr = 'AI 回傳非 JSON'; continue; }
+      const c = json?.choices?.[0]?.message?.content || '';
+      let parsed: any = null;
+      try { parsed = JSON.parse(c); } catch { const m = c.match(/\{[\s\S]*\}/); if (m) { try { parsed = JSON.parse(m[0]); } catch {} } }
+      if (!parsed) { lastErr = 'AI 回傳無法解析'; continue; }
+      return { items: Array.isArray(parsed.items) ? parsed.items : [] };
+    } catch {
+      clearTimeout(timer);
+      lastErr = 'AI 逾時，請再試一次';
+    }
+  }
+  return { items: [], error: lastErr };
 }
 
 function err(code: string, message: string, status: number): Response {
