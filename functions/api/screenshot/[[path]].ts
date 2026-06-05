@@ -27,8 +27,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return new Response('Missing key', { status: 400 });
   }
 
-  // 安全：只允許 screenshots/ 開頭，避免 path traversal
-  if (!key.startsWith('screenshots/')) {
+  // 安全：只允許 screenshots/ 或 cards/ 開頭，避免 path traversal
+  if (!key.startsWith('screenshots/') && !key.startsWith('cards/')) {
     return new Response('Forbidden', { status: 403 });
   }
 
