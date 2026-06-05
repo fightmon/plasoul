@@ -268,12 +268,12 @@ import Layout from '../layouts/Layout.astro';
   /* 特效座標由 JS 依目標卡中心點計算（left/top inline），永遠對準對方卡正中 */
   .bt-laser { position:absolute; height:6px; transform-origin:left center; z-index:7; }
   .bt-laser.big { height:13px; }
-  .bt-laser i { display:block; width:100%; height:100%; border-radius:6px; transform-origin:left center; animation:bt-beam .5s ease-out; }
+  .bt-laser i { display:block; width:100%; height:100%; border-radius:6px; transform-origin:left center; animation:bt-beam .5s ease-out forwards; }
   .bt-laser.l-my i { background:linear-gradient(90deg,#9fe8ff,#2f9bff); box-shadow:0 0 12px #2f9bff; }
   .bt-laser.l-foe i { background:linear-gradient(90deg,#ffd0d0,#ff4d4d); box-shadow:0 0 12px #ff4d4d; }
   .bt-laser.weak { height:3px; opacity:.4; } .bt-laser.weak i { box-shadow:none; }
   @keyframes bt-beam { 0%{ transform:scaleX(0); opacity:.5;} 45%{ transform:scaleX(1); opacity:1;} 100%{ transform:scaleX(1); opacity:0;} }
-  .bt-slash { position:absolute; width:128px; height:10px; z-index:8; transform:translate(-50%,-50%); animation:bt-slashk .5s ease-out; }
+  .bt-slash { position:absolute; width:128px; height:10px; z-index:8; transform:translate(-50%,-50%); animation:bt-slashk .5s ease-out forwards; }
   .bt-slash.big { width:172px; height:15px; }
   .bt-slash::before, .bt-slash::after { content:''; position:absolute; inset:0; border-radius:12px; background:linear-gradient(90deg,transparent 6%,#fff 50%,transparent 94%); filter:drop-shadow(0 0 9px #fff) drop-shadow(0 0 18px #9bdcff); }
   .bt-slash::after { transform:rotate(76deg); }
