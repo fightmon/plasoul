@@ -244,8 +244,29 @@ import Layout from '../layouts/Layout.astro';
   .ar-bar { height:12px; background:var(--ar-bg); border-radius:999px; overflow:hidden; margin:4px 0; }
   .ar-bar i { display:block; height:100%; background:linear-gradient(90deg,#3ddc84,#7ee0a0); transition:width .35s; }
   .ar-bar.foe i { background:linear-gradient(90deg,#ff5a5a,#ff8a8a); }
-  .ar-bt-log { background:var(--ar-bg); border-radius:10px; padding:10px 12px; font-size:12.5px; line-height:1.7; overflow-y:auto; max-height:40vh; min-height:120px; }
-  .ar-bt-line { padding:2px 0; border-bottom:1px solid var(--ar-line); }
+  /* 卡片對撞 */
+  .bt-arena { position:relative; height:230px; background:radial-gradient(circle at 50% 40%, #1a2447, #0a0e1a); border-radius:12px; overflow:hidden; margin-bottom:10px; }
+  .bt-arena.shake { animation:bt-shake .3s; }
+  @keyframes bt-shake { 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-6px); } 40%{ transform:translateX(6px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(4px); } }
+  .bt-card { position:absolute; top:50%; transform:translateY(-50%); width:40%; max-width:140px; aspect-ratio:3/4; border-radius:12px; overflow:hidden; border:2px solid var(--ar-line); background:var(--ar-card2); transition:left .3s cubic-bezier(.3,1.4,.5,1), right .3s cubic-bezier(.3,1.4,.5,1); }
+  .bt-my { left:-46%; } .bt-foe { right:-46%; }
+  .bt-my.in { left:5%; } .bt-foe.in { right:5%; }
+  .bt-card img { width:100%; height:100%; object-fit:cover; }
+  .bt-noimg { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:46px; }
+  .bt-noimg.t-ranged{ background:#1c3a66; } .bt-noimg.t-melee{ background:#5a2a1c; } .bt-noimg.t-evade{ background:#3a1c5a; }
+  .bt-tb { position:absolute; left:5px; bottom:5px; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; }
+  .bt-mid { position:absolute; left:50%; top:42%; transform:translate(-50%,-50%); z-index:3; }
+  .bt-badge { font-size:24px; font-weight:900; padding:4px 14px; border-radius:10px; background:rgba(0,0,0,.6); }
+  .bt-badge.win { color:#7ee0a0; } .bt-badge.lose { color:#ff8a8a; }
+  .bt-dmg { position:absolute; top:14px; left:50%; transform:translateX(-50%); font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 6px #000; animation:bt-pop .85s ease-out forwards; z-index:4; white-space:nowrap; }
+  .bt-dmg.crit { font-size:30px; color:#ffd23d; } .bt-dmg.block { color:#9ad0ff; } .bt-dmg.miss { color:#bbb; font-size:18px; }
+  @keyframes bt-pop { 0%{ opacity:0; transform:translate(-50%,8px) scale(.6);} 25%{ opacity:1; transform:translate(-50%,-6px) scale(1.1);} 100%{ opacity:0; transform:translate(-50%,-34px) scale(1);} }
+  .bt-ult { position:fixed; inset:0; z-index:70; display:flex; align-items:center; justify-content:center; pointer-events:none; animation:bt-flash .9s ease-out; }
+  @keyframes bt-flash { 0%{ background:rgba(255,210,61,0);} 15%{ background:rgba(255,210,61,.35);} 100%{ background:rgba(255,210,61,0);} }
+  .bt-ult-in { text-align:center; font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 12px #000; animation:ar-pop .5s; }
+  .bt-ult-in b { font-size:40px; display:block; color:#ffd23d; }
+  .bt-ult-in.foe b { color:#ff8a8a; }
+  .bt-skip { display:block; margin:0 auto 8px; background:transparent; border:1px solid var(--ar-line); color:var(--ar-dim); padding:6px 16px; border-radius:999px; font-size:12px; cursor:pointer; }
   .ar-bt-result { text-align:center; font-size:24px; font-weight:800; margin:12px 0 6px; }
   .ar-bt-result.win { color:#ffd23d; } .ar-bt-result.lose { color:#9aa3bd; }
   .ar-bt-rw { text-align:center; font-size:14px; margin-bottom:12px; }
@@ -376,25 +397,56 @@ import Layout from '../layouts/Layout.astro';
   function animateBattle(d: any) {
     const el = $('ar-battle')!;
     const myMax = d.my.maxHP, foeMax = d.foe.maxHP;
-    el.innerHTML = `<div class="ar-bt-box"><div class="ar-bt-bars"><div class="ar-bt-side"><span>我的戰艦</span><div class="ar-bar"><i id="bt-my" style="width:100%"></i></div><small id="bt-myn">${myMax}</small></div><div class="ar-bt-vs">VS</div><div class="ar-bt-side"><span>${esc(d.foe.name)}</span><div class="ar-bar foe"><i id="bt-foe" style="width:100%"></i></div><small id="bt-foen">${foeMax}</small></div></div><div class="ar-bt-log" id="bt-log"></div><div id="bt-end"></div></div>`;
-    const logEl = $('bt-log')!; const lines = d.log || []; let i = 0;
-    const step = () => {
-      if (i >= lines.length) { showEnd(); return; }
-      const ev = lines[i++];
-      const ln = document.createElement('div'); ln.className = 'ar-bt-line'; ln.textContent = ev.text; logEl.appendChild(ln);
-      ($('bt-my') as HTMLElement).style.width = Math.max(0, Math.round(ev.myHP / myMax * 100)) + '%';
-      ($('bt-foe') as HTMLElement).style.width = Math.max(0, Math.round(ev.foeHP / foeMax * 100)) + '%';
-      $('bt-myn')!.textContent = ev.myHP; $('bt-foen')!.textContent = ev.foeHP;
-      logEl.scrollTop = logEl.scrollHeight;
-      setTimeout(step, ev.round === 0 ? 550 : 650);
+    el.innerHTML = `<div class="ar-bt-box">
+      <div class="ar-bt-bars">
+        <div class="ar-bt-side"><span>我方</span><div class="ar-bar"><i id="bt-my" style="width:100%"></i></div><small id="bt-myn">${myMax}</small></div>
+        <div class="ar-bt-vs" id="bt-round">VS</div>
+        <div class="ar-bt-side"><span>${esc(d.foe.name)}</span><div class="ar-bar foe"><i id="bt-foe" style="width:100%"></i></div><small id="bt-foen">${foeMax}</small></div>
+      </div>
+      <div class="bt-arena" id="bt-arena"><div class="bt-card bt-my" id="bt-cm"></div><div class="bt-mid" id="bt-mid"></div><div class="bt-card bt-foe" id="bt-cf"></div></div>
+      <button class="bt-skip" id="bt-skip">跳過 ⏩</button>
+      <div id="bt-end"></div>
+    </div>`;
+    const lines = d.log || []; let i = 0; const timers: any[] = []; let skipped = false;
+    const tcls = (t: string) => t === 'ranged' ? 't-ranged' : t === 'melee' ? 't-melee' : 't-evade';
+    const tlab = (t: string) => ({ ranged: '射', melee: '近', evade: '閃' } as any)[t] || '?';
+    const cardInner = (c: any, foe: boolean) => `${c.photo ? `<img src="${esc(c.photo)}"/>` : `<div class="bt-noimg ${tcls(c.type)}">${foe ? '👾' : '🤖'}</div>`}<span class="bt-tb ${tcls(c.type)}">${tlab(c.type)}</span>`;
+    const setHP = (my: number, foe: number) => { ($('bt-my') as HTMLElement).style.width = Math.max(0, Math.round(my / myMax * 100)) + '%'; ($('bt-foe') as HTMLElement).style.width = Math.max(0, Math.round(foe / foeMax * 100)) + '%'; $('bt-myn')!.textContent = String(my); $('bt-foen')!.textContent = String(foe); };
+    const popDmg = (cardEl: HTMLElement, h: any, side: string) => {
+      if (!h) return;
+      const s = document.createElement('span'); s.className = 'bt-dmg ' + (side === 'my' ? 'dmg-my' : 'dmg-foe');
+      if (h.dodge) { s.textContent = 'MISS'; s.classList.add('miss'); }
+      else { s.textContent = '-' + h.dmg + (h.crit ? '!' : ''); if (h.crit) s.classList.add('crit'); if (h.block) s.classList.add('block'); }
+      cardEl.appendChild(s); setTimeout(() => s.remove(), 850);
     };
-    const showEnd = () => {
-      const rw = d.rewards;
+    const showUlt = (u: any) => { const o = document.createElement('div'); o.className = 'bt-ult'; o.innerHTML = `<div class="bt-ult-in ${u.side === 'my' ? 'my' : 'foe'}">💥 ${esc(u.name)}<br><b>${u.dmg}</b></div>`; el.appendChild(o); setTimeout(() => o.remove(), 950); };
+    const end = () => {
+      const rw = d.rewards; const sk = $('bt-skip'); if (sk) sk.style.display = 'none';
       $('bt-end')!.innerHTML = `<div class="ar-bt-result ${d.win ? 'win' : 'lose'}">${d.win ? '🎉 勝利！' : '💧 雖敗猶榮'}</div><div class="ar-bt-rw">🔩+${rw.parts}　🪙+${rw.coins}　段位 ${rw.rank_delta >= 0 ? '+' : ''}${rw.rank_delta}</div><div class="ar-bt-acts"><button class="ar-edit" id="bt-again">再戰</button><button class="ar-rv-close" id="bt-close" style="flex:1">返回大廳</button></div>`;
       $('bt-again')!.addEventListener('click', () => doBattle());
-      $('bt-close')!.addEventListener('click', () => { const e = $('ar-battle')!; e.setAttribute('hidden', ''); e.innerHTML = ''; loadData(); });
+      $('bt-close')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; loadData(); });
     };
-    setTimeout(step, 350);
+    const play = () => {
+      if (skipped) return;
+      if (i >= lines.length) { end(); return; }
+      const ev = lines[i++];
+      if (ev.intro) { $('bt-round')!.textContent = '開戰！'; setHP(ev.myHP, ev.foeHP); timers.push(setTimeout(play, 650)); return; }
+      $('bt-round')!.textContent = '第 ' + ev.round + ' 回';
+      const cm = $('bt-cm')!, cf = $('bt-cf')!, mid = $('bt-mid')!;
+      cm.className = 'bt-card bt-my'; cf.className = 'bt-card bt-foe'; mid.innerHTML = '';
+      cm.innerHTML = cardInner(ev.my, false); cf.innerHTML = cardInner(ev.foe, true);
+      void (cm as HTMLElement).offsetWidth; cm.classList.add('in'); cf.classList.add('in');
+      timers.push(setTimeout(() => {
+        mid.innerHTML = ev.rps === 1 ? '<span class="bt-badge win">剋!</span>' : ev.rps === -1 ? '<span class="bt-badge lose">被剋!</span>' : '<span class="bt-badge">對撞</span>';
+        popDmg(cf, ev.toFoe, 'foe'); popDmg(cm, ev.toMe, 'my');
+        if ((ev.toFoe && ev.toFoe.crit) || (ev.toMe && ev.toMe.crit) || ev.ult) { const a = $('bt-arena')!; a.classList.add('shake'); setTimeout(() => a.classList.remove('shake'), 320); }
+        setHP(ev.myHP, ev.foeHP);
+        if (ev.ult) showUlt(ev.ult);
+      }, 320));
+      timers.push(setTimeout(play, ev.ult ? 1250 : 820));
+    };
+    $('bt-skip')!.addEventListener('click', () => { skipped = true; timers.forEach(clearTimeout); const last = lines[lines.length - 1]; if (last) setHP(last.myHP, last.foeHP); end(); });
+    timers.push(setTimeout(play, 350));
   }
 
   // tabs
