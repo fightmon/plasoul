@@ -120,6 +120,7 @@
     .fl-ball.c-my { background: radial-gradient(circle,#dff4ff,#2f9bff); box-shadow: 0 0 16px #2f9bff; }
     .fl-ball.c-foe { background: radial-gradient(circle,#ffe0e0,#ff4d4d); box-shadow: 0 0 16px #ff4d4d; }
     .fl-bolt { position: absolute; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle,#fff,#ffd24d); box-shadow: 0 0 8px #ffd24d; }
+    .fl-bolt.big { width: 18px; height: 18px; box-shadow: 0 0 12px #ffd24d; }
 
     /* 蓄力 */
     .fl-charge { position: absolute; width: 24px; height: 24px; border-radius: 50%; transform: translate(-50%,-50%); animation: fl-charge .4s ease-in forwards; }
@@ -207,7 +208,7 @@
 
     const cc = () => atk === 'my' ? 'c-my' : 'c-foe';
 
-    function beam(a, b, big, miss) { if (miss) { b = { x: b.x + (atk === 'my' ? 24 : -24), y: b.y - 38 }; } const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) + (miss ? 34 : 0); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; }
+    function beam(a, b, big, miss) { if (miss) { b = { x: b.x + (atk === 'my' ? 24 : -24), y: b.y - 38 }; } const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) + (miss ? 34 : 0); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 16 : 6; const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; }
 
     // 近身衝刺：把攻方卡衝到對方卡前再回來，callback 在落招瞬間呼叫
     function lunge(cb, ratio) {
@@ -225,8 +226,8 @@
     function chargeBeam(a, b, big, miss) {
       let bb = b; if (miss) bb = { x: b.x + (atk === 'my' ? 26 : -26), y: b.y - 40 };
       const dx = bb.x - a.x, dy = bb.y - a.y; let len = Math.hypot(dx, dy); if (big && !miss) len += 130;
-      const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = add('fl-laser ' + cc() + (big ? ' huge' : ' big'), 600);
-      n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>';
+      const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 30 : 16; const n = add('fl-laser ' + cc() + (big ? ' huge' : ' big'), 600);
+      n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>';
     }
 
     // ---- 射擊類 ----
@@ -239,14 +240,14 @@
       an.onfinish = () => { ball.remove(); if (!missOn()) burst(b.x, b.y, atk === 'my' ? '#7fd0ff' : '#ff8a8a', big); resolve(defEl()); };
     }
     function eShot() {
-      const a = cen(atkEl()), b = cen(defEl()); maybeDodge(defEl(), 380);
-      for (let k = 0; k < 5; k++) setTimeout(() => {
-        const off = (k - 2) * 11; const tx = (missOn() ? b.x + (atk === 'my' ? 28 : -28) : b.x), ty = b.y + off - (missOn() ? 32 : 0);
-        const bo = add('fl-bolt', 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
+      const a = cen(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), impact);
+      for (let k = 0; k < cnt; k++) setTimeout(() => {
+        const off = (k - (cnt - 1) / 2) * 10; const tx = (missOn() ? b.x + (atk === 'my' ? 28 : -28) : b.x), ty = b.y + off - (missOn() ? 32 : 0);
+        const bo = add('fl-bolt' + (critOn() ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
         const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
         an.onfinish = () => { bo.remove(); if (!missOn()) ring(tx, ty, '#ffd24d', false); };
-      }, k * 70);
-      setTimeout(() => resolve(defEl()), 380);
+      }, k * 55);
+      setTimeout(() => resolve(defEl()), impact);
     }
     function eCharge() {
       const big = critOn(); const a = cen(atkEl()); const chargeT = big ? 660 : 420;
@@ -281,7 +282,7 @@
     }
     function eSnipe() {
       const b = cen(defEl()); const c = add('fl-cross', 520); c.style.left = b.x + 'px'; c.style.top = b.y + 'px'; maybeDodge(defEl(), 360);
-      setTimeout(() => { const a = cen(atkEl()); beam(a, b, false, missOn()); if (!missOn()) { burst(b.x, b.y, '#fff', true); shake(); } resolve(defEl()); }, 360);
+      setTimeout(() => { const a = cen(atkEl()); beam(a, b, critOn(), missOn()); if (!missOn()) { burst(b.x, b.y, '#fff', true); shake(); if (critOn()) setTimeout(() => burst(b.x, b.y, '#ffd24d', true), 120); } resolve(defEl()); }, 360);
     }
 
     // ---- 斬擊／近身類 ----
@@ -299,7 +300,7 @@
     }
     function eIai() {
       lunge(() => {
-        if (!missOn()) { const c = cen(defEl()); [0, 1, 2].forEach((k) => setTimeout(() => slashAt({ x: c.x + (k - 1) * 9, y: c.y + (k - 1) * 11 }, false), k * 120)); }
+        if (!missOn()) { const c = cen(defEl()); const n = critOn() ? 5 : 3; for (let k = 0; k < n; k++) setTimeout(() => slashAt({ x: c.x + (k - (n - 1) / 2) * 10, y: c.y + (k - (n - 1) / 2) * 12 }, critOn()), k * 100); }
         resolve(defEl());
       });
     }
@@ -318,13 +319,13 @@
     }
     function eSpin() {
       lunge(() => {
-        if (!missOn()) { const c = cen(defEl()); const s = add('fl-spin', 560); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; }
+        if (!missOn()) { const c = cen(defEl()); const big = critOn(); const s = add('fl-spin', 560); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; if (big) { s.style.width = '124px'; s.style.height = '124px'; burst(c.x, c.y, '#fff', true); shake(); } }
         resolve(defEl());
       });
     }
     function eImpact() {
       lunge(() => {
-        if (!missOn()) { const c = cen(defEl()); ring(c.x, c.y, '#fff', true); setTimeout(() => ring(c.x, c.y, '#ffd24d', true), 110); shake(); }
+        if (!missOn()) { const c = cen(defEl()); const big = critOn(); ring(c.x, c.y, '#fff', true); setTimeout(() => ring(c.x, c.y, '#ffd24d', true), 110); if (big) { setTimeout(() => { ring(c.x, c.y, '#fff', true); burst(c.x, c.y, '#ffd24d', true); shake(); }, 220); } shake(); }
         resolve(defEl());
       });
     }
