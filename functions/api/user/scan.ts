@@ -65,7 +65,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       names.push({ name, series: String(it.series || '').trim(), scale: String(it.scale || '').trim() });
     }
   }
-  if (!names.length) return err('NO_RESULT', aiErr || 'AI 沒辨識到型號，換張清楚的照片試試', 502);
+  if (!names.length) return err('NO_RESULT', aiErr || '看不出鋼彈型號（這張可能不是鋼彈模型，或拍清楚一點再試）', 422);
 
   // 對 catalog
   const matched: any[] = [];
@@ -101,7 +101,7 @@ async function analyze(img: any, workerUrl: string): Promise<{ items: any[]; err
   let lastErr = 'AI 連線錯誤';
   for (let attempt = 0; attempt < 2; attempt++) {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 20000);
+    const timer = setTimeout(() => ctrl.abort(), 10000);
     try {
       const resp = await fetch(workerUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload, signal: ctrl.signal });
       clearTimeout(timer);
