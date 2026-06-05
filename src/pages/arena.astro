@@ -69,8 +69,7 @@ import Layout from '../layouts/Layout.astro';
         <button class="ar-nav-btn" data-tab="hangar"><span class="ar-ni">🎴</span><span class="ar-nl">格納庫</span></button>
         <button class="ar-en-center" id="ar-en-btn">
           <span class="ar-en-icon">⚡</span>
-          <span class="ar-en-val" id="ar-en">20/20</span>
-          <span class="ar-en-time" id="ar-en-time">已滿</span>
+          <span class="ar-en-line"><b id="ar-en">20/20</b> · <span id="ar-en-time">已滿</span></span>
         </button>
         <button class="ar-nav-btn" data-soon="商店"><span class="ar-ni">🛒</span><span class="ar-nl">商店</span></button>
         <button class="ar-nav-btn" data-soon="戰績"><span class="ar-ni">📊</span><span class="ar-nl">戰績</span></button>
@@ -175,9 +174,9 @@ import Layout from '../layouts/Layout.astro';
 
   /* 中央 EN（30%，凸起圓鈕 + 回復倒數）*/
   .ar-en-center { flex:0 0 30%; background:transparent; border:none; cursor:pointer; position:relative; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:7px; }
-  .ar-en-icon { position:absolute; top:-24px; width:62px; height:62px; border-radius:50%; background:radial-gradient(circle at 50% 32%, #3a4d92, #141a2e); border:3px solid #ffd23d; box-shadow:0 0 18px rgba(255,210,61,.45); display:flex; align-items:center; justify-content:center; font-size:28px; }
-  .ar-en-val { font-size:14px; font-weight:800; color:#ffd23d; line-height:1.1; }
-  .ar-en-time { font-size:10px; color:var(--ar-dim); }
+  .ar-en-icon { position:absolute; top:-26px; width:60px; height:60px; border-radius:50%; background:radial-gradient(circle at 50% 32%, #3a4d92, #141a2e); border:3px solid #ffd23d; box-shadow:0 0 18px rgba(255,210,61,.45); display:flex; align-items:center; justify-content:center; font-size:27px; }
+  .ar-en-line { font-size:11px; color:var(--ar-dim); white-space:nowrap; }
+  .ar-en-line b { color:#ffd23d; font-size:12px; }
 
   /* reveal */
   .ar-reveal { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.86); display:flex; align-items:center; justify-content:center; padding:24px; }
