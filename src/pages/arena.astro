@@ -248,34 +248,36 @@ import Layout from '../layouts/Layout.astro';
   .bt-field { position:relative; height:300px; background:radial-gradient(circle at 50% 45%, #1a2447, #070a14); border-radius:12px; overflow:hidden; margin-bottom:10px; }
   .bt-field.shake { animation:bt-shake .3s; }
   @keyframes bt-shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px);} 40%{transform:translateX(7px);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
-  .bt-u { position:absolute; width:25%; max-width:98px; aspect-ratio:3/4; border-radius:10px; overflow:hidden; border:2px solid var(--ar-line); background:var(--ar-card2); filter:brightness(.62); transition:top .32s cubic-bezier(.3,1.3,.5,1), left .32s cubic-bezier(.3,1.3,.5,1), right .32s cubic-bezier(.3,1.3,.5,1), transform .25s, filter .2s; z-index:2; }
+  .bt-u { position:absolute; width:24%; max-width:96px; aspect-ratio:3/4; border-radius:10px; overflow:hidden; border:2px solid var(--ar-line); background:var(--ar-card2); filter:brightness(.62); transition:top .32s cubic-bezier(.3,1.3,.5,1), left .32s cubic-bezier(.3,1.3,.5,1), right .32s cubic-bezier(.3,1.3,.5,1), transform .25s, filter .3s; z-index:2; }
   .bt-u img { width:100%; height:100%; object-fit:cover; }
-  .bt-u.active { filter:brightness(1.05) drop-shadow(0 0 10px rgba(120,170,255,.85)); transform:scale(1.18); z-index:5; }
+  .bt-u.active { filter:brightness(1.05) drop-shadow(0 0 10px rgba(120,170,255,.85)); transform:scale(1.12); z-index:5; }
   .bt-u.hit { filter:brightness(1) saturate(2.5) sepia(.6) hue-rotate(-30deg); }
   .my-side.hit { animation:bt-recoil-l .4s; } .foe-side.hit { animation:bt-recoil-r .4s; }
-  @keyframes bt-recoil-l { 30%{ transform:scale(1.18) translateX(-15px) rotate(-5deg);} }
-  @keyframes bt-recoil-r { 30%{ transform:scale(1.18) translateX(15px) rotate(5deg);} }
-  .my-side.lunge { transform:scale(1.2) translateX(42px); } .foe-side.lunge { transform:scale(1.2) translateX(-42px); }
-  .my-side.dodge { transform:scale(1.18) translate(-12px,-36px); } .foe-side.dodge { transform:scale(1.18) translate(12px,-36px); }
-  .bt-u.ult { filter:brightness(1.1) drop-shadow(0 0 14px rgba(255,210,61,.9)); transform:scale(1.12); z-index:6; }
+  @keyframes bt-recoil-l { 30%{ transform:scale(1.12) translateX(-14px) rotate(-5deg);} }
+  @keyframes bt-recoil-r { 30%{ transform:scale(1.12) translateX(14px) rotate(5deg);} }
+  .my-side.lunge { transform:scale(1.18) translateX(40px); } .foe-side.lunge { transform:scale(1.18) translateX(-40px); }
+  .my-side.dodge { transform:scale(1.12) translate(-14px,-34px); } .foe-side.dodge { transform:scale(1.12) translate(14px,-34px); }
+  .bt-u.ult { filter:brightness(1.1) drop-shadow(0 0 14px rgba(255,210,61,.9)); transform:scale(1.1); z-index:6; }
+  .bt-u.dim { filter:brightness(.28) grayscale(.7); }
+  .bt-u.won { filter:brightness(1); }
   .bt-noimg { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:34px; }
   .bt-noimg.t-ranged{ background:#1c3a66; } .bt-noimg.t-melee{ background:#5a2a1c; } .bt-noimg.t-evade{ background:#3a1c5a; }
   .bt-tb { position:absolute; left:4px; bottom:16px; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; z-index:2; }
   .bt-uname { position:absolute; left:0; right:0; bottom:0; font-size:9px; text-align:center; background:rgba(0,0,0,.6); padding:1px 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .bt-fx { position:absolute; inset:0; pointer-events:none; z-index:7; }
-  .bt-laser { position:absolute; top:44%; height:8px; border-radius:8px; box-shadow:0 0 12px currentColor; animation:bt-beam .42s ease-out; }
-  .bt-laser.to-r { left:32%; right:18%; background:linear-gradient(90deg,#9fe8ff,#2f9bff); color:#2f9bff; transform-origin:left; }
-  .bt-laser.to-l { left:18%; right:32%; background:linear-gradient(270deg,#ffb0b0,#ff4d4d); color:#ff4d4d; transform-origin:right; }
-  .bt-laser.big { height:18px; }
-  @keyframes bt-beam { 0%{ transform:scaleX(0); opacity:.4;} 45%{ transform:scaleX(1); opacity:1;} 100%{ transform:scaleX(1); opacity:0;} }
-  .bt-slash { position:absolute; top:30%; width:92px; height:8px; background:linear-gradient(90deg,transparent,#fff,transparent); transform:rotate(-35deg); filter:drop-shadow(0 0 6px #fff); animation:bt-slashk .4s ease-out; }
-  .bt-slash.on-foe { right:18%; } .bt-slash.on-my { left:18%; }
-  .bt-slash.big { width:134px; height:12px; }
-  @keyframes bt-slashk { 0%{ opacity:0; transform:rotate(-35deg) scale(.4);} 40%{ opacity:1; transform:rotate(-35deg) scale(1.1);} 100%{ opacity:0; transform:rotate(-35deg) scale(1);} }
-  .bt-dmg { position:absolute; top:24%; font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 6px #000; animation:bt-pop .85s ease-out forwards; z-index:9; white-space:nowrap; }
-  .bt-dmg.on-my { left:22%; } .bt-dmg.on-foe { right:22%; }
+  /* 特效座標由 JS 依目標卡中心點計算（left/top inline），永遠對準對方卡正中 */
+  .bt-laser { position:absolute; height:6px; transform-origin:left center; z-index:7; }
+  .bt-laser.big { height:13px; }
+  .bt-laser i { display:block; width:100%; height:100%; border-radius:6px; transform-origin:left center; animation:bt-beam .5s ease-out; }
+  .bt-laser.l-my i { background:linear-gradient(90deg,#9fe8ff,#2f9bff); box-shadow:0 0 12px #2f9bff; }
+  .bt-laser.l-foe i { background:linear-gradient(90deg,#ffd0d0,#ff4d4d); box-shadow:0 0 12px #ff4d4d; }
+  @keyframes bt-beam { 0%{ transform:scaleX(0); opacity:.5;} 45%{ transform:scaleX(1); opacity:1;} 100%{ transform:scaleX(1); opacity:0;} }
+  .bt-slash { position:absolute; width:84px; height:8px; background:linear-gradient(90deg,transparent,#fff,transparent); filter:drop-shadow(0 0 6px #fff); animation:bt-slashk .45s ease-out; z-index:8; }
+  .bt-slash.big { width:120px; height:12px; }
+  @keyframes bt-slashk { 0%{ opacity:0; transform:translate(-50%,-50%) rotate(-44deg) scale(.3);} 40%{ opacity:1; transform:translate(-50%,-50%) rotate(-35deg) scale(1.15);} 100%{ opacity:0; transform:translate(-50%,-50%) rotate(-26deg) scale(1);} }
+  .bt-dmg { position:absolute; font-size:22px; font-weight:900; color:#fff; text-shadow:0 2px 6px #000; animation:bt-pop .85s ease-out forwards; z-index:9; white-space:nowrap; }
   .bt-dmg.crit { font-size:32px; color:#ffd23d; } .bt-dmg.block { color:#9ad0ff; } .bt-dmg.miss { color:#cfcfcf; font-size:17px; }
-  @keyframes bt-pop { 0%{ opacity:0; transform:translateY(10px) scale(.6);} 25%{ opacity:1; transform:translateY(-6px) scale(1.1);} 100%{ opacity:0; transform:translateY(-40px) scale(1);} }
+  @keyframes bt-pop { 0%{ opacity:0; transform:translate(-50%,-20%) scale(.6);} 25%{ opacity:1; transform:translate(-50%,-80%) scale(1.1);} 100%{ opacity:0; transform:translate(-50%,-200%) scale(1);} }
   .bt-darken { position:absolute; inset:0; background:#000; opacity:0; transition:opacity .25s; z-index:4; pointer-events:none; }
   .bt-darken.on { opacity:.55; }
   .bt-banner { position:absolute; left:0; right:0; top:44%; text-align:center; font-size:22px; font-weight:900; color:#ffd23d; text-shadow:0 2px 12px #000; opacity:0; transform:scale(.6); transition:opacity .2s, transform .2s; z-index:8; pointer-events:none; }
@@ -421,29 +423,35 @@ import Layout from '../layouts/Layout.astro';
       <div id="bt-end"></div>
     </div>`;
     const lines = d.log || []; let i = 0; const timers: any[] = []; let skipped = false; let aMy = 0, aFoe = 0;
-    const SLOT = ['7%', '38%', '69%'];
+    const SLOT = ['4%', '37%', '70%'];
     const U = (side: string, k: number) => $(`bt-${side}-${k}`);
-    const place = (side: string, k: number, active: boolean) => { const u = U(side, k); if (!u) return; u.classList.remove('hit', 'dodge', 'lunge', 'ult'); u.classList.toggle('active', active); u.style.top = active ? '38%' : SLOT[k]; if (side === 'my') u.style.left = active ? '27%' : '4%'; else u.style.right = active ? '27%' : '4%'; };
+    const place = (side: string, k: number, active: boolean) => { const u = U(side, k); if (!u) return; u.classList.remove('hit', 'dodge', 'lunge', 'ult', 'dim', 'won'); u.classList.toggle('active', active); u.style.top = active ? '36%' : SLOT[k]; if (side === 'my') u.style.left = active ? '13%' : '3%'; else u.style.right = active ? '13%' : '3%'; };
     const reset = () => { [0, 1, 2].forEach((k) => { place('my', k, false); place('foe', k, false); }); $('bt-fx')!.innerHTML = ''; };
-    const fx = (cls: string) => { const n = document.createElement('div'); n.className = cls; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 600); return n; };
     const setHP = (my: number, foe: number) => { ($('bt-my') as HTMLElement).style.width = Math.max(0, Math.round(my / myMax * 100)) + '%'; ($('bt-foe') as HTMLElement).style.width = Math.max(0, Math.round(foe / foeMax * 100)) + '%'; $('bt-myn')!.textContent = String(my); $('bt-foen')!.textContent = String(foe); };
     const shake = () => { const f = $('bt-field')!; f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 320); };
-    const laser = (side: string, big: boolean) => fx(`bt-laser ${side === 'my' ? 'to-r' : 'to-l'} ${big ? 'big' : ''}`);
-    const slash = (onSide: string, big: boolean) => fx(`bt-slash ${onSide === 'my' ? 'on-my' : 'on-foe'} ${big ? 'big' : ''}`);
+    // 以「卡片實際位置」為基準算特效座標（永遠對準目標卡正中）
+    const cen = (el: HTMLElement | null) => { const fr = $('bt-field')!.getBoundingClientRect(); if (!el) return { x: fr.width / 2, y: fr.height / 2 }; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; };
+    const laserFx = (attEl: HTMLElement | null, defEl: HTMLElement | null, big: boolean, side: string) => { if (!attEl || !defEl) return; const a = cen(attEl), b = cen(defEl); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = document.createElement('div'); n.className = 'bt-laser ' + (side === 'my' ? 'l-my' : 'l-foe') + (big ? ' big' : ''); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 550); };
+    const slashFx = (defEl: HTMLElement | null, big: boolean) => { if (!defEl) return; const c = cen(defEl); const n = document.createElement('div'); n.className = 'bt-slash' + (big ? ' big' : ''); n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 500); };
+    const dmgNum = (defEl: HTMLElement | null, text: string, cls: string) => { if (!defEl) return; const c = cen(defEl); const n = document.createElement('div'); n.className = 'bt-dmg ' + cls; n.textContent = text; n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 850); };
     const lunge = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('lunge'); setTimeout(() => u && u.classList.remove('lunge'), 400); } };
     const dodge = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('dodge'); setTimeout(() => u && u.classList.remove('dodge'), 520); } };
-    const dmgNum = (side: string, text: string, cls: string) => { const n = document.createElement('div'); n.className = 'bt-dmg ' + (side === 'my' ? 'on-my' : 'on-foe') + ' ' + cls; n.textContent = text; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 850); };
     const hitCard = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('hit'); setTimeout(() => u && u.classList.remove('hit'), 420); } };
-    const applyHit = (defSide: string, k: number, h: any) => { if (!h) return; if (h.dodge) { dmgNum(defSide, 'MISS', 'miss'); return; } hitCard(defSide, k); dmgNum(defSide, '-' + h.dmg + (h.crit ? '!' : ''), h.crit ? 'crit' : (h.block ? 'block' : '')); };
+    const applyHit = (defSide: string, defK: number, h: any) => { if (!h) return; const defEl = U(defSide, defK); if (h.dodge) { dmgNum(defEl, 'MISS', 'miss'); return; } hitCard(defSide, defK); dmgNum(defEl, '-' + h.dmg + (h.crit ? '!' : ''), h.crit ? 'crit' : (h.block ? 'block' : '')); };
     const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any) => {
       const big = !!(h && h.crit);
-      if (atkType === 'ranged') laser(atkSide, big);
-      else if (atkType === 'melee') { lunge(atkSide, atkK); slash(defSide, big); }
-      else laser(atkSide, big);
+      const attEl = U(atkSide, atkK), defEl = U(defSide, defK);
+      if (atkType === 'ranged') laserFx(attEl, defEl, big, atkSide);
+      else if (atkType === 'melee') { lunge(atkSide, atkK); slashFx(defEl, big); }
+      else laserFx(attEl, defEl, big, atkSide);
       if (big) shake();
       applyHit(defSide, defK, h);
     };
     const end = () => {
+      reset();
+      const loseSide = d.win ? 'foe' : 'my', winSide = d.win ? 'my' : 'foe';
+      [0, 1, 2].forEach((k) => { const lu = U(loseSide, k); if (lu) lu.classList.add('dim'); const wu = U(winSide, k); if (wu) wu.classList.add('won'); });
+      $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on');
       const rw = d.rewards; const sk = $('bt-skip'); if (sk) sk.style.display = 'none';
       $('bt-end')!.innerHTML = `<div class="ar-bt-result ${d.win ? 'win' : 'lose'}">${d.win ? '🎉 勝利！' : '💧 雖敗猶榮'}</div><div class="ar-bt-rw">🔩+${rw.parts}　🪙+${rw.coins}　段位 ${rw.rank_delta >= 0 ? '+' : ''}${rw.rank_delta}</div><div class="ar-bt-acts"><button class="ar-edit" id="bt-again">再戰</button><button class="ar-rv-close" id="bt-close" style="flex:1">返回大廳</button></div>`;
       $('bt-again')!.addEventListener('click', () => doBattle());
@@ -455,10 +463,10 @@ import Layout from '../layouts/Layout.astro';
       $('bt-banner')!.textContent = '⚡ 覺醒・' + ult.name; $('bt-banner')!.classList.add('on');
       const team = side === 'my' ? myTeam : foeTeam;
       [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.add('ult'); });
-      [0, 1, 2].forEach((k) => setTimeout(() => { const t = team[k] ? team[k].type : 'ranged'; if (t === 'melee') slash(other, true); else laser(side, true); }, k * 130));
+      [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const t = team[k] ? team[k].type : 'ranged'; const aEl = U(side, k), dEl = U(other, k); if (t === 'melee') { lunge(side, k); slashFx(dEl, true); } else laserFx(aEl, dEl, true, side); }, k * 140)));
       shake();
-      setTimeout(() => { [0, 1, 2].forEach((k) => hitCard(other, k)); dmgNum(other, '-' + ult.dmg + '!!', 'crit'); shake(); }, 560);
-      setTimeout(() => { $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on'); [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.remove('ult'); }); }, 1500);
+      timers.push(setTimeout(() => { [0, 1, 2].forEach((k) => hitCard(other, k)); dmgNum(U(other, 1) || U(other, 0), '-' + ult.dmg + '!!', 'crit'); shake(); }, 580));
+      timers.push(setTimeout(() => { $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on'); [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.remove('ult'); }); }, 1500));
     };
     const play = () => {
       if (skipped) return;
@@ -471,10 +479,10 @@ import Layout from '../layouts/Layout.astro';
       timers.push(setTimeout(() => {
         const myType = (myTeam[aMy] || {}).type, foeType = (foeTeam[aFoe] || {}).type;
         if (ev.rps === 1) {
-          if (myType === 'evade') { if (foeType === 'ranged') laser('foe', false); else slash('my', false); dodge('my', aMy); timers.push(setTimeout(() => { lunge('my', aMy); slash('foe', !!(ev.toFoe && ev.toFoe.crit)); applyHit('foe', aFoe, ev.toFoe); }, 280)); }
+          if (myType === 'evade') { if (foeType === 'ranged') laserFx(U('foe', aFoe), U('my', aMy), false, 'foe'); else slashFx(U('my', aMy), false); dodge('my', aMy); timers.push(setTimeout(() => { lunge('my', aMy); slashFx(U('foe', aFoe), !!(ev.toFoe && ev.toFoe.crit)); applyHit('foe', aFoe, ev.toFoe); }, 300)); }
           else attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
         } else if (ev.rps === -1) {
-          if (foeType === 'evade') { if (myType === 'ranged') laser('my', false); else slash('foe', false); dodge('foe', aFoe); timers.push(setTimeout(() => { lunge('foe', aFoe); slash('my', !!(ev.toMe && ev.toMe.crit)); applyHit('my', aMy, ev.toMe); }, 280)); }
+          if (foeType === 'evade') { if (myType === 'ranged') laserFx(U('my', aMy), U('foe', aFoe), false, 'my'); else slashFx(U('foe', aFoe), false); dodge('foe', aFoe); timers.push(setTimeout(() => { lunge('foe', aFoe); slashFx(U('my', aMy), !!(ev.toMe && ev.toMe.crit)); applyHit('my', aMy, ev.toMe); }, 300)); }
           else attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
         } else {
           attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
