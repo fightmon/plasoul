@@ -82,6 +82,12 @@ import Layout from '../layouts/Layout.astro';
     <!-- 卡片詳情 -->
     <div id="ar-detail" class="ar-modal" hidden></div>
 
+    <!-- 編成 -->
+    <div id="ar-equip" class="ar-modal" hidden></div>
+
+    <!-- 戰鬥 -->
+    <div id="ar-battle" class="ar-battle" hidden></div>
+
     <!-- toast -->
     <div id="ar-toast" class="ar-toast" hidden></div>
   </div>
@@ -208,6 +214,43 @@ import Layout from '../layouts/Layout.astro';
   .ar-modal[hidden]{ display:none; }
   .ar-modal-box { width:100%; max-width:340px; background:var(--ar-card); border-radius:16px; overflow:hidden; border:2px solid var(--ar-line); }
 
+  /* 編成 */
+  .ar-eq-box { width:100%; max-width:380px; background:var(--ar-card); border-radius:16px; border:2px solid var(--ar-line); max-height:88vh; display:flex; flex-direction:column; }
+  .ar-eq-head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--ar-line); }
+  .x-btn { background:none; border:none; color:var(--ar-dim); font-size:20px; cursor:pointer; }
+  .ar-eq-slots { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 16px 4px; }
+  .ar-eq-slot { aspect-ratio:3/4; border-radius:10px; background:var(--ar-bg); border:1px dashed var(--ar-line); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; font-size:24px; }
+  .ar-eq-slot img { width:100%; height:100%; object-fit:cover; }
+  .ar-eq-empty { color:var(--ar-dim); font-size:12px; }
+  .ar-eq-hint { font-size:11px; color:var(--ar-dim); padding:6px 16px 8px; }
+  .ar-eq-list { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:0 16px 12px; overflow-y:auto; }
+  .ar-eq-card { aspect-ratio:1/1; border-radius:8px; background:var(--ar-bg); border:2px solid var(--ar-line); overflow:hidden; position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .ar-eq-card img { width:100%; height:100%; object-fit:cover; }
+  .ar-eq-card .ph { font-size:22px; }
+  .ar-eq-card.on { border-color:#ffd23d; }
+  .ar-eq-chk { position:absolute; inset:0; background:rgba(255,210,61,.28); display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; font-weight:800; }
+  .ar-eq-card .ar-tbadge { position:absolute; left:3px; bottom:3px; width:18px; height:18px; font-size:10px; }
+  .ar-eq-none { grid-column:1/-1; text-align:center; color:var(--ar-dim); padding:24px; }
+  .ar-eq-box .ar-rv-close { margin:0 16px 16px; }
+
+  /* 戰鬥 */
+  .ar-battle { position:fixed; inset:0; z-index:65; background:rgba(0,0,0,.9); display:flex; align-items:center; justify-content:center; padding:18px; }
+  .ar-battle[hidden]{ display:none; }
+  .ar-bt-loading { color:#fff; text-align:center; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .ar-bt-box { width:100%; max-width:430px; background:var(--ar-card); border:2px solid var(--ar-line); border-radius:16px; padding:16px; display:flex; flex-direction:column; max-height:90vh; }
+  .ar-bt-bars { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .ar-bt-side { flex:1; text-align:center; font-size:12px; }
+  .ar-bt-vs { font-weight:800; color:var(--ar-dim); }
+  .ar-bar { height:12px; background:var(--ar-bg); border-radius:999px; overflow:hidden; margin:4px 0; }
+  .ar-bar i { display:block; height:100%; background:linear-gradient(90deg,#3ddc84,#7ee0a0); transition:width .35s; }
+  .ar-bar.foe i { background:linear-gradient(90deg,#ff5a5a,#ff8a8a); }
+  .ar-bt-log { background:var(--ar-bg); border-radius:10px; padding:10px 12px; font-size:12.5px; line-height:1.7; overflow-y:auto; max-height:40vh; min-height:120px; }
+  .ar-bt-line { padding:2px 0; border-bottom:1px solid var(--ar-line); }
+  .ar-bt-result { text-align:center; font-size:24px; font-weight:800; margin:12px 0 6px; }
+  .ar-bt-result.win { color:#ffd23d; } .ar-bt-result.lose { color:#9aa3bd; }
+  .ar-bt-rw { text-align:center; font-size:14px; margin-bottom:12px; }
+  .ar-bt-acts { display:flex; gap:8px; }
+
   .ar-toast { position:fixed; left:50%; bottom:100px; transform:translateX(-50%); z-index:70; background:rgba(0,0,0,.9); color:#fff; padding:10px 18px; border-radius:999px; font-size:13px; }
   .ar-toast[hidden]{ display:none; }
 </style>
@@ -249,24 +292,25 @@ import Layout from '../layouts/Layout.astro';
     } catch {}
   }
 
-  // 大廳：MVP 1 艘戰艦，顯示最近 3 張卡（編成下一片才做）
+  // 大廳：MVP 1 艘戰艦，顯示已編成的卡
   function renderFleet() {
-    const lineup = cards.slice(0, 3);
-    const hp = (player.ship_base_hp || 800) + lineup.reduce((s, c) => s + (c.hp || 0), 0);
+    const byId: any = {}; cards.forEach((c) => byId[c.id] = c);
+    const lineup = (player.ship_card_ids || []).map((id: string) => byId[id]).filter(Boolean);
+    const hp = (player.ship_base_hp || 800) + lineup.reduce((s: number, c: any) => s + (c.hp || 0), 0);
     const slot = (c: any) => c
       ? `<div class="ar-slot">${c.photo_url ? `<img src="${esc(c.photo_url)}" alt=""/>` : '<span class="ar-empty">🤖</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span></div>`
-      : `<div class="ar-slot"><span class="ar-empty">空格<br>去格納庫創卡</span></div>`;
+      : `<div class="ar-slot"><span class="ar-empty">空格<br>點編成放卡</span></div>`;
     $('ar-fleet')!.innerHTML = `
       <div class="ar-ship">
-        <div class="ar-ship-head"><span class="ar-ship-name">🚀 我的戰艦</span><span class="ar-ship-hp">HP <b>${hp.toLocaleString()}</b></span></div>
+        <div class="ar-ship-head"><span class="ar-ship-name">🚀 我的戰艦 <span style="font-size:11px;color:var(--ar-dim)">🛡️ 防守隊</span></span><span class="ar-ship-hp">HP <b>${hp.toLocaleString()}</b></span></div>
         <div class="ar-slots">${slot(lineup[0])}${slot(lineup[1])}${slot(lineup[2])}</div>
         <div class="ar-ship-acts">
           <button class="ar-sortie" id="ar-sortie">⚔️ 出擊</button>
           <button class="ar-edit" id="ar-edit">編成</button>
         </div>
       </div>`;
-    $('ar-sortie')!.addEventListener('click', () => toast(lineup.length ? '戰鬥系統開發中（下一階段）⚔️' : '先去格納庫創一張卡吧！'));
-    $('ar-edit')!.addEventListener('click', () => toast('編成系統開發中（下一階段）'));
+    $('ar-sortie')!.addEventListener('click', () => { if (!lineup.length) { toast('先按「編成」把卡放上戰艦'); return; } doBattle(); });
+    $('ar-edit')!.addEventListener('click', openEquip);
   }
 
   function renderHangar() {
@@ -285,6 +329,72 @@ import Layout from '../layouts/Layout.astro';
         </div>
       </div>`).join('');
     $('ar-cards')!.querySelectorAll('.ar-c').forEach((el) => el.addEventListener('click', () => showDetail(cards[parseInt((el as HTMLElement).dataset.i!, 10)])));
+  }
+
+  // 編成
+  let equipSel: string[] = [];
+  function openEquip() {
+    equipSel = [...(player.ship_card_ids || [])].filter((id: string) => cards.some((c) => c.id === id)).slice(0, 3);
+    const el = $('ar-equip')!;
+    const byId: any = {}; cards.forEach((c) => byId[c.id] = c);
+    const render = () => {
+      const slots = [0, 1, 2].map((i) => { const c = byId[equipSel[i]]; return `<div class="ar-eq-slot">${c ? `${c.photo_url ? `<img src="${esc(c.photo_url)}"/>` : '🤖'}<span class="ar-tbadge ${TYPE[c.type]?.c}">${TYPE[c.type]?.t}</span>` : '<span class="ar-eq-empty">空</span>'}</div>`; }).join('');
+      const list = cards.length ? cards.map((c) => { const on = equipSel.includes(c.id); return `<div class="ar-eq-card ${on ? 'on' : ''}" data-id="${esc(c.id)}">${c.photo_url ? `<img src="${esc(c.photo_url)}"/>` : '<span class="ph">🤖</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c}">${TYPE[c.type]?.t}</span>${on ? '<span class="ar-eq-chk">✓</span>' : ''}</div>`; }).join('') : '<div class="ar-eq-none">還沒有卡，先去格納庫創卡</div>';
+      el.innerHTML = `<div class="ar-eq-box"><div class="ar-eq-head"><b>編成戰艦（選最多 3 張）</b><button class="x-btn" id="ar-eq-x">✕</button></div><div class="ar-eq-slots">${slots}</div><div class="ar-eq-hint">點下方卡片放上 / 取下　🛡️ 此艦同時為防守隊</div><div class="ar-eq-list">${list}</div><button class="ar-rv-close" id="ar-eq-save">儲存編成</button></div>`;
+      $('ar-eq-x')!.addEventListener('click', closeEquip);
+      $('ar-eq-save')!.addEventListener('click', saveEquip);
+      el.querySelectorAll('.ar-eq-card').forEach((d) => d.addEventListener('click', () => {
+        const id = (d as HTMLElement).dataset.id!;
+        if (equipSel.includes(id)) equipSel = equipSel.filter((x) => x !== id);
+        else if (equipSel.length < 3) equipSel.push(id);
+        else { toast('最多 3 張'); return; }
+        render();
+      }));
+    };
+    el.removeAttribute('hidden'); render();
+  }
+  function closeEquip() { const el = $('ar-equip')!; el.setAttribute('hidden', ''); el.innerHTML = ''; }
+  async function saveEquip() {
+    try {
+      const r = await fetch('/api/card/equip', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ card_ids: equipSel }) });
+      const d = await r.json();
+      if (!r.ok || !d.ok) { toast((d && d.message) || '儲存失敗'); return; }
+      closeEquip(); toast('編成已儲存 ✅'); await loadData();
+    } catch { toast('網路錯誤'); }
+  }
+
+  // 戰鬥
+  async function doBattle() {
+    const el = $('ar-battle')!;
+    el.innerHTML = '<div class="ar-bt-loading"><div class="ar-spin"></div><div>出擊中…</div></div>';
+    el.removeAttribute('hidden');
+    let d: any = null;
+    try { const r = await fetch('/api/card/battle', { method: 'POST', credentials: 'include' }); d = await r.json(); if (!r.ok || !d.ok) { el.setAttribute('hidden', ''); el.innerHTML = ''; toast((d && d.message) || '出擊失敗'); return; } }
+    catch { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('網路錯誤'); return; }
+    animateBattle(d);
+  }
+  function animateBattle(d: any) {
+    const el = $('ar-battle')!;
+    const myMax = d.my.maxHP, foeMax = d.foe.maxHP;
+    el.innerHTML = `<div class="ar-bt-box"><div class="ar-bt-bars"><div class="ar-bt-side"><span>我的戰艦</span><div class="ar-bar"><i id="bt-my" style="width:100%"></i></div><small id="bt-myn">${myMax}</small></div><div class="ar-bt-vs">VS</div><div class="ar-bt-side"><span>${esc(d.foe.name)}</span><div class="ar-bar foe"><i id="bt-foe" style="width:100%"></i></div><small id="bt-foen">${foeMax}</small></div></div><div class="ar-bt-log" id="bt-log"></div><div id="bt-end"></div></div>`;
+    const logEl = $('bt-log')!; const lines = d.log || []; let i = 0;
+    const step = () => {
+      if (i >= lines.length) { showEnd(); return; }
+      const ev = lines[i++];
+      const ln = document.createElement('div'); ln.className = 'ar-bt-line'; ln.textContent = ev.text; logEl.appendChild(ln);
+      ($('bt-my') as HTMLElement).style.width = Math.max(0, Math.round(ev.myHP / myMax * 100)) + '%';
+      ($('bt-foe') as HTMLElement).style.width = Math.max(0, Math.round(ev.foeHP / foeMax * 100)) + '%';
+      $('bt-myn')!.textContent = ev.myHP; $('bt-foen')!.textContent = ev.foeHP;
+      logEl.scrollTop = logEl.scrollHeight;
+      setTimeout(step, ev.round === 0 ? 550 : 650);
+    };
+    const showEnd = () => {
+      const rw = d.rewards;
+      $('bt-end')!.innerHTML = `<div class="ar-bt-result ${d.win ? 'win' : 'lose'}">${d.win ? '🎉 勝利！' : '💧 雖敗猶榮'}</div><div class="ar-bt-rw">🔩+${rw.parts}　🪙+${rw.coins}　段位 ${rw.rank_delta >= 0 ? '+' : ''}${rw.rank_delta}</div><div class="ar-bt-acts"><button class="ar-edit" id="bt-again">再戰</button><button class="ar-rv-close" id="bt-close" style="flex:1">返回大廳</button></div>`;
+      $('bt-again')!.addEventListener('click', () => doBattle());
+      $('bt-close')!.addEventListener('click', () => { const e = $('ar-battle')!; e.setAttribute('hidden', ''); e.innerHTML = ''; loadData(); });
+    };
+    setTimeout(step, 350);
   }
 
   // tabs
