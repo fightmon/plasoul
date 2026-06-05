@@ -223,8 +223,8 @@ import Layout from '../layouts/Layout.astro';
   .ar-eq-slot img { width:100%; height:100%; object-fit:cover; }
   .ar-eq-empty { color:var(--ar-dim); font-size:12px; }
   .ar-eq-hint { font-size:11px; color:var(--ar-dim); padding:6px 16px 8px; }
-  .ar-eq-list { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:0 16px 12px; overflow-y:auto; }
-  .ar-eq-card { aspect-ratio:1/1; border-radius:8px; background:var(--ar-bg); border:2px solid var(--ar-line); overflow:hidden; position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .ar-eq-list { display:grid; grid-template-columns:repeat(auto-fill, minmax(90px,1fr)); gap:10px; padding:4px 16px 14px; overflow-y:auto; }
+  .ar-eq-card { aspect-ratio:3/4; border-radius:10px; background:var(--ar-bg); border:2px solid var(--ar-line); overflow:hidden; position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .ar-eq-card img { width:100%; height:100%; object-fit:cover; }
   .ar-eq-card .ph { font-size:22px; }
   .ar-eq-card.on { border-color:#ffd23d; }
@@ -359,9 +359,8 @@ import Layout from '../layouts/Layout.astro';
     const el = $('ar-equip')!;
     const byId: any = {}; cards.forEach((c) => byId[c.id] = c);
     const render = () => {
-      const slots = [0, 1, 2].map((i) => { const c = byId[equipSel[i]]; return `<div class="ar-eq-slot">${c ? `${c.photo_url ? `<img src="${esc(c.photo_url)}"/>` : '🤖'}<span class="ar-tbadge ${TYPE[c.type]?.c}">${TYPE[c.type]?.t}</span>` : '<span class="ar-eq-empty">空</span>'}</div>`; }).join('');
       const list = cards.length ? cards.map((c) => { const on = equipSel.includes(c.id); return `<div class="ar-eq-card ${on ? 'on' : ''}" data-id="${esc(c.id)}">${c.photo_url ? `<img src="${esc(c.photo_url)}"/>` : '<span class="ph">🤖</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c}">${TYPE[c.type]?.t}</span>${on ? '<span class="ar-eq-chk">✓</span>' : ''}</div>`; }).join('') : '<div class="ar-eq-none">還沒有卡，先去格納庫創卡</div>';
-      el.innerHTML = `<div class="ar-eq-box"><div class="ar-eq-head"><b>編成戰艦（選最多 3 張）</b><button class="x-btn" id="ar-eq-x">✕</button></div><div class="ar-eq-slots">${slots}</div><div class="ar-eq-hint">點下方卡片放上 / 取下　🛡️ 此艦同時為防守隊</div><div class="ar-eq-list">${list}</div><button class="ar-rv-close" id="ar-eq-save">儲存編成</button></div>`;
+      el.innerHTML = `<div class="ar-eq-box"><div class="ar-eq-head"><b>編成戰艦</b><button class="x-btn" id="ar-eq-x">✕</button></div><div class="ar-eq-hint">點卡片放上 / 取下（最多 3 張）　已選 <b style="color:#ffd23d">${equipSel.length}</b>/3　🛡️ 此艦同時為防守隊</div><div class="ar-eq-list">${list}</div><button class="ar-rv-close" id="ar-eq-save">儲存編成</button></div>`;
       $('ar-eq-x')!.addEventListener('click', closeEquip);
       $('ar-eq-save')!.addEventListener('click', saveEquip);
       el.querySelectorAll('.ar-eq-card').forEach((d) => d.addEventListener('click', () => {
