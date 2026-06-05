@@ -221,8 +221,11 @@ import Breadcrumb from '../components/Breadcrumb.astro';
     try {
       const images = await Promise.all(files.map(fileToB64));
       const r = await fetch('/api/user/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ images }) });
-      const d = await r.json();
-      if (!r.ok || !d.ok) { scanBody.innerHTML = `<div class="scan-loading">${esc(d.message || '辨識失敗')}</div>`; return; }
+      let d: any = null; try { d = await r.json(); } catch {}
+      if (!r.ok || !d || !d.ok) {
+        const msg = (d && d.message) || (r.status >= 500 ? 'AI 忙線中，請稍後再試' : '辨識失敗，請重試');
+        scanBody.innerHTML = `<div class="scan-loading">${esc(msg)}</div>`; return;
+      }
       scanMatched = d.matched || [];
       renderScan(d);
     } catch { scanBody.innerHTML = '<div class="scan-loading">網路錯誤</div>'; }

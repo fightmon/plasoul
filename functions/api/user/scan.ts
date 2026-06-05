@@ -100,7 +100,7 @@ async function analyze(img: any, workerUrl: string): Promise<{ items: any[]; err
     resp = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, messages: [{ role: 'user', content }], temperature: 0.1, max_tokens: 8000 }),
+      body: JSON.stringify({ model: MODEL, messages: [{ role: 'user', content }], temperature: 0.1, max_tokens: 3000 }),
     });
   } catch (e: any) { return { items: [], error: 'AI 連線錯誤' }; }
   if (!resp.ok) return { items: [], error: `AI HTTP ${resp.status}` };
