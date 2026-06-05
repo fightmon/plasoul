@@ -436,15 +436,16 @@ import Layout from '../layouts/Layout.astro';
     const laserFx = (attEl: HTMLElement | null, defEl: HTMLElement | null, big: boolean, side: string) => { if (!attEl || !defEl) return; const a = cen(attEl), b = cen(defEl); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = document.createElement('div'); n.className = 'bt-laser ' + (side === 'my' ? 'l-my' : 'l-foe') + (big ? ' big' : ''); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 550); };
     const slashFx = (defEl: HTMLElement | null, big: boolean) => { if (!defEl) return; const c = cen(defEl); const n = document.createElement('div'); n.className = 'bt-slash' + (big ? ' big' : ''); n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 500); };
     const dmgNum = (defEl: HTMLElement | null, text: string, cls: string) => { if (!defEl) return; const c = cen(defEl); const n = document.createElement('div'); n.className = 'bt-dmg ' + cls; n.textContent = text; n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 850); };
-    const lunge = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('lunge'); setTimeout(() => u && u.classList.remove('lunge'), 400); } };
+    // 近身衝刺：動態算到對方卡位置（ratio 0.82=疊到對方卡上、0.5=中間相撞）
+    const lungeTo = (atkSide: string, atkK: number, defSide: string, defK: number, ratio: number) => { const aEl = U(atkSide, atkK), dEl = U(defSide, defK); if (!aEl || !dEl) return; const a = cen(aEl), b = cen(dEl); const dx = (b.x - a.x) * ratio, dy = (b.y - a.y) * ratio; aEl.style.zIndex = '8'; aEl.style.transform = `translate(${dx}px,${dy}px) scale(1.18)`; setTimeout(() => { if (aEl) { aEl.style.transform = ''; aEl.style.zIndex = ''; } }, 380); };
     const dodge = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('dodge'); setTimeout(() => u && u.classList.remove('dodge'), 520); } };
     const hitCard = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('hit'); setTimeout(() => u && u.classList.remove('hit'), 420); } };
     const applyHit = (defSide: string, defK: number, h: any) => { if (!h) return; const defEl = U(defSide, defK); if (h.dodge) { dmgNum(defEl, 'MISS', 'miss'); return; } hitCard(defSide, defK); dmgNum(defEl, '-' + h.dmg + (h.crit ? '!' : ''), h.crit ? 'crit' : (h.block ? 'block' : '')); };
-    const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any) => {
+    const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any, meleeRatio = 0.82) => {
       const big = !!(h && h.crit);
       const attEl = U(atkSide, atkK), defEl = U(defSide, defK);
       if (atkType === 'ranged') laserFx(attEl, defEl, big, atkSide);
-      else if (atkType === 'melee') { lunge(atkSide, atkK); slashFx(defEl, big); }
+      else if (atkType === 'melee') { lungeTo(atkSide, atkK, defSide, defK, meleeRatio); setTimeout(() => slashFx(defEl, big), 200); }
       else laserFx(attEl, defEl, big, atkSide);
       if (big) shake();
       applyHit(defSide, defK, h);
@@ -465,7 +466,7 @@ import Layout from '../layouts/Layout.astro';
       $('bt-banner')!.textContent = '⚡ 覺醒・' + ult.name; $('bt-banner')!.classList.add('on');
       const team = side === 'my' ? myTeam : foeTeam;
       [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.add('ult'); });
-      [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const t = team[k] ? team[k].type : 'ranged'; const aEl = U(side, k), dEl = U(other, k); if (t === 'melee') { lunge(side, k); slashFx(dEl, true); } else laserFx(aEl, dEl, true, side); }, k * 140)));
+      [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const t = team[k] ? team[k].type : 'ranged'; const aEl = U(side, k), dEl = U(other, k); if (t === 'melee') { lungeTo(side, k, other, k, 0.82); setTimeout(() => slashFx(dEl, true), 200); } else laserFx(aEl, dEl, true, side); }, k * 140)));
       shake();
       timers.push(setTimeout(() => { [0, 1, 2].forEach((k) => hitCard(other, k)); dmgNum(U(other, 1) || U(other, 0), '-' + ult.dmg + '!!', 'crit'); shake(); }, 580));
       timers.push(setTimeout(() => { $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on'); [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.remove('ult'); }); }, 1500));
@@ -481,14 +482,16 @@ import Layout from '../layouts/Layout.astro';
       timers.push(setTimeout(() => {
         const myType = (myTeam[aMy] || {}).type, foeType = (foeTeam[aFoe] || {}).type;
         if (ev.rps === 1) {
-          if (myType === 'evade') { if (foeType === 'ranged') laserFx(U('foe', aFoe), U('my', aMy), false, 'foe'); else slashFx(U('my', aMy), false); dodge('my', aMy); timers.push(setTimeout(() => { lunge('my', aMy); slashFx(U('foe', aFoe), !!(ev.toFoe && ev.toFoe.crit)); applyHit('foe', aFoe, ev.toFoe); }, 300)); }
+          if (myType === 'evade') { if (foeType === 'ranged') laserFx(U('foe', aFoe), U('my', aMy), false, 'foe'); else slashFx(U('my', aMy), false); dodge('my', aMy); timers.push(setTimeout(() => { lungeTo('my', aMy, 'foe', aFoe, 0.82); setTimeout(() => slashFx(U('foe', aFoe), !!(ev.toFoe && ev.toFoe.crit)), 200); applyHit('foe', aFoe, ev.toFoe); }, 300)); }
           else attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
         } else if (ev.rps === -1) {
-          if (foeType === 'evade') { if (myType === 'ranged') laserFx(U('my', aMy), U('foe', aFoe), false, 'my'); else slashFx(U('foe', aFoe), false); dodge('foe', aFoe); timers.push(setTimeout(() => { lunge('foe', aFoe); slashFx(U('my', aMy), !!(ev.toMe && ev.toMe.crit)); applyHit('my', aMy, ev.toMe); }, 300)); }
+          if (foeType === 'evade') { if (myType === 'ranged') laserFx(U('my', aMy), U('foe', aFoe), false, 'my'); else slashFx(U('foe', aFoe), false); dodge('foe', aFoe); timers.push(setTimeout(() => { lungeTo('foe', aFoe, 'my', aMy, 0.82); setTimeout(() => slashFx(U('my', aMy), !!(ev.toMe && ev.toMe.crit)), 200); applyHit('my', aMy, ev.toMe); }, 300)); }
           else attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
         } else {
-          attack('my', myType, aMy, 'foe', aFoe, ev.toFoe);
-          attack('foe', foeType, aFoe, 'my', aMy, ev.toMe);
+          const bothMelee = myType === 'melee' && foeType === 'melee';
+          const r = bothMelee ? 0.5 : 0.82;
+          attack('my', myType, aMy, 'foe', aFoe, ev.toFoe, r);
+          attack('foe', foeType, aFoe, 'my', aMy, ev.toMe, r);
         }
         setHP(ev.myHP, ev.foeHP);
         if (ev.ult) timers.push(setTimeout(() => playUlt(ev.ult), 520));
