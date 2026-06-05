@@ -1,6 +1,6 @@
 ---
-// 招式實驗室（純前端表演層測試頁，不影響正式戰鬥）
-// 開 /fxlab：點按鈕放招、可重複看、切暴擊/MISS、換方向、隨機、依序全播
+// 招式實驗室 v2（純前端表演層測試，不影響正式戰鬥）
+// 1機/3機切換、單招、大絕招(全射/全近/全閃/通用)、閃避；類別可展開收合；舞台固定頂端
 ---
 
 <!doctype html>
@@ -9,95 +9,140 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex" />
-  <meta name="theme-color" content="#0a0e1a" />
+  <meta name="theme-color" content="#07090f" />
   <title>招式實驗室 · 普拉魂</title>
 </head>
 <body>
   <div class="fl-wrap">
-    <div class="fl-top">
-      <a class="fl-back" href="/arena/">← 競技場</a>
-      <span class="fl-title">招式實驗室</span>
-      <button class="fl-dir" id="fl-dir">攻方：我方 ▶</button>
+    <div class="fl-sticky">
+      <div class="fl-top">
+        <a class="fl-back" href="/arena/">← 競技場</a>
+        <span class="fl-title">招式實驗室</span>
+        <button class="fl-tg" id="fl-mode">1 機 ▢</button>
+        <button class="fl-tg" id="fl-dir">攻方：我方 ▶</button>
+      </div>
+
+      <div class="fl-field" id="fl-field">
+        <div class="fl-darken" id="fl-darken"></div>
+        <div class="fl-u my-side" data-i="0" id="fl-my-0"><div class="fl-noimg t-my">🤖</div></div>
+        <div class="fl-u my-side" data-i="1" id="fl-my-1"><div class="fl-noimg t-my">🤖</div><span class="fl-name">我方</span></div>
+        <div class="fl-u my-side" data-i="2" id="fl-my-2"><div class="fl-noimg t-my">🤖</div></div>
+        <div class="fl-u foe-side" data-i="0" id="fl-foe-0"><div class="fl-noimg t-foe">👾</div></div>
+        <div class="fl-u foe-side" data-i="1" id="fl-foe-1"><div class="fl-noimg t-foe">👾</div><span class="fl-name">敵方</span></div>
+        <div class="fl-u foe-side" data-i="2" id="fl-foe-2"><div class="fl-noimg t-foe">👾</div></div>
+        <div class="fl-fx" id="fl-fx"></div>
+        <div class="fl-banner" id="fl-banner"></div>
+      </div>
+
+      <div class="fl-toggles">
+        <label class="fl-chk"><input type="checkbox" id="fl-crit" /> 暴擊</label>
+        <label class="fl-chk"><input type="checkbox" id="fl-miss" /> MISS</label>
+        <button class="fl-act" id="fl-rand">🎲 隨機</button>
+        <button class="fl-act" id="fl-seq">▶ 依序</button>
+      </div>
     </div>
 
-    <div class="fl-field" id="fl-field">
-      <div class="fl-u my-side" id="fl-my"><div class="fl-noimg t-my">🤖</div><span class="fl-name">我方測試卡</span></div>
-      <div class="fl-u foe-side" id="fl-foe"><div class="fl-noimg t-foe">👾</div><span class="fl-name">敵方測試卡</span></div>
-      <div class="fl-fx" id="fl-fx"></div>
+    <div class="fl-cats">
+      <div class="fl-cat open">
+        <button class="fl-cat-h">射擊類 <i>▾</i></button>
+        <div class="fl-grid">
+          <button class="fl-btn" data-fx="laser">雷射光束</button>
+          <button class="fl-btn" data-fx="cannon">炮彈</button>
+          <button class="fl-btn" data-fx="shot">散彈連發</button>
+          <button class="fl-btn" data-fx="charge">蓄力光束砲</button>
+          <button class="fl-btn" data-fx="homing">追蹤飛彈</button>
+          <button class="fl-btn" data-fx="wave">能量波</button>
+          <button class="fl-btn" data-fx="snipe">狙擊</button>
+        </div>
+      </div>
+
+      <div class="fl-cat">
+        <button class="fl-cat-h">斬擊／近身類 <i>▾</i></button>
+        <div class="fl-grid">
+          <button class="fl-btn" data-fx="slash">直線斬</button>
+          <button class="fl-btn" data-fx="arc">月牙弧斬</button>
+          <button class="fl-btn" data-fx="iai">居合連斬</button>
+          <button class="fl-btn" data-fx="thrust">突刺</button>
+          <button class="fl-btn" data-fx="cross">十字爆裂斬</button>
+          <button class="fl-btn" data-fx="spin">迴旋斬</button>
+          <button class="fl-btn" data-fx="impact">重擊衝撞</button>
+        </div>
+      </div>
+
+      <div class="fl-cat">
+        <button class="fl-cat-h">閃避類（受攻擊方示範）<i>▾</i></button>
+        <div class="fl-grid">
+          <button class="fl-btn" data-fx="dduck">下蹲閃</button>
+          <button class="fl-btn" data-fx="dback">後撤閃</button>
+          <button class="fl-btn" data-fx="dside">側移閃</button>
+          <button class="fl-btn" data-fx="dafter">殘影閃</button>
+          <button class="fl-btn" data-fx="dblink">瞬移閃</button>
+          <button class="fl-btn" data-fx="dspin">旋身閃</button>
+          <button class="fl-btn" data-fx="droll">翻滾閃</button>
+        </div>
+      </div>
+
+      <div class="fl-cat">
+        <button class="fl-cat-h">🌟 大絕招（自動切 3 機）<i>▾</i></button>
+        <div class="fl-grid">
+          <button class="fl-btn fl-btn-ult" data-fx="ultg">通用必殺</button>
+          <button class="fl-btn fl-btn-ult" data-fx="ultr">全射・總軌道炮擊</button>
+          <button class="fl-btn fl-btn-ult" data-fx="ultm">全近・超絕一閃</button>
+          <button class="fl-btn fl-btn-ult" data-fx="ulte">全閃・殘影殲滅</button>
+        </div>
+      </div>
     </div>
 
-    <div class="fl-toggles">
-      <label class="fl-chk"><input type="checkbox" id="fl-crit" /> 暴擊</label>
-      <label class="fl-chk"><input type="checkbox" id="fl-miss" /> MISS</label>
-      <button class="fl-act" id="fl-rand">🎲 隨機一招</button>
-      <button class="fl-act" id="fl-seq">▶ 依序全播</button>
-    </div>
-
-    <div class="fl-sec">射擊類</div>
-    <div class="fl-grid">
-      <button class="fl-btn" data-fx="laser">雷射光束</button>
-      <button class="fl-btn" data-fx="cannon">炮彈</button>
-      <button class="fl-btn" data-fx="shot">散彈連發</button>
-      <button class="fl-btn" data-fx="charge">蓄力光束砲</button>
-      <button class="fl-btn" data-fx="homing">追蹤飛彈</button>
-      <button class="fl-btn" data-fx="wave">能量波</button>
-      <button class="fl-btn" data-fx="snipe">狙擊</button>
-    </div>
-
-    <div class="fl-sec">斬擊／近身類</div>
-    <div class="fl-grid">
-      <button class="fl-btn" data-fx="slash">直線斬</button>
-      <button class="fl-btn" data-fx="arc">月牙弧斬</button>
-      <button class="fl-btn" data-fx="iai">居合連斬</button>
-      <button class="fl-btn" data-fx="thrust">突刺</button>
-      <button class="fl-btn" data-fx="cross">十字爆裂斬</button>
-      <button class="fl-btn" data-fx="spin">迴旋斬</button>
-      <button class="fl-btn" data-fx="impact">重擊衝撞</button>
-    </div>
-
-    <div class="fl-sec">閃避類（受攻擊方示範，可用「換方向」切換）</div>
-    <div class="fl-grid">
-      <button class="fl-btn" data-fx="dduck">下蹲閃</button>
-      <button class="fl-btn" data-fx="dback">後撤閃</button>
-      <button class="fl-btn" data-fx="dside">側移閃</button>
-      <button class="fl-btn" data-fx="dafter">殘影閃</button>
-      <button class="fl-btn" data-fx="dblink">瞬移閃</button>
-      <button class="fl-btn" data-fx="dspin">旋身閃</button>
-      <button class="fl-btn" data-fx="droll">翻滾閃</button>
-    </div>
-
-    <p class="fl-hint">提示：先勾「暴擊／MISS」再點招式，可看不同狀態下的表現。近身類會自動衝刺。閃避類示範的是「受攻擊方」的閃法，用上方「換方向」可切換是哪一方閃。</p>
+    <p class="fl-hint">舞台固定在上方，按下面任何招都看得到。勾「暴擊／MISS」看不同狀態；大絕招會自動切到 3 機、用該天性的簽名演出。</p>
   </div>
 
   <style is:global>
     * { box-sizing: border-box; }
     body { margin: 0; background: #07090f; color: #e8ecf5; font-family: -apple-system, "Noto Sans TC", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-    .fl-wrap { max-width: 520px; margin: 0 auto; padding: 10px 12px 40px; }
-    .fl-top { display: flex; align-items: center; gap: 10px; padding: 6px 2px 12px; }
-    .fl-back { color: #9fb0d0; text-decoration: none; font-size: 14px; }
-    .fl-title { font-weight: 800; font-size: 16px; }
-    .fl-dir { margin-left: auto; background: #18203a; color: #cfe; border: 1px solid #2c3a5e; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .fl-wrap { max-width: 520px; margin: 0 auto; padding: 0 12px 40px; }
 
-    .fl-field { position: relative; height: 360px; background: radial-gradient(circle at 50% 45%, #1a2447, #070a14); border-radius: 14px; overflow: hidden; border: 1px solid #20294a; }
+    /* 固定舞台 */
+    .fl-sticky { position: sticky; top: 0; z-index: 30; background: #07090f; padding: 8px 0; }
+    .fl-top { display: flex; align-items: center; gap: 8px; padding: 2px 2px 8px; flex-wrap: wrap; }
+    .fl-back { color: #9fb0d0; text-decoration: none; font-size: 13px; }
+    .fl-title { font-weight: 800; font-size: 15px; }
+    .fl-tg { background: #18203a; color: #cfe; border: 1px solid #2c3a5e; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .fl-tg#fl-dir { margin-left: auto; }
+    .fl-tg.on { background: linear-gradient(135deg, #3b82f6, #1e50e5); border-color: #5b86ff; }
+
+    .fl-field { position: relative; height: clamp(210px, 34vh, 300px); background: radial-gradient(circle at 50% 45%, #1a2447, #070a14); border-radius: 14px; overflow: hidden; border: 1px solid #20294a; }
     .fl-field.fl-shake { animation: fl-shake .3s; }
     @keyframes fl-shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px);} 40%{transform:translateX(7px);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
 
-    .fl-u { position: absolute; width: 94px; aspect-ratio: 3/4; top: 36%; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; background: #141c34; z-index: 2; }
-    #fl-my { left: 9%; } #fl-foe { right: 9%; }
-    .fl-noimg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 38px; }
+    .fl-u { position: absolute; width: 84px; aspect-ratio: 3/4; top: 32%; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; background: #141c34; z-index: 2; transition: top .25s, left .25s, right .25s, transform .2s, opacity .2s, width .2s; }
+    .my-side { left: 9%; } .foe-side { right: 9%; }
+    /* 1 機：只留中間 */
+    .fl-field:not(.m3) .fl-u[data-i="0"], .fl-field:not(.m3) .fl-u[data-i="2"] { opacity: 0; pointer-events: none; }
+    .fl-field:not(.m3) .my-side[data-i="1"] { left: 13%; } .fl-field:not(.m3) .foe-side[data-i="1"] { right: 13%; }
+    /* 3 機 */
+    .fl-field.m3 .fl-u { width: 72px; }
+    .fl-field.m3 .fl-u[data-i="0"] { top: 5%; } .fl-field.m3 .fl-u[data-i="1"] { top: 35%; } .fl-field.m3 .fl-u[data-i="2"] { top: 65%; }
+    .fl-field.m3 .fl-u[data-i="1"] { box-shadow: 0 0 0 2px rgba(120,170,255,.55); }
+
+    .fl-noimg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
     .fl-noimg.t-my { background: #1c3a66; } .fl-noimg.t-foe { background: #5a2a1c; }
-    .fl-name { position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; text-align: center; background: rgba(0,0,0,.6); padding: 2px; }
+    .fl-name { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; text-align: center; background: rgba(0,0,0,.6); padding: 1px; }
 
     .fl-u.fl-hit { animation: fl-hit .42s; }
     @keyframes fl-hit { 30%{ transform: translateX(var(--rec,10px)) rotate(3deg); filter: brightness(1) saturate(2.5) sepia(.6) hue-rotate(-30deg);} }
     .fl-u.fl-hop { animation: fl-hop .44s ease; }
     @keyframes fl-hop { 35%{ transform: translate(var(--hx,0), 30px);} 62%{ transform: translate(var(--hx,0), 30px);} }
 
+    .fl-darken { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity .25s; z-index: 3; pointer-events: none; }
+    .fl-darken.on { opacity: .55; }
+    .fl-banner { position: absolute; left: 0; right: 0; top: 42%; text-align: center; font-size: 22px; font-weight: 900; color: #ffd23d; text-shadow: 0 2px 12px #000; opacity: 0; transform: scale(.6); transition: opacity .2s, transform .2s; z-index: 9; pointer-events: none; }
+    .fl-banner.on { opacity: 1; transform: scale(1); }
+
     .fl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
-    .fl-ghost { position: absolute; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; pointer-events: none; filter: brightness(.8) saturate(.6); }
+    .fl-ghost { position: absolute; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; pointer-events: none; filter: brightness(.8) saturate(.6); z-index: 1; }
 
     .fl-dmg { position: absolute; font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 2px 6px #000; transform: translate(-50%,-50%); animation: fl-pop .85s ease-out forwards; white-space: nowrap; }
-    .fl-dmg.crit { font-size: 32px; color: #ffd23d; } .fl-dmg.miss { color: #cfcfcf; font-size: 18px; }
+    .fl-dmg.crit { font-size: 30px; color: #ffd23d; } .fl-dmg.miss { color: #cfcfcf; font-size: 18px; }
     @keyframes fl-pop { 0%{opacity:0;transform:translate(-50%,-20%) scale(.6);} 25%{opacity:1;transform:translate(-50%,-80%) scale(1.1);} 100%{opacity:0;transform:translate(-50%,-200%) scale(1);} }
 
     .fl-ring { position: absolute; width: 52px; height: 52px; border: 3px solid #fff; border-radius: 50%; opacity: .95; transform: translate(-50%,-50%) scale(.2); animation: fl-ring .62s ease-out forwards; }
@@ -105,16 +150,14 @@
     .fl-flash { position: absolute; width: 80px; height: 80px; border-radius: 50%; transform: translate(-50%,-50%) scale(.4); opacity: .9; background: radial-gradient(circle,#fff,transparent 68%); animation: fl-flashk .32s ease-out forwards; }
     @keyframes fl-flashk { to { transform: translate(-50%,-50%) scale(1.5); opacity: 0; } }
 
-    /* 雷射 */
     .fl-laser { position: absolute; height: 6px; transform-origin: left center; }
-    .fl-laser.big { height: 16px; }
-    .fl-laser.huge { height: 30px; }
+    .fl-laser.big { height: 16px; } .fl-laser.huge { height: 30px; }
     .fl-laser i { display: block; width: 100%; height: 100%; border-radius: 6px; transform-origin: left center; animation: fl-beam .5s ease-out forwards; }
     .fl-laser.c-my i { background: linear-gradient(90deg,#9fe8ff,#2f9bff); box-shadow: 0 0 12px #2f9bff; }
     .fl-laser.c-foe i { background: linear-gradient(90deg,#ffd0d0,#ff4d4d); box-shadow: 0 0 12px #ff4d4d; }
+    .fl-laser.weak { height: 3px; opacity: .4; } .fl-laser.weak i { box-shadow: none; }
     @keyframes fl-beam { 0%{transform:scaleX(0);opacity:.5;} 45%{transform:scaleX(1);opacity:1;} 100%{transform:scaleX(1);opacity:0;} }
 
-    /* 炮彈／光球 */
     .fl-ball { position: absolute; width: 18px; height: 18px; border-radius: 50%; transform: translate(-50%,-50%); }
     .fl-ball.big { width: 28px; height: 28px; }
     .fl-ball.c-my { background: radial-gradient(circle,#dff4ff,#2f9bff); box-shadow: 0 0 16px #2f9bff; }
@@ -122,61 +165,60 @@
     .fl-bolt { position: absolute; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle,#fff,#ffd24d); box-shadow: 0 0 8px #ffd24d; }
     .fl-bolt.big { width: 18px; height: 18px; box-shadow: 0 0 12px #ffd24d; }
 
-    /* 蓄力 */
     .fl-charge { position: absolute; width: 24px; height: 24px; border-radius: 50%; transform: translate(-50%,-50%); animation: fl-charge .4s ease-in forwards; }
     .fl-charge.c-my { background: radial-gradient(circle,#dff4ff,rgba(47,155,255,.15)); box-shadow: 0 0 20px #2f9bff; }
     .fl-charge.c-foe { background: radial-gradient(circle,#ffe0e0,rgba(255,77,77,.15)); box-shadow: 0 0 20px #ff4d4d; }
     @keyframes fl-charge { 0%{transform:translate(-50%,-50%) scale(.3);opacity:.3;} 100%{transform:translate(-50%,-50%) scale(2.4);opacity:1;} }
 
-    /* 追蹤飛彈 */
     .fl-missile { position: absolute; left: 0; top: 0; width: 16px; height: 7px; border-radius: 4px; background: linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow: 0 0 10px #ff9a3d; offset-rotate: auto; }
 
-    /* 聲波 */
     .fl-sonic { position: absolute; width: 50px; height: 76px; border: 5px solid transparent; border-radius: 50%; transform: translate(-50%,-50%); filter: drop-shadow(0 0 5px #fff); }
     .fl-sonic.r.c-my { border-right-color: #7fd0ff; } .fl-sonic.r.c-foe { border-right-color: #ff8a8a; }
     .fl-sonic.l.c-my { border-left-color: #7fd0ff; } .fl-sonic.l.c-foe { border-left-color: #ff8a8a; }
 
-    /* 狙擊準星 */
     .fl-cross { position: absolute; width: 46px; height: 46px; transform: translate(-50%,-50%); border: 2px solid #ff5a5a; border-radius: 50%; animation: fl-crossk .5s ease-out forwards; }
     .fl-cross::before, .fl-cross::after { content: ''; position: absolute; background: #ff5a5a; }
     .fl-cross::before { left: 50%; top: -8px; bottom: -8px; width: 2px; transform: translateX(-50%); }
     .fl-cross::after { top: 50%; left: -8px; right: -8px; height: 2px; transform: translateY(-50%); }
     @keyframes fl-crossk { 0%{opacity:0;transform:translate(-50%,-50%) scale(1.7);} 40%{opacity:1;transform:translate(-50%,-50%) scale(1);} 100%{opacity:.5;} }
 
-    /* 直線斬（交叉） */
     .fl-slash { position: absolute; width: 122px; height: 10px; transform: translate(-50%,-50%); animation: fl-slashk .5s ease-out forwards; }
     .fl-slash.big { width: 162px; height: 14px; }
     .fl-slash::before, .fl-slash::after { content: ''; position: absolute; inset: 0; border-radius: 12px; background: linear-gradient(90deg,transparent 6%,#fff 50%,transparent 94%); filter: drop-shadow(0 0 9px #fff) drop-shadow(0 0 18px #9bdcff); }
     .fl-slash::after { transform: rotate(76deg); }
     @keyframes fl-slashk { 0%{opacity:0;transform:translate(-50%,-50%) rotate(-46deg) scale(.25);} 35%{opacity:1;transform:translate(-50%,-50%) rotate(-34deg) scale(1.35);} 100%{opacity:0;transform:translate(-50%,-50%) rotate(-24deg) scale(1.05);} }
 
-    /* 月牙弧斬 */
     .fl-arc { position: absolute; transform: translate(-50%,-50%) rotate(-18deg); }
     .fl-arc path { fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 6px #9bdcff) drop-shadow(0 0 12px #fff); stroke-dasharray: 210; stroke-dashoffset: 210; animation: fl-draw .45s ease-out forwards; }
     @keyframes fl-draw { 0%{stroke-dashoffset:210;opacity:1;} 55%{stroke-dashoffset:0;opacity:1;} 100%{stroke-dashoffset:0;opacity:0;} }
 
-    /* 突刺 */
     .fl-thrust { position: absolute; height: 6px; transform-origin: left center; }
     .fl-thrust.big { height: 10px; }
     .fl-thrust i { display: block; width: 100%; height: 100%; border-radius: 6px; background: linear-gradient(90deg,transparent,#fff 80%,#fff); box-shadow: 0 0 10px #fff; transform-origin: left; animation: fl-thrustk .35s ease-out forwards; }
     @keyframes fl-thrustk { 0%{transform:scaleX(.15);opacity:0;} 45%{transform:scaleX(1);opacity:1;} 100%{transform:scaleX(1);opacity:0;} }
 
-    /* 迴旋斬 */
     .fl-spin { position: absolute; width: 92px; height: 92px; border-radius: 50%; transform: translate(-50%,-50%); background: conic-gradient(from 0deg, transparent, #fff, transparent 55%); -webkit-mask: radial-gradient(transparent 54%, #000 56%); mask: radial-gradient(transparent 54%, #000 56%); animation: fl-spink .5s ease-out forwards; }
     @keyframes fl-spink { 0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.5);} 40%{opacity:1;} 100%{opacity:0;transform:translate(-50%,-50%) rotate(330deg) scale(1.25);} }
 
-    /* 控制 */
-    .fl-toggles { display: flex; align-items: center; gap: 10px; margin: 14px 2px 6px; flex-wrap: wrap; }
+    /* 控制 + 類別收合 */
+    .fl-toggles { display: flex; align-items: center; gap: 10px; margin: 10px 2px 0; flex-wrap: wrap; }
     .fl-chk { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
     .fl-chk input { width: 18px; height: 18px; }
-    .fl-act { margin-left: 0; background: #1f2a48; color: #dfe; border: 1px solid #34466e; border-radius: 10px; padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
-    .fl-act:last-child { margin-left: auto; }
-    .fl-sec { margin: 16px 2px 8px; font-size: 13px; font-weight: 800; color: #8fa3c8; }
-    .fl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .fl-act { background: #1f2a48; color: #dfe; border: 1px solid #34466e; border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .fl-act#fl-seq { margin-left: auto; }
+
+    .fl-cats { margin-top: 8px; }
+    .fl-cat { border: 1px solid #1c2748; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
+    .fl-cat-h { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #10162c; color: #cdd7ee; border: none; padding: 12px 14px; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .fl-cat-h i { transition: transform .2s; font-style: normal; color: #6f80a8; }
+    .fl-cat.open .fl-cat-h i { transform: rotate(180deg); }
+    .fl-cat:not(.open) .fl-grid { display: none; }
+    .fl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
     @media (max-width: 360px) { .fl-grid { grid-template-columns: repeat(2, 1fr); } }
-    .fl-btn { background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; border-radius: 10px; padding: 13px 6px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .fl-btn { background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; border-radius: 10px; padding: 13px 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
     .fl-btn:active { background: #233156; transform: scale(.97); }
-    .fl-hint { color: #7c8bab; font-size: 12px; line-height: 1.6; margin: 16px 2px 0; }
+    .fl-btn-ult { background: linear-gradient(135deg, #3a2a12, #2a1a30); border-color: #5a4a2a; color: #ffe6a8; }
+    .fl-hint { color: #7c8bab; font-size: 12px; line-height: 1.6; margin: 14px 2px 0; }
   </style>
 
   <script>
@@ -185,44 +227,52 @@
     const fxL = () => $('fl-fx');
     let atk = 'my';
 
-    const atkEl = () => $(atk === 'my' ? 'fl-my' : 'fl-foe');
-    const defEl = () => $(atk === 'my' ? 'fl-foe' : 'fl-my');
+    const oth = () => atk === 'my' ? 'foe' : 'my';
+    const card = (s, i) => $('fl-' + s + '-' + i);
+    const atkEl = () => card(atk, 1);
+    const defEl = () => card(oth(), 1);
+    const cc = () => atk === 'my' ? 'c-my' : 'c-foe';
     const critOn = () => $('fl-crit').checked;
     const missOn = () => $('fl-miss').checked;
+    const live = () => field().classList.contains('m3') ? [0, 1, 2] : [1];
+    function setMode(on) { field().classList.toggle('m3', on); const b = $('fl-mode'); b.textContent = on ? '3 機 ▣' : '1 機 ▢'; b.classList.toggle('on', on); }
 
     function cen(el) { const fr = field().getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; }
+    const cardCen = (s, i) => cen(card(s, i));
     function add(cls, life) { const n = document.createElement('div'); n.className = cls; fxL().appendChild(n); if (life) setTimeout(() => n.remove(), life); return n; }
     function shake() { const f = field(); f.classList.add('fl-shake'); setTimeout(() => f.classList.remove('fl-shake'), 320); }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
     function burst(x, y, color, big) { ring(x, y, color, true); const f = add('fl-flash', 320); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; }
-
-    function dmg(el, txt, cls) { const c = cen(el); const n = add('fl-dmg ' + cls, 850); n.textContent = txt; n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; }
-    function missDodge(el) { el.style.setProperty('--hx', el.id === 'fl-foe' ? '16px' : '-16px'); el.classList.add('fl-hop'); setTimeout(() => el.classList.remove('fl-hop'), 460); }
+    function dmg(el, txt, cls) { if (!el) return; const c = cen(el); const n = add('fl-dmg ' + cls, 850); n.textContent = txt; n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; }
+    function hitFx(el) { if (!el) return; el.style.setProperty('--rec', el.id.indexOf('foe') >= 0 ? '13px' : '-13px'); el.classList.add('fl-hit'); setTimeout(() => el.classList.remove('fl-hit'), 420); }
+    function missDodge(el) { el.style.setProperty('--hx', el.id.indexOf('foe') >= 0 ? '16px' : '-16px'); el.classList.add('fl-hop'); setTimeout(() => el.classList.remove('fl-hop'), 460); }
     function maybeDodge(el, impactDelay) { if (missOn()) setTimeout(() => missDodge(el), Math.max(0, impactDelay - 260)); }
     function resolve(el) {
       if (missOn()) { dmg(el, 'MISS', 'miss'); return; }
-      el.style.setProperty('--rec', el.id === 'fl-foe' ? '13px' : '-13px'); el.classList.add('fl-hit'); setTimeout(() => el.classList.remove('fl-hit'), 420);
+      hitFx(el);
       const big = critOn(); dmg(el, '-' + (big ? '999' : '350') + (big ? '!' : ''), big ? 'crit' : '');
       if (big) shake();
     }
 
-    const cc = () => atk === 'my' ? 'c-my' : 'c-foe';
-
     function beam(a, b, big, miss) { if (miss) { b = { x: b.x + (atk === 'my' ? 24 : -24), y: b.y - 38 }; } const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) + (miss ? 34 : 0); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 16 : 6; const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; }
+    function hugeBeam(a, b) { const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) + 120; const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = add('fl-laser ' + cc() + ' huge', 600); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = '-15px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; }
+    function slashAt(c, big) { const s = add('fl-slash' + (big ? ' big' : ''), 520); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; }
+    function spawnGhost(el, dx, dy) { const g = el.cloneNode(true); g.removeAttribute('id'); g.classList.add('fl-ghost'); const r = el.getBoundingClientRect(), fr = field().getBoundingClientRect(); g.style.left = (r.left - fr.left) + 'px'; g.style.top = (r.top - fr.top) + 'px'; g.style.width = r.width + 'px'; field().appendChild(g); g.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: .45 }, { transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: 0 }], { duration: 380, easing: 'ease-out' }); setTimeout(() => g.remove(), 400); }
 
-    // 近身衝刺：把攻方卡衝到對方卡前再回來，callback 在落招瞬間呼叫
+    // 近身衝刺（單招用中央卡；ult 用指定卡）
     function lunge(cb, ratio) {
       const aEl = atkEl(); const a = cen(aEl), b = cen(defEl());
       if (missOn()) missDodge(defEl());
       const r = missOn() ? 0.5 : (ratio || 0.78);
       const dx = (b.x - a.x) * r, dy = (b.y - a.y) * r;
       aEl.style.zIndex = '9';
-      aEl.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.15)', offset: .42 }, { transform: 'translate(0,0) scale(1)' }], { duration: 560, easing: 'ease-out' });
+      aEl.animate([{ transform: 'translate(0,0) scale(1)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.12)', offset: .42 }, { transform: 'translate(0,0) scale(1)' }], { duration: 560, easing: 'ease-out' });
       setTimeout(cb, 210);
       setTimeout(() => { aEl.style.zIndex = ''; }, 560);
     }
+    function lungeIdx(s, i, ds, j, ratio, cb) { const aEl = card(s, i), dEl = card(ds, j); if (!aEl || !dEl) { cb && cb(); return; } const a = cen(aEl), b = cen(dEl); const dx = (b.x - a.x) * ratio, dy = (b.y - a.y) * ratio; aEl.style.zIndex = '9'; aEl.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + dx + 'px,' + dy + 'px) scale(1.12)', offset: .45 }, { transform: 'translate(0,0)' }], { duration: 520, easing: 'ease-out' }); setTimeout(() => cb && cb(), 200); setTimeout(() => { aEl.style.zIndex = ''; }, 520); }
 
-    // 蓄力光束（暴擊時更粗、且貫穿延伸超過卡片）
+    // 蓄力光束
     function chargeBeam(a, b, big, miss) {
       let bb = b; if (miss) bb = { x: b.x + (atk === 'my' ? 26 : -26), y: b.y - 40 };
       const dx = bb.x - a.x, dy = bb.y - a.y; let len = Math.hypot(dx, dy); if (big && !miss) len += 130;
@@ -267,16 +317,11 @@
       }
       setTimeout(() => resolve(defEl()), impact);
     }
-    // 聲波：一圈圈弧形音波推向對方
     function eWave() {
       const a = cen(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = critOn() ? 4 : 3; maybeDodge(defEl(), 540);
       for (let k = 0; k < n; k++) setTimeout(() => {
         const s = add('fl-sonic ' + side + ' ' + cc(), 620); s.style.left = a.x + 'px'; s.style.top = a.y + 'px';
-        s.animate([
-          { transform: 'translate(-50%,-50%) scale(.45)', opacity: 0 },
-          { transform: 'translate(-50%,-50%) scale(.85)', opacity: .95, offset: .2 },
-          { transform: 'translate(calc(-50% + ' + (b.x - a.x) + 'px), calc(-50% + ' + (b.y - a.y) + 'px)) scale(1.7)', opacity: 0 }
-        ], { duration: 540, easing: 'ease-out' });
+        s.animate([{ transform: 'translate(-50%,-50%) scale(.45)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.85)', opacity: .95, offset: .2 }, { transform: 'translate(calc(-50% + ' + (b.x - a.x) + 'px), calc(-50% + ' + (b.y - a.y) + 'px)) scale(1.7)', opacity: 0 }], { duration: 540, easing: 'ease-out' });
       }, k * 120);
       setTimeout(() => { if (!missOn()) ring(b.x, b.y, '#9b6bff', true); resolve(defEl()); }, 540);
     }
@@ -286,7 +331,6 @@
     }
 
     // ---- 斬擊／近身類 ----
-    function slashAt(c, big) { const s = add('fl-slash' + (big ? ' big' : ''), 520); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; }
     function eSlash() { lunge(() => { if (!missOn()) slashAt(cen(defEl()), critOn()); resolve(defEl()); }); }
     function eArc() {
       lunge(() => {
@@ -298,48 +342,14 @@
         resolve(defEl());
       });
     }
-    function eIai() {
-      lunge(() => {
-        if (!missOn()) { const c = cen(defEl()); const n = critOn() ? 5 : 3; for (let k = 0; k < n; k++) setTimeout(() => slashAt({ x: c.x + (k - (n - 1) / 2) * 10, y: c.y + (k - (n - 1) / 2) * 12 }, critOn()), k * 100); }
-        resolve(defEl());
-      });
-    }
-    function eThrust() {
-      lunge(() => {
-        if (!missOn()) { const a = cen(atkEl()), c = cen(defEl()); const dx = c.x - a.x, dy = c.y - a.y; const len = Math.hypot(dx, dy) * 0.7; const ang = Math.atan2(dy, dx) * 180 / Math.PI;
-          const t = add('fl-thrust' + (critOn() ? ' big' : ''), 420); t.style.left = a.x + 'px'; t.style.top = a.y + 'px'; t.style.width = len + 'px'; t.style.transform = 'rotate(' + ang + 'deg)'; t.innerHTML = '<i></i>'; ring(c.x, c.y, '#fff', critOn()); }
-        resolve(defEl());
-      }, 0.65);
-    }
-    function eCross() {
-      lunge(() => {
-        if (!missOn()) { const c = cen(defEl()); slashAt(c, critOn()); setTimeout(() => { ring(c.x, c.y, '#ffb13d', true); shake(); }, 170); }
-        resolve(defEl());
-      });
-    }
-    function eSpin() {
-      lunge(() => {
-        if (!missOn()) { const c = cen(defEl()); const big = critOn(); const s = add('fl-spin', 560); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; if (big) { s.style.width = '124px'; s.style.height = '124px'; burst(c.x, c.y, '#fff', true); shake(); } }
-        resolve(defEl());
-      });
-    }
-    function eImpact() {
-      lunge(() => {
-        if (!missOn()) { const c = cen(defEl()); const big = critOn(); ring(c.x, c.y, '#fff', true); setTimeout(() => ring(c.x, c.y, '#ffd24d', true), 110); if (big) { setTimeout(() => { ring(c.x, c.y, '#fff', true); burst(c.x, c.y, '#ffd24d', true); shake(); }, 220); } shake(); }
-        resolve(defEl());
-      });
-    }
+    function eIai() { lunge(() => { if (!missOn()) { const c = cen(defEl()); const n = critOn() ? 5 : 3; for (let k = 0; k < n; k++) setTimeout(() => slashAt({ x: c.x + (k - (n - 1) / 2) * 10, y: c.y + (k - (n - 1) / 2) * 12 }, critOn()), k * 100); } resolve(defEl()); }); }
+    function eThrust() { lunge(() => { if (!missOn()) { const a = cen(atkEl()), c = cen(defEl()); const dx = c.x - a.x, dy = c.y - a.y; const len = Math.hypot(dx, dy) * 0.7; const ang = Math.atan2(dy, dx) * 180 / Math.PI; const t = add('fl-thrust' + (critOn() ? ' big' : ''), 420); t.style.left = a.x + 'px'; t.style.top = a.y + 'px'; t.style.width = len + 'px'; t.style.transform = 'rotate(' + ang + 'deg)'; t.innerHTML = '<i></i>'; ring(c.x, c.y, '#fff', critOn()); } resolve(defEl()); }, 0.65); }
+    function eCross() { lunge(() => { if (!missOn()) { const c = cen(defEl()); slashAt(c, critOn()); setTimeout(() => { ring(c.x, c.y, '#ffb13d', true); shake(); }, 170); } resolve(defEl()); }); }
+    function eSpin() { lunge(() => { if (!missOn()) { const c = cen(defEl()); const big = critOn(); const s = add('fl-spin', 560); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; if (big) { s.style.width = '124px'; s.style.height = '124px'; burst(c.x, c.y, '#fff', true); shake(); } } resolve(defEl()); }); }
+    function eImpact() { lunge(() => { if (!missOn()) { const c = cen(defEl()); const big = critOn(); ring(c.x, c.y, '#fff', true); setTimeout(() => ring(c.x, c.y, '#ffd24d', true), 110); if (big) setTimeout(() => { ring(c.x, c.y, '#fff', true); burst(c.x, c.y, '#ffd24d', true); shake(); }, 220); shake(); } resolve(defEl()); }); }
 
-    // ---- 閃避類（受攻擊方示範）----
-    const awayOf = (el) => el.id === 'fl-foe' ? 1 : -1;
-    function spawnGhost(el, dx, dy) {
-      const g = el.cloneNode(true); g.removeAttribute('id'); g.classList.add('fl-ghost');
-      const r = el.getBoundingClientRect(), fr = field().getBoundingClientRect();
-      g.style.left = (r.left - fr.left) + 'px'; g.style.top = (r.top - fr.top) + 'px'; g.style.width = r.width + 'px'; g.style.zIndex = '1';
-      field().appendChild(g);
-      g.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: .45 }, { transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: 0 }], { duration: 380, easing: 'ease-out' });
-      setTimeout(() => g.remove(), 400);
-    }
+    // ---- 閃避類 ----
+    const awayOf = (el) => el.id.indexOf('foe') >= 0 ? 1 : -1;
     function dDuck(el) { el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(38px)', offset: .4 }, { transform: 'translateY(38px)', offset: .62 }, { transform: 'translateY(0)' }], { duration: 520, easing: 'ease' }); }
     function dBack(el) { const a = awayOf(el); el.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(' + (a * 46) + 'px)', offset: .4 }, { transform: 'translateX(' + (a * 46) + 'px)', offset: .62 }, { transform: 'translateX(0)' }], { duration: 520, easing: 'ease' }); }
     function dSide(el) { el.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-38px)', offset: .4 }, { transform: 'translateY(-38px)', offset: .62 }, { transform: 'translateY(0)' }], { duration: 520, easing: 'ease' }); }
@@ -348,17 +358,55 @@
     function dSpin(el) { el.animate([{ transform: 'rotate(0) translateY(0)' }, { transform: 'rotate(360deg) translateY(-24px)', offset: .5 }, { transform: 'rotate(360deg) translateY(0)' }], { duration: 560, easing: 'ease-in-out' }); }
     function dRoll(el) { const a = awayOf(el); el.animate([{ transform: 'translateX(0) rotate(0)' }, { transform: 'translateX(' + (a * 50) + 'px) rotate(' + (a * 360) + 'deg)', offset: .5 }, { transform: 'translateX(0) rotate(0)' }], { duration: 600, easing: 'ease-in-out' }); }
 
+    // ---- 大絕招（自動切 3 機）----
+    function banner(t) { const b = $('fl-banner'); b.textContent = t; b.classList.add('on'); }
+    function ultStart(name) { setMode(true); $('fl-darken').classList.add('on'); banner(name); }
+    function ultEnd() { setTimeout(() => { $('fl-darken').classList.remove('on'); $('fl-banner').classList.remove('on'); }, 1800); }
+    function ultGeneric() {
+      ultStart('⚡ 覺醒・總攻擊'); const A = live(), o = oth();
+      A.forEach((i, k) => setTimeout(() => { const a = cardCen(atk, i); const dEl = card(o, Math.min(i, 2)); if (dEl) beam(a, cen(dEl), true, false); }, 120 + k * 140));
+      setTimeout(() => { [0, 1, 2].forEach((j) => { const e = card(o, j); if (e) { hitFx(e); dmg(e, '-' + (800 + j * 30) + '!', 'crit'); } }); shake(); setTimeout(shake, 90); }, 120 + A.length * 140 + 360);
+      ultEnd();
+    }
+    function ultRanged() {
+      ultStart('⚡ 全射・總軌道炮擊'); const A = live(), o = oth();
+      A.forEach((i, k) => setTimeout(() => {
+        const a = cardCen(atk, i); const g = add('fl-charge ' + cc(), 380); g.style.left = a.x + 'px'; g.style.top = a.y + 'px'; g.style.animationDuration = '.38s';
+        setTimeout(() => { [0, 1, 2].forEach((j) => { const dEl = card(o, j); if (dEl) hugeBeam(a, cen(dEl)); }); }, 360);
+      }, 200 + k * 170));
+      setTimeout(() => { [0, 1, 2].forEach((j) => { const e = card(o, j); if (e) { hitFx(e); burst(cen(e).x, cen(e).y, '#7fd0ff', true); dmg(e, '-' + (900 + j * 40) + '!!', 'crit'); } }); shake(); setTimeout(shake, 100); }, 200 + A.length * 170 + 420);
+      ultEnd();
+    }
+    function ultMelee() {
+      ultStart('⚡ 全近・超絕一閃'); const A = live(), o = oth();
+      A.forEach((i, k) => setTimeout(() => { const j = Math.min(i, 2); lungeIdx(atk, i, o, j, 0.82, () => { const dEl = card(o, j); if (dEl) { const c = cen(dEl); slashAt(c, true); hitFx(dEl); } }); }, 150 + k * 190));
+      setTimeout(() => { const e = card(o, 1) || card(o, 0); if (e) { const c = cen(e); slashAt(c, true); ring(c.x, c.y, '#ffb13d', true); burst(c.x, c.y, '#ffd24d', true); } [0, 1, 2].forEach((j) => { const x = card(o, j); if (x) { hitFx(x); dmg(x, '-' + (1000 + j * 50) + '!!', 'crit'); } }); shake(); setTimeout(shake, 100); }, 150 + A.length * 190 + 320);
+      ultEnd();
+    }
+    function ultEvade() {
+      ultStart('⚡ 全閃・殘影殲滅'); const A = live(), o = oth(); const away = atk === 'my' ? 1 : -1;
+      A.forEach((i, k) => setTimeout(() => {
+        const aEl = card(atk, i); for (let g = 0; g < 3; g++) setTimeout(() => spawnGhost(aEl, away * 22 * (g + 1), -6 * (g + 1)), g * 45);
+        const j = Math.min(i, 2); lungeIdx(atk, i, o, j, 0.85, () => { const dEl = card(o, j); if (dEl) { const c = cen(dEl); slashAt(c, false); hitFx(dEl); dmg(dEl, '-' + (600 + j * 20), ''); } });
+      }, 120 + k * 150));
+      setTimeout(() => { [0, 1, 2].forEach((j) => { const e = card(o, j); if (e) { hitFx(e); dmg(e, '-' + (500 + j * 40) + '!', 'crit'); } }); shake(); }, 120 + A.length * 150 + 360);
+      ultEnd();
+    }
+
     const FX = {
       laser: eLaser, cannon: eCannon, shot: eShot, charge: eCharge, homing: eHoming, wave: eWave, snipe: eSnipe,
       slash: eSlash, arc: eArc, iai: eIai, thrust: eThrust, cross: eCross, spin: eSpin, impact: eImpact,
       dduck: () => dDuck(defEl()), dback: () => dBack(defEl()), dside: () => dSide(defEl()), dafter: () => dAfter(defEl()), dblink: () => dBlink(defEl()), dspin: () => dSpin(defEl()), droll: () => dRoll(defEl()),
+      ultg: ultGeneric, ultr: ultRanged, ultm: ultMelee, ulte: ultEvade,
     };
     const NAMES = Object.keys(FX);
 
     document.querySelectorAll('.fl-btn').forEach((b) => b.addEventListener('click', () => { const f = FX[b.dataset.fx]; if (f) f(); }));
+    document.querySelectorAll('.fl-cat-h').forEach((h) => h.addEventListener('click', () => { const cat = h.parentElement; const was = cat.classList.contains('open'); document.querySelectorAll('.fl-cat').forEach((c) => c.classList.remove('open')); if (!was) cat.classList.add('open'); }));
+    $('fl-mode').addEventListener('click', () => setMode(!field().classList.contains('m3')));
     $('fl-dir').addEventListener('click', () => { atk = atk === 'my' ? 'foe' : 'my'; $('fl-dir').textContent = '攻方：' + (atk === 'my' ? '我方 ▶' : '敵方 ◀'); });
     $('fl-rand').addEventListener('click', () => { FX[NAMES[Math.floor(Math.random() * NAMES.length)]](); });
-    $('fl-seq').addEventListener('click', () => { NAMES.forEach((n, i) => setTimeout(() => FX[n](), i * 1100)); });
+    $('fl-seq').addEventListener('click', () => { NAMES.forEach((n, i) => setTimeout(() => FX[n](), i * 1300)); });
   </script>
 </body>
 </html>
