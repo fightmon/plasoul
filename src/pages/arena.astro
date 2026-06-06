@@ -328,9 +328,17 @@ import Layout from '../layouts/Layout.astro';
   .ar-bar.foe i { background:linear-gradient(90deg,#ff8a8a,#ff5a5a); }
   .bt-foot { position:relative; z-index:2; text-align:center; padding:8px 0 max(14px,env(safe-area-inset-bottom)); }
   /* 放話框（G世代/超機大戰風）*/
-  .bt-talk { position:absolute; left:0; right:0; bottom:60px; z-index:4; display:flex; justify-content:center; padding:0 16px; pointer-events:none; opacity:0; transform:translateY(6px); transition:opacity .18s, transform .18s; }
+  .bt-talk { position:absolute; left:0; right:0; bottom:58px; z-index:4; display:flex; padding:0 14px; pointer-events:none; opacity:0; transform:translateY(6px); transition:opacity .18s, transform .18s; }
   .bt-talk.on { opacity:1; transform:translateY(0); }
-  .bt-talk span { max-width:92%; background:rgba(0,0,0,.62); color:#fff; font-size:14px; font-weight:700; line-height:1.4; padding:8px 16px; border-radius:10px; border-left:3px solid #ffd23d; box-shadow:0 4px 16px rgba(0,0,0,.4); }
+  .bt-talk.me { justify-content:flex-start; }
+  .bt-talk.foe { justify-content:flex-end; }
+  .bt-bubble { display:flex; align-items:flex-end; gap:8px; max-width:82%; }
+  .bt-talk.foe .bt-bubble { flex-direction:row-reverse; }
+  .bt-av { width:38px; height:38px; border-radius:50%; overflow:hidden; flex-shrink:0; background:var(--ar-card2); display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid rgba(255,255,255,.25); }
+  .bt-av img { width:100%; height:100%; object-fit:cover; }
+  .bt-bubble span { font-size:14px; font-weight:600; line-height:1.4; padding:9px 14px; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,.45); color:#fff; }
+  .bt-talk.me .bt-bubble span { background:rgba(45,95,170,.95); border-bottom-left-radius:4px; }
+  .bt-talk.foe .bt-bubble span { background:rgba(48,48,58,.95); border-bottom-right-radius:4px; }
   /* 語氣選擇 */
   .ar-tone-chip { display:block; width:100%; margin-top:10px; padding:9px; background:var(--ar-card); border:1px solid var(--ar-line); border-radius:10px; color:var(--ar-dim); font-size:13px; cursor:pointer; }
   .ar-tone-chip b { color:#ffd23d; }
@@ -640,11 +648,18 @@ import Layout from '../layouts/Layout.astro';
     const reset = () => { [0, 1, 2].forEach((k) => { place('my', k, false); place('foe', k, false); }); $('bt-fx')!.innerHTML = ''; };
     const setHP = (my: number, foe: number) => { const mb = $('bt-my'), fb = $('bt-foe'); if (mb) (mb as HTMLElement).style.width = Math.max(0, Math.round(my / myMax * 100)) + '%'; if (fb) (fb as HTMLElement).style.width = Math.max(0, Math.round(foe / foeMax * 100)) + '%'; };
     const shake = () => { const f = $('bt-field')!; f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 320); };
-    // 放話（依語氣）
+    // 放話（依語氣；LINE 風：我方左、對方右，帶說話卡頭像）
     const pickL = (a: string[]) => a[Math.floor(Math.random() * a.length)];
-    const taunt = (text: string) => { const t = $('bt-talk'); if (!t) return; t.innerHTML = '<span>' + esc(text) + '</span>'; t.classList.add('on'); clearTimeout((t as any)._tt); (t as any)._tt = setTimeout(() => t.classList.remove('on'), 1700); };
     const toneOf = (side: string) => side === 'my' ? getTone() : TONE_KEYS[Math.floor(Math.random() * TONE_KEYS.length)];
-    const say = (side: string, situ: string) => { const p = TONES[toneOf(side)][situ]; if (p && p.length) taunt(pickL(p)); };
+    const say = (side: string, situ: string) => {
+      const p = TONES[toneOf(side)][situ]; if (!p || !p.length) return;
+      const card = side === 'my' ? myTeam[aMy] : foeTeam[aFoe];
+      const av = card && card.photo ? `<img src="${esc(card.photo)}" alt=""/>` : (side === 'my' ? '🤖' : '👾');
+      const t = $('bt-talk'); if (!t) return;
+      t.className = 'bt-talk on ' + (side === 'my' ? 'me' : 'foe');
+      t.innerHTML = `<div class="bt-bubble"><div class="bt-av">${av}</div><span>${esc(pickL(p))}</span></div>`;
+      clearTimeout((t as any)._tt); (t as any)._tt = setTimeout(() => t.classList.remove('on'), 1700);
+    };
     // 以「卡片實際位置」為基準算特效座標（永遠對準目標卡正中）
     const cen = (el: HTMLElement | null) => { const fr = $('bt-field')!.getBoundingClientRect(); if (!el) return { x: fr.width / 2, y: fr.height / 2 }; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; };
     const laserFx = (attEl: HTMLElement | null, defEl: HTMLElement | null, big: boolean, side: string, weak = false, miss = false) => { if (!attEl || !defEl) return; const a = cen(attEl), b = cen(defEl); if (miss) { const fr = $('bt-field')!.getBoundingClientRect(); b.x = side === 'my' ? fr.width + 80 : -80; b.y -= 14; } const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = document.createElement('div'); n.className = 'bt-laser ' + (side === 'my' ? 'l-my' : 'l-foe') + (big ? ' big' : '') + (weak ? ' weak' : ''); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 550); };
