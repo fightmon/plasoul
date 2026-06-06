@@ -355,6 +355,8 @@ import Layout from '../layouts/Layout.astro';
   .ar-cz-chip { padding:6px 11px; background:var(--ar-card2); border:1px solid var(--ar-line); border-radius:20px; color:var(--ar-dim); font-size:12.5px; cursor:pointer; transition:.12s; }
   .ar-cz-chip.on { border-color:#ffc23d; background:rgba(255,194,61,.16); color:#ffd23d; }
   .ar-cz-note { font-size:12px; color:var(--ar-dim); padding:6px 0 2px; }
+  .ar-cz-sub { font-size:11px; color:var(--ar-dim); font-weight:700; margin:9px 0 5px; letter-spacing:.5px; }
+  .ar-cz-sub:first-child { margin-top:2px; }
   /* 戰鬥・雙排佈陣（佔滿中段）*/
   .bt-field { position:relative; z-index:1; flex:1; min-height:0; overflow:hidden; }
   .bt-field.shake { animation:bt-shake .3s; }
@@ -462,9 +464,23 @@ import Layout from '../layouts/Layout.astro';
   const RANK = (s: number) => { let t = 'F'; for (let k = 0; k < TIER_MIN.length; k++) if ((s || 0) >= TIER_MIN[k]) t = TIER_NAME[k]; return t; };
 
   // 放話語氣：資料化（/data/tones.json 按需載入；之後可擴到上百種）
-  let TONES: any = { hot: { name: '熱血', atk: ['上啊！', '看我的！'], crit: ['必殺！'], dodge: ['太天真了！'], ult: ['全力解放！'] } };  // 最小 fallback
+  let TONES: any = { hot: { name: '熱血', cat: 'common', atk: ['上啊！', '看我的！'], crit: ['必殺！'], dodge: ['太天真了！'], ult: ['全力解放！'] } };  // 最小 fallback
   let TONE_KEYS: string[] = ['hot'];
-  fetch('/data/tones.json').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && typeof d === 'object') { TONES = d; TONE_KEYS = Object.keys(d); } }).catch(() => {});
+  let TONE_CATS: any[] = [{ id: 'common', name: '通用' }];
+  fetch('/data/tones.json').then((r) => (r.ok ? r.json() : null)).then((d) => {
+    if (d && d.tones) { TONES = d.tones; TONE_CATS = Array.isArray(d.cats) && d.cats.length ? d.cats : TONE_CATS; TONE_KEYS = Object.keys(d.tones); }
+    else if (d && typeof d === 'object') { TONES = d; TONE_KEYS = Object.keys(d); }   // 舊扁平格式相容
+  }).catch(() => {});
+  // 依單元分組產生語氣選擇 chips（withFollow=是否提供「跟隨大廳預設」選項）
+  const toneChipsHTML = (selKey: string, withFollow: boolean): string => {
+    const follow = withFollow ? `<div class="ar-cz-row"><button class="ar-cz-chip${!selKey ? ' on' : ''}" data-tk="">🏠 跟隨預設</button></div>` : '';
+    const groups = TONE_CATS.map((cat) => {
+      const keys = TONE_KEYS.filter((k) => (TONES[k] && TONES[k].cat || 'common') === cat.id);
+      if (!keys.length) return '';
+      return `<div class="ar-cz-sub">${esc(cat.name)}</div><div class="ar-cz-row">${keys.map((k) => `<button class="ar-cz-chip${k === selKey ? ' on' : ''}" data-tk="${esc(k)}">${esc(toneName(k))}</button>`).join('')}</div>`;
+    }).join('');
+    return follow + groups;
+  };
   const getTone = () => { try { const t = localStorage.getItem('ps_tone'); return t && TONES[t] ? t : 'hot'; } catch { return 'hot'; } };
   const setTone = (t: string) => { try { localStorage.setItem('ps_tone', t); } catch {} };
   const toneName = (t: string) => TONES[t] ? TONES[t].name : '熱血';
@@ -599,10 +615,10 @@ import Layout from '../layouts/Layout.astro';
   function closeMatch() { const el = $('ar-match')!; el.setAttribute('hidden', ''); el.innerHTML = ''; }
   function openTone() {
     const el = $('ar-tone-modal')!; const cur = getTone();
-    el.innerHTML = `<div class="ar-modal-box ar-match-box"><div class="ar-modal-head"><b>🗣️ 預設放話語氣</b><button class="ar-x" id="ar-tone-x">✕</button></div><div class="ar-tone-list">${TONE_KEYS.map((k) => `<button class="ar-tone-opt${k === cur ? ' on' : ''}" data-k="${k}"><b>${esc(toneName(k))}</b><small>「${esc(TONES[k].atk[0])}」</small></button>`).join('')}</div></div>`;
+    el.innerHTML = `<div class="ar-modal-box ar-match-box"><div class="ar-modal-head"><b>🗣️ 預設放話語氣</b><button class="ar-x" id="ar-tone-x">✕</button></div><div class="ar-tone-list">${toneChipsHTML(cur, false)}</div></div>`;
     el.removeAttribute('hidden');
     $('ar-tone-x')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; });
-    el.querySelectorAll('.ar-tone-opt').forEach((b) => b.addEventListener('click', () => { setTone((b as HTMLElement).dataset.k!); el.setAttribute('hidden', ''); el.innerHTML = ''; renderFleet(); toast('語氣已設定 ✅'); }));
+    el.querySelectorAll('.ar-cz-chip').forEach((b) => b.addEventListener('click', () => { const k = (b as HTMLElement).dataset.tk; if (!k) return; setTone(k); el.setAttribute('hidden', ''); el.innerHTML = ''; renderFleet(); toast('語氣已設定 ✅'); }));
   }
   function renderMatch(d: any) {
     const cand = (d.candidates || []).map((o: any, i: number) => {
@@ -665,7 +681,8 @@ import Layout from '../layouts/Layout.astro';
     const shake = () => { const f = $('bt-field')!; f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 320); };
     // 放話（依語氣；LINE 風：我方左、對方右，帶說話卡頭像）
     const pickL = (a: string[]) => a[Math.floor(Math.random() * a.length)];
-    const toneOf = (side: string) => { const c = side === 'my' ? myTeam[aMy] : foeTeam[aFoe]; if (c && c.tone_id && TONES[c.tone_id]) return c.tone_id; return side === 'my' ? getTone() : TONE_KEYS[Math.floor(Math.random() * TONE_KEYS.length)]; };
+    const foeToneMemo: any = {};   // 每個敵卡整場固定一種語氣（較有個性、較好笑）
+    const toneOf = (side: string) => { const c = side === 'my' ? myTeam[aMy] : foeTeam[aFoe]; if (c && c.tone_id && TONES[c.tone_id]) return c.tone_id; if (side === 'my') return getTone(); if (foeToneMemo[aFoe] == null) foeToneMemo[aFoe] = TONE_KEYS[Math.floor(Math.random() * TONE_KEYS.length)]; return foeToneMemo[aFoe]; };
     const say = (side: string, situ: string) => {
       const tk = toneOf(side); const p = TONES[tk] && TONES[tk][situ]; if (!p || !p.length) return;
       const card = side === 'my' ? myTeam[aMy] : foeTeam[aFoe];
@@ -1020,10 +1037,7 @@ import Layout from '../layouts/Layout.astro';
           <div class="ar-rv-special">💥 <b>${esc(c.special_name)}</b>　${esc(c.special_desc)}</div>
           <div class="ar-cz">
             <div class="ar-cz-h">🗣️ 語氣 <small>單選一種</small></div>
-            <div class="ar-cz-row" id="cz-tones">
-              <button class="ar-cz-chip${!c.tone_id ? ' on' : ''}" data-tk="">預設</button>
-              ${TONE_KEYS.map((k) => `<button class="ar-cz-chip${c.tone_id === k ? ' on' : ''}" data-tk="${esc(k)}">${esc(toneName(k))}</button>`).join('')}
-            </div>
+            <div id="cz-tones">${toneChipsHTML(c.tone_id || '', true)}</div>
             ${MOVE_POOL[c.type] ? `
             <div class="ar-cz-h">⚔️ ${c.type === 'evade' ? '反擊招式' : '招式'} <small>可全掛，至少留一招</small></div>
             <div class="ar-cz-row" id="cz-moves">
