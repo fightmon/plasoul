@@ -82,6 +82,58 @@ import Layout from '../../layouts/Layout.astro';
           <button id="m-cancel" class="link-btn">取消</button>
           <button id="m-save" class="btn-primary">儲存</button>
         </div>
+
+        <!-- 創鬥卡進度 -->
+        <div class="m-sec">
+          <div class="m-sec-h">🎴 創鬥卡進度</div>
+          <div id="m-arena"><div class="muted">載入中…</div></div>
+        </div>
+
+        <!-- 卡片 -->
+        <div class="m-sec">
+          <div class="m-sec-h">🃏 卡片 <span class="muted" id="m-cards-n"></span></div>
+          <div id="m-cards" class="m-cards"><div class="muted">載入中…</div></div>
+        </div>
+
+        <!-- 危險區 -->
+        <div class="m-danger">
+          <div><b>危險區</b><div class="muted">永久刪除：連同卡片、天梯、車庫一併清除，不可復原。</div></div>
+          <button id="m-purge" class="btn-danger">永久刪除帳號</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 卡片編輯 modal -->
+    <div id="card-modal" class="modal" hidden>
+      <div class="modal-box">
+        <div class="modal-head">
+          <div class="modal-title" id="cm-title">編輯卡片</div>
+          <button id="cm-close" class="x-btn" title="關閉">×</button>
+        </div>
+        <label class="m-field"><span>呼號名稱</span><input id="cm-name" class="m-input" /></label>
+        <div class="cm-row">
+          <label class="m-field"><span>天性</span><select id="cm-type" class="m-input"><option value="ranged">射擊</option><option value="melee">近身</option><option value="evade">閃躲</option></select></label>
+          <label class="m-field"><span>稀有度</span><select id="cm-rarity" class="m-input"><option>N</option><option>R</option><option>SR</option><option>SSR</option></select></label>
+        </div>
+        <div class="cm-grid">
+          <label class="m-field"><span>HP</span><input id="cm-hp" type="number" class="m-input" /></label>
+          <label class="m-field"><span>攻</span><input id="cm-atk" type="number" class="m-input" /></label>
+          <label class="m-field"><span>防</span><input id="cm-def" type="number" class="m-input" /></label>
+          <label class="m-field"><span>機動</span><input id="cm-mob" type="number" class="m-input" /></label>
+        </div>
+        <div class="cm-hint" id="cm-pow"></div>
+        <label class="m-field"><span>地形適性</span><input id="cm-terrain" class="m-input" /></label>
+        <label class="m-field"><span>必殺名</span><input id="cm-special_name" class="m-input" /></label>
+        <label class="m-field"><span>必殺描述</span><input id="cm-special_desc" class="m-input" /></label>
+        <label class="m-field"><span>一句介紹</span><input id="cm-flavor" class="m-input" /></label>
+        <label class="m-field"><span>語氣 tone_id（tones.json 的 key，留空=預設）</span><input id="cm-tone" class="m-input" placeholder="hot / caocao / cat_normal …" /></label>
+        <label class="m-field"><span>招式 moves（逗號分隔，留空=全掛該天性）</span><input id="cm-moves" class="m-input" placeholder="laser,cannon … / slash,arc …" /></label>
+        <div id="cm-status" class="status-text"></div>
+        <div class="modal-actions">
+          <div class="spacer"></div>
+          <button id="cm-cancel" class="link-btn">取消</button>
+          <button id="cm-save" class="btn-primary">儲存卡片</button>
+        </div>
       </div>
     </div>
   </div>
@@ -171,7 +223,31 @@ import Layout from '../../layouts/Layout.astro';
   .modal-box {
     width: 100%; max-width: 420px; background: var(--admin-surface);
     border: 1px solid var(--admin-border); border-radius: 16px; padding: 20px;
+    max-height: 90vh; overflow-y: auto;
   }
+  /* 會員 modal 擴充區 */
+  .m-sec { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--admin-border); }
+  .m-sec-h { font-size: 13px; font-weight: 700; margin-bottom: 10px; }
+  .m-arena-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .m-arena-grid .m-field { margin-bottom: 0; }
+  .m-arena-grid .m-input { padding: 7px 9px; font-size: 13px; }
+  .m-cards { display: flex; flex-direction: column; gap: 7px; }
+  .m-card { display: flex; align-items: center; gap: 9px; padding: 8px 10px; background: var(--admin-surface-2); border: 1px solid var(--admin-border-2); border-radius: 9px; }
+  .m-card.dead { opacity: 0.5; }
+  .m-card-thumb { width: 34px; height: 44px; border-radius: 5px; object-fit: cover; background: var(--admin-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .m-card-info { flex: 1; min-width: 0; }
+  .m-card-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-card-sub { font-size: 11px; color: var(--admin-text-faint); margin-top: 2px; }
+  .m-card-acts { display: flex; gap: 6px; flex-shrink: 0; }
+  .m-mini { padding: 5px 9px; font-size: 12px; font-weight: 700; cursor: pointer; border-radius: 6px; background: var(--admin-surface); border: 1px solid var(--admin-border-2); color: var(--admin-text); }
+  .m-mini.danger { color: #fca5a5; border-color: rgba(248,113,113,0.4); }
+  .m-tag-t { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-right: 4px; background: var(--admin-surface); }
+  .m-danger { margin-top: 18px; padding: 12px 14px; border: 1px solid rgba(248,113,113,0.35); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(248,113,113,0.06); }
+  .m-danger .muted { font-size: 11px; margin-top: 3px; }
+  .cm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .cm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .cm-grid .m-field { margin-bottom: 8px; }
+  .cm-hint { font-size: 11px; color: var(--admin-text-faint); margin: -2px 0 12px; }
   .modal-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
   .modal-title { font-weight: 700; font-size: 16px; word-break: break-all; }
   .modal-sub { font-size: 12px; color: var(--admin-text-faint); margin-top: 3px; }
@@ -252,10 +328,11 @@ import Layout from '../../layouts/Layout.astro';
   }
 
   // ---- modal ----
-  let editing: any = null;
+  let editing: any = null;       // list 的基本會員資料
+  let detail: any = null;        // /detail 回傳（user/arena/cards）
   const modal = $('modal')!, mStatus = $('m-status')!;
   function openModal(u: any) {
-    editing = u;
+    editing = u; detail = null;
     $('m-email')!.textContent = u.email;
     $('m-meta')!.textContent = `車庫 ${u.garage_count} 盒 · 註冊 ${fmtDate(u.created_at)}${u.suspended ? ' · 已停權' : ''}`;
     ($('m-tier') as HTMLSelectElement).value = u.tier;
@@ -263,12 +340,133 @@ import Layout from '../../layouts/Layout.astro';
     ($('m-expiry') as HTMLInputElement).value = u.tier_expires_at ? fmtDate(u.tier_expires_at) : '';
     ($('m-suspend') as HTMLButtonElement).textContent = u.suspended ? '復原帳號' : '停權';
     mStatus.textContent = ''; mStatus.className = 'status-text';
+    $('m-arena')!.innerHTML = '<div class="muted">載入中…</div>';
+    $('m-cards')!.innerHTML = '<div class="muted">載入中…</div>';
+    $('m-cards-n')!.textContent = '';
     modal.removeAttribute('hidden');
+    loadDetail(u.id);
   }
-  function closeModal() { modal.setAttribute('hidden', ''); editing = null; }
+  function closeModal() { modal.setAttribute('hidden', ''); editing = null; detail = null; }
   $('m-close')!.addEventListener('click', closeModal);
   $('m-cancel')!.addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  // ---- 載入完整資料：天梯 + 卡片 ----
+  async function loadDetail(id: string) {
+    try {
+      const res = await fetch(`/api/admin/users/detail?id=${encodeURIComponent(id)}`, { credentials: 'include' });
+      const d = await res.json();
+      if (!d.ok) { $('m-arena')!.innerHTML = '<div class="muted">載入失敗</div>'; return; }
+      detail = d; renderArena(d.arena); renderCards(d.cards);
+    } catch { $('m-arena')!.innerHTML = '<div class="muted">網路錯誤</div>'; }
+  }
+
+  const AF: [string, string][] = [['rank_score', '天梯分'], ['best_rank', '最高分'], ['parts', '零件'], ['coins', '金幣'], ['wins', '勝'], ['losses', '敗']];
+  function renderArena(a: any) {
+    const v = a || { rank_score: 0, best_rank: 0, parts: 0, coins: 0, wins: 0, losses: 0 };
+    $('m-arena')!.innerHTML = `<div class="m-arena-grid">${AF.map(([k, lab]) => `<label class="m-field"><span>${lab}</span><input id="ar-${k}" type="number" class="m-input" value="${v[k] || 0}"/></label>`).join('')}</div><div class="modal-actions" style="margin-top:12px"><div class="spacer"></div><button id="ar-save" class="m-mini">儲存進度</button></div>`;
+    applyScope($('m-arena')!);
+    $('ar-save')!.addEventListener('click', saveArena);
+  }
+  async function saveArena() {
+    if (!editing) return;
+    const body: any = { id: editing.id };
+    AF.forEach(([k]) => { body[k] = Number(($(`ar-${k}`) as HTMLInputElement).value) || 0; });
+    mStatus.textContent = '處理中…'; mStatus.className = 'status-text';
+    try {
+      const res = await fetch('/api/admin/users/arena-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+      const d = await res.json();
+      if (!res.ok || !d.ok) { mStatus.textContent = '❌ ' + (d.message || '失敗'); mStatus.className = 'status-text error'; return; }
+      mStatus.textContent = '✅ 創鬥卡進度已更新'; mStatus.className = 'status-text success';
+    } catch { mStatus.textContent = '❌ 網路錯誤'; mStatus.className = 'status-text error'; }
+  }
+
+  const TLAB: Record<string, string> = { ranged: '射', melee: '近', evade: '閃' };
+  function renderCards(cards: any[]) {
+    $('m-cards-n')!.textContent = `共 ${cards.length}（${cards.filter((c) => !c.deleted).length} 有效）`;
+    if (!cards.length) { $('m-cards')!.innerHTML = '<div class="muted">沒有卡片</div>'; return; }
+    $('m-cards')!.innerHTML = cards.map((c, i) => `<div class="m-card ${c.deleted ? 'dead' : ''}">
+      <div class="m-card-thumb">${c.photo_url ? `<img src="${esc(c.photo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:5px"/>` : '🤖'}</div>
+      <div class="m-card-info"><div class="m-card-name"><span class="m-tag-t">${TLAB[c.type] || '?'}</span>${esc(c.name)}${c.deleted ? ' 🗑' : ''}</div>
+      <div class="m-card-sub">${esc(c.rarity)} · 戰歷 ${c.wins}/${c.battles} · 戰力 ${c.hp + c.atk + c.def + c.mob}${c.tone_id ? ` · 語氣 ${esc(c.tone_id)}` : ''}</div></div>
+      <div class="m-card-acts"><button class="m-mini" data-edit="${i}">編輯</button><button class="m-mini danger" data-del="${i}">${c.deleted ? '還原' : '刪除'}</button></div>
+    </div>`).join('');
+    applyScope($('m-cards')!);
+    $('m-cards')!.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => openCard(detail.cards[Number((b as HTMLElement).dataset.edit)])));
+    $('m-cards')!.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', () => delCard(detail.cards[Number((b as HTMLElement).dataset.del)])));
+  }
+  async function delCard(c: any) {
+    const restore = !!c.deleted;
+    if (!restore && !confirm(`確定刪除卡片「${c.name}」？（軟刪除，可再還原）`)) return;
+    try {
+      const res = await fetch('/api/admin/users/card-delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ card_id: c.id, restore }) });
+      const d = await res.json();
+      if (!res.ok || !d.ok) { alert(d.message || '失敗'); return; }
+      if (editing) loadDetail(editing.id);
+    } catch { alert('網路錯誤'); }
+  }
+
+  // ---- 卡片編輯器 ----
+  let editingCard: any = null;
+  const cardModal = $('card-modal')!, cmStatus = $('cm-status')!;
+  const CM_TEXT = ['name', 'terrain', 'special_name', 'special_desc', 'flavor'];
+  const CM_NUM = ['hp', 'atk', 'def', 'mob'];
+  function cmPow() { const p = CM_NUM.reduce((s, k) => s + (Number(($(`cm-${k}`) as HTMLInputElement).value) || 0), 0); $('cm-pow')!.textContent = `總戰力 ${p}（標準約 800；改數值會破壞平衡）`; }
+  function openCard(c: any) {
+    editingCard = c;
+    $('cm-title')!.textContent = `編輯卡片：${c.name}`;
+    CM_TEXT.forEach((k) => (($(`cm-${k}`) as HTMLInputElement).value = c[k] || ''));
+    CM_NUM.forEach((k) => (($(`cm-${k}`) as HTMLInputElement).value = String(c[k] ?? 0)));
+    ($('cm-type') as HTMLSelectElement).value = c.type;
+    ($('cm-rarity') as HTMLSelectElement).value = c.rarity;
+    ($('cm-tone') as HTMLInputElement).value = c.tone_id || '';
+    let mvText = ''; if (c.moves) { try { const a = JSON.parse(c.moves); if (Array.isArray(a)) mvText = a.join(','); } catch {} }
+    ($('cm-moves') as HTMLInputElement).value = mvText;
+    cmStatus.textContent = ''; cmStatus.className = 'status-text'; cmPow();
+    cardModal.removeAttribute('hidden');
+  }
+  function closeCard() { cardModal.setAttribute('hidden', ''); editingCard = null; }
+  $('cm-close')!.addEventListener('click', closeCard);
+  $('cm-cancel')!.addEventListener('click', closeCard);
+  cardModal.addEventListener('click', (e) => { if (e.target === cardModal) closeCard(); });
+  CM_NUM.forEach((k) => $(`cm-${k}`)!.addEventListener('input', cmPow));
+  $('cm-save')!.addEventListener('click', async () => {
+    if (!editingCard) return;
+    const body: any = { card_id: editingCard.id };
+    CM_TEXT.forEach((k) => (body[k] = ($(`cm-${k}`) as HTMLInputElement).value.trim()));
+    CM_NUM.forEach((k) => (body[k] = Number(($(`cm-${k}`) as HTMLInputElement).value) || 0));
+    body.type = ($('cm-type') as HTMLSelectElement).value;
+    body.rarity = ($('cm-rarity') as HTMLSelectElement).value;
+    body.tone_id = ($('cm-tone') as HTMLInputElement).value.trim() || null;
+    const mv = ($('cm-moves') as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean);
+    body.moves = mv.length ? mv : null;
+    cmStatus.textContent = '處理中…'; cmStatus.className = 'status-text';
+    try {
+      const res = await fetch('/api/admin/users/card-update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
+      const d = await res.json();
+      if (!res.ok || !d.ok) { cmStatus.textContent = '❌ ' + (d.message || '失敗'); cmStatus.className = 'status-text error'; return; }
+      closeCard(); if (editing) loadDetail(editing.id);
+      statusEl.textContent = '✅ 卡片已更新'; statusEl.className = 'status-text success';
+    } catch { cmStatus.textContent = '❌ 網路錯誤'; cmStatus.className = 'status-text error'; }
+  });
+
+  // ---- 永久刪除帳號 ----
+  $('m-purge')!.addEventListener('click', async () => {
+    if (!editing) return;
+    if (detail?.user?.role === 'admin') { alert('對方是管理員，請先把角色降為一般會員再刪除。'); return; }
+    const typed = prompt(`⚠️ 永久刪除「${editing.email}」？\n此動作不可復原，會一併清除其卡片、天梯、車庫資料。\n\n請輸入該會員 email 以確認：`);
+    if (typed == null) return;
+    if (typed.trim() !== editing.email) { alert('輸入與 email 不符，已取消。'); return; }
+    mStatus.textContent = '刪除中…'; mStatus.className = 'status-text';
+    try {
+      const res = await fetch('/api/admin/users/purge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: editing.id, confirm: typed.trim() }) });
+      const d = await res.json();
+      if (!res.ok || !d.ok) { mStatus.textContent = '❌ ' + (d.message || '失敗'); mStatus.className = 'status-text error'; return; }
+      closeModal();
+      statusEl.textContent = '✅ 已永久刪除該帳號'; statusEl.className = 'status-text success';
+      load();
+    } catch { mStatus.textContent = '❌ 網路錯誤'; mStatus.className = 'status-text error'; }
+  });
 
   $('m-save')!.addEventListener('click', async () => {
     if (!editing) return;
