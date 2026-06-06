@@ -317,7 +317,7 @@
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const col = atk === 'my' ? '#3aa0ff' : '#ff5a5a';
       if (big) {
         const fwd = atk === 'my' ? 1 : -1;
-        maybeDodge(defEl(), 680);
+        maybeDodge(defEl(), 560);
         for (let s = 0; s < 3; s++) {
           const oy = (s - 1) * 34; const sx = a.x + fwd * Math.random() * 30; const a2 = { x: sx, y: a.y + oy }, b2 = { x: b.x, y: a.y + oy };  // 上中下、橫向、起點 X 隨機
           setTimeout(() => { aperture(a2.x, a2.y, col, false); setTimeout(() => beam(a2, b2, false, missOn()), 150); }, s * 130);
@@ -325,13 +325,13 @@
         setTimeout(() => resolve(defEl()), 680);
         return;
       }
-      maybeDodge(defEl(), 400);
+      maybeDodge(defEl(), 490);
       muzzle(atkEl()); aperture(a.x, a.y, col, false);
       setTimeout(() => { beam(a, b, false, missOn()); }, 210);
       setTimeout(() => resolve(defEl()), 400);
     }
     function eCannon() {
-      const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 300);
+      const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 350);
       recoil(atkEl(), 16); muzzle(atkEl(), true, '#ffd24d');
       const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = mp ? mp.y : b.y;
       const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
@@ -339,7 +339,7 @@
       an.onfinish = () => { ball.remove(); if (!missOn()) { burst(b.x, b.y, '#ffd24d', big); particles(b.x, b.y, '#ffd24d', big ? 24 : 12, big ? 1 : 0.55); } resolve(defEl()); };
     }
     function eShot() {
-      const a = frontEdge(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), impact);
+      const a = frontEdge(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), Math.round((impact + 220) / 2) + 30);
       vibrate(atkEl(), impact);
       for (let k = 0; k < cnt; k++) setTimeout(() => {
         muzzle(atkEl(), false, '#ffd24d');
@@ -362,13 +362,13 @@
       const big = critOn(); const a = frontEdge(atkEl()); const chargeT = big ? 680 : 460;
       chargeRings(a.x, a.y, atk === 'my' ? '#9fe8ff' : '#ffd0d0', chargeT, big);
       glowPulse(atkEl(), '#fff');
-      maybeDodge(defEl(), chargeT + 40);
+      maybeDodge(defEl(), chargeT + 280);
       setTimeout(() => { const b = cen(defEl()); chargeBeam(a, b, big, missOn()); if (!missOn()) { burst(b.x, b.y, '#fff', big); if (big) setTimeout(shake, 90); } resolve(defEl()); }, chargeT);
     }
     function eHoming() {
       const big = critOn(); const a = frontEdge(atkEl()); const n = big ? 6 : 2; const back = atk === 'my' ? -1 : 1;
       const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
-      maybeDodge(defEl(), 520);
+      maybeDodge(defEl(), 570);
       let last = 0;
       for (let k = 0; k < n; k++) {
         let tx, ty;
@@ -385,7 +385,7 @@
       setTimeout(() => resolve(defEl()), last + 60);
     }
     function eWave() {
-      const big = critOn(); const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = big ? 5 : 3; maybeDodge(defEl(), 540);
+      const big = critOn(); const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = big ? 5 : 3; maybeDodge(defEl(), 520);
       glowPulse(atkEl(), atk === 'my' ? '#7fd0ff' : '#ff8a8a');
       const mp = missOn() ? missPoint(b) : null;
       const ex = mp ? mp.x : (big ? b.x + (atk === 'my' ? 90 : -90) : b.x);   // 暴擊貫穿 / MISS 穿出視窗
@@ -397,7 +397,7 @@
       setTimeout(() => { if (!missOn()) { if (big) { burst(b.x, b.y, '#c9a3ff', true); setTimeout(() => burst(b.x, b.y, '#fff', true), 110); } else ring(b.x, b.y, '#9b6bff', true); } resolve(defEl()); }, 540);
     }
     function eSnipe() {
-      const big = critOn(); const b = cen(defEl()); maybeDodge(defEl(), 360);
+      const big = critOn(); const b = cen(defEl()); maybeDodge(defEl(), 640);
       const shots = big ? 3 : 1;
       for (let s = 0; s < shots; s++) {
         const cx = b.x + (s - (shots - 1) / 2) * 16, cy = b.y + (s - (shots - 1) / 2) * 18;
