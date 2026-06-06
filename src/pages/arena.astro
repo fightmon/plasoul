@@ -377,6 +377,21 @@ import Layout from '../layouts/Layout.astro';
   .bt-missile { position:absolute; left:0; top:0; width:14px; height:6px; border-radius:4px; background:linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow:0 0 8px #ff9a3d; offset-rotate:auto; }
   .bt-arc path { fill:none; stroke:#fff; stroke-width:7; stroke-linecap:round; filter:drop-shadow(0 0 6px #9bdcff) drop-shadow(0 0 12px #fff); stroke-dasharray:210; stroke-dashoffset:210; animation:bt-draw .45s ease-out forwards; }
   @keyframes bt-draw { 0%{stroke-dashoffset:210;opacity:1;} 55%{stroke-dashoffset:0;opacity:1;} 100%{stroke-dashoffset:0;opacity:0;} }
+  .bt-sonic { position:absolute; width:50px; height:76px; border:5px solid transparent; border-radius:50%; transform:translate(-50%,-50%); filter:drop-shadow(0 0 5px #fff); }
+  .bt-sonic.r.s-my { border-right-color:#7fd0ff; } .bt-sonic.r.s-foe { border-right-color:#ff8a8a; }
+  .bt-sonic.l.s-my { border-left-color:#7fd0ff; } .bt-sonic.l.s-foe { border-left-color:#ff8a8a; }
+  .bt-cring { position:absolute; width:42px; height:42px; border:3px solid #fff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 10px rgba(255,255,255,.5); }
+  .bt-cross { position:absolute; width:46px; height:46px; transform:translate(-50%,-50%); border:2px solid #ff5a5a; border-radius:50%; animation:bt-crossk .5s ease-out forwards; }
+  .bt-cross::before, .bt-cross::after { content:''; position:absolute; background:#ff5a5a; }
+  .bt-cross::before { left:50%; top:-8px; bottom:-8px; width:2px; transform:translateX(-50%); }
+  .bt-cross::after { top:50%; left:-8px; right:-8px; height:2px; transform:translateY(-50%); }
+  @keyframes bt-crossk { 0%{opacity:0;transform:translate(-50%,-50%) scale(1.7);} 40%{opacity:1;transform:translate(-50%,-50%) scale(1);} 100%{opacity:.5;} }
+  .bt-thrust { position:absolute; height:6px; transform-origin:left center; }
+  .bt-thrust.big { height:10px; }
+  .bt-thrust i { display:block; width:100%; height:100%; border-radius:6px; background:linear-gradient(90deg,transparent,#fff 80%,#fff); box-shadow:0 0 10px #fff; transform-origin:left; animation:bt-thrustk .35s ease-out forwards; }
+  @keyframes bt-thrustk { 0%{transform:scaleX(.15);opacity:0;} 45%{transform:scaleX(1);opacity:1;} 100%{transform:scaleX(1);opacity:0;} }
+  .bt-spin { position:absolute; width:92px; height:92px; border-radius:50%; transform:translate(-50%,-50%); background:conic-gradient(from 0deg,transparent,#fff,transparent 55%); -webkit-mask:radial-gradient(transparent 54%,#000 56%); mask:radial-gradient(transparent 54%,#000 56%); animation:bt-spink .5s ease-out forwards; }
+  @keyframes bt-spink { 0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.5);} 40%{opacity:1;} 100%{opacity:0;transform:translate(-50%,-50%) rotate(330deg) scale(1.25);} }
   .ar-bt-result { text-align:center; font-size:24px; font-weight:800; margin:12px 0 6px; }
   .ar-bt-result.win { color:#ffd23d; } .ar-bt-result.lose { color:#9aa3bd; }
   .ar-bt-rw { text-align:center; font-size:14px; margin-bottom:12px; }
@@ -589,6 +604,7 @@ import Layout from '../layouts/Layout.astro';
     const muzzleFx = (elm: HTMLElement | null, side: string, big: boolean, color?: string) => { const p = frontPt(elm, side); const col = color || (side === 'my' ? '#3aa0ff' : '#ff5a5a'); const m = addFx('bt-muzzle' + (big ? ' big' : ''), 260); m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; m.style.background = 'radial-gradient(circle,#fff,' + col + ' 55%,transparent 74%)'; };
     const apFx = (x: number, y: number, color: string, big: boolean) => { const n = addFx('bt-ap' + (big ? ' big' : ''), 540); n.style.left = x + 'px'; n.style.top = y + 'px'; n.style.borderColor = color; (n.style as any).color = color; };
     const beamPts = (a: any, b: any, big: boolean, side: string) => { const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 16 : 6; const n = addFx('bt-laser ' + (side === 'my' ? 'l-my' : 'l-foe') + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; };
+    const chargeRingsFx = (x: number, y: number, color: string, dur: number, big: boolean) => { const n = 4, s0 = big ? 2.6 : 1.8; for (let k = 0; k < n; k++) setTimeout(() => { const c = addFx('bt-cring', dur + 40); c.style.left = x + 'px'; c.style.top = y + 'px'; if (color) c.style.borderColor = color; c.animate([{ transform: 'translate(-50%,-50%) scale(' + s0 + ')', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(' + s0 + ')', opacity: .85, offset: .18 }, { transform: 'translate(-50%,-50%) scale(.25)', opacity: 0 }], { duration: 440, easing: 'ease-in', fill: 'forwards' }); }, k * (dur / (n + 1))); };
     const arcFx = (c: any, big: boolean) => { const size = big ? 150 : 110; const ns = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('class', 'bt-arc'); svg.setAttribute('width', String(size)); svg.setAttribute('height', String(size)); svg.setAttribute('viewBox', '0 0 100 100'); svg.style.position = 'absolute'; const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M 78 16 A 60 60 0 0 0 22 84'); svg.appendChild(p); svg.style.left = c.x + 'px'; svg.style.top = c.y + 'px'; svg.style.transform = 'translate(-50%,-50%)'; $('bt-fx')!.appendChild(svg); setTimeout(() => svg.remove(), 540); };
 
     // ===== 招式（純視覺，回傳命中時間 ms）=====
@@ -634,6 +650,25 @@ import Layout from '../layouts/Layout.astro';
         }
         return last;
       }
+      if (mv === 'charge') {
+        const CH = big ? 540 : 420; const c2 = atkSide === 'my' ? '#9fe8ff' : '#ffd0d0';
+        chargeRingsFx(a.x, a.y, c2, CH, big);
+        timers.push(setTimeout(() => { beamPts(a, miss ? missPt(b, atkSide) : b, true, atkSide); if (!miss) { burstFx(b.x, b.y, '#fff', big); partsDir(b.x, b.y, dir, c2, big ? 20 : 12); if (big) flashFx(b.x, b.y, '#9fe8ff'); } }, CH));
+        return CH + 230;
+      }
+      if (mv === 'snipe') {
+        const cr = addFx('bt-cross', 560); cr.style.left = b.x + 'px'; cr.style.top = b.y + 'px';
+        timers.push(setTimeout(() => { muzzleFx(aEl, atkSide, false, '#fff'); beamPts(a, miss ? missPt(b, atkSide) : b, big, atkSide); if (!miss) { burstFx(b.x, b.y, '#fff', big); partsDir(b.x, b.y, dir, col, big ? 12 : 8); } }, 360));
+        return 590;
+      }
+      if (mv === 'wave') {
+        const num = big ? 5 : 3; const sd = atkSide === 'my' ? 'r' : 'l'; const sc = atkSide === 'my' ? 's-my' : 's-foe'; const CH = 300;
+        const mp = miss ? missPt(b, atkSide) : null; const ex = mp ? mp.x : b.x, ey = mp ? mp.y : b.y;
+        chargeRingsFx(a.x, a.y, atkSide === 'my' ? '#9fe8ff' : '#ffd0d0', CH, big);
+        timers.push(setTimeout(() => { for (let k = 0; k < num; k++) setTimeout(() => { const s = addFx('bt-sonic ' + sd + ' ' + sc, 640); s.style.left = a.x + 'px'; s.style.top = a.y + 'px'; s.animate([{ transform: 'translate(-50%,-50%) scale(.45)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.85)', opacity: .95, offset: .2 }, { transform: 'translate(calc(-50% + ' + (ex - a.x) + 'px),calc(-50% + ' + (ey - a.y) + 'px)) scale(' + (big ? 2.1 : 1.7) + ')', opacity: 0 }], { duration: 560, easing: 'ease-out', fill: 'forwards' }); }, k * 100); }, CH));
+        timers.push(setTimeout(() => { if (!miss) { burstFx(b.x, b.y, '#c9a3ff', big); if (big) flashFx(b.x, b.y, '#9b6bff'); } }, CH + 540));
+        return CH + 540;
+      }
       // laser（預設）
       muzzleFx(aEl, atkSide, false, col); apFx(a.x, a.y, col, big);
       timers.push(setTimeout(() => beamPts(a, miss ? missPt(b, atkSide) : b, big, atkSide), 120));
@@ -647,12 +682,15 @@ import Layout from '../layouts/Layout.astro';
         if (mv === 'arc') arcFx(c, big);
         else if (mv === 'cross') { slashFx(dEl, big); setTimeout(() => ringFx(c.x, c.y, '#ffb13d', true), 60); }
         else if (mv === 'impact') { ringFx(c.x, c.y, '#fff', true); setTimeout(() => ringFx(c.x, c.y, '#ffd24d', true), 90); }
+        else if (mv === 'iai') { const n = big ? 5 : 3; for (let s = 0; s < n; s++) setTimeout(() => slashFx(dEl, big), s * 90); }
+        else if (mv === 'spin') { const sp = addFx('bt-spin', 560); sp.style.left = c.x + 'px'; sp.style.top = c.y + 'px'; if (big) { sp.style.width = '124px'; sp.style.height = '124px'; ringFx(c.x, c.y, '#fff', true); } }
+        else if (mv === 'thrust') { const ac = cen(U(atkSide, atkK)); const dx = c.x - ac.x, dy = c.y - ac.y; const len = Math.hypot(dx, dy) * 0.7; const ang = Math.atan2(dy, dx) * 180 / Math.PI; const t = addFx('bt-thrust' + (big ? ' big' : ''), 420); t.style.left = ac.x + 'px'; t.style.top = ac.y + 'px'; t.style.width = len + 'px'; t.style.transform = 'rotate(' + ang + 'deg)'; t.innerHTML = '<i></i>'; ringFx(c.x, c.y, '#fff', big); }
         else slashFx(dEl, big);
       }, 200));
       return 320;
     };
-    const RANGED = ['laser', 'cannon', 'shotgun', 'homing'];
-    const MELEE = ['slash', 'arc', 'cross', 'impact'];
+    const RANGED = ['laser', 'cannon', 'shotgun', 'homing', 'wave', 'snipe', 'charge'];
+    const MELEE = ['slash', 'arc', 'cross', 'impact', 'iai', 'thrust', 'spin'];
     const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any, meleeRatio = 0.82) => {
       const miss = !!(h && h.dodge);
       const big = !!(h && h.crit);
@@ -727,10 +765,11 @@ import Layout from '../layouts/Layout.astro';
         // 血條在命中瞬間才更新（與斬擊/雷射同步）
         if (ev.ult) timers.push(setTimeout(() => { playUlt(ev.ult); timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), 600)); }, 520));
         else if (resolveAt >= 0) timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), resolveAt));
+        // 下一回合：依本回合招式長度自適應 + 整體放慢（看得清楚）
+        let pace = resolveAt >= 0 ? resolveAt : 760;   // 閃避反擊約 760
+        if (ev.ult) pace = Math.max(pace, 1400);
+        timers.push(setTimeout(play, pace + 820));
       }, 400));
-      const _mt = (myTeam[ev.myIdx] || {}).type, _ft = (foeTeam[ev.foeIdx] || {}).type;
-      const _evade = (ev.rps === 1 && _mt === 'evade') || (ev.rps === -1 && _ft === 'evade');
-      timers.push(setTimeout(play, ev.ult ? 1900 : (_evade ? 1650 : 1100)));
     };
     $('bt-skip')!.addEventListener('click', () => { skipped = true; timers.forEach(clearTimeout); const last = lines[lines.length - 1]; if (last) setHP(last.myHP, last.foeHP); end(); });
     timers.push(setTimeout(play, 350));
