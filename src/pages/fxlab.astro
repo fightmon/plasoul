@@ -391,7 +391,7 @@
           else { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.18 + Math.random() * 0.64); }
           const p = add('fl-bolt', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
           const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
-          pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
+          pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 6, 0.5); } };
         }
         if (!missOn() && big) setTimeout(() => { critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', 22, 1); shake(); }, 230);
       };
@@ -448,7 +448,7 @@
         const dur = 520 + k * 95;                                                  // 同時發射、飛行時間不同→錯開命中
         const m = add('fl-missile', 0); try { m.style.offsetPath = "path('M " + a.x + " " + a.y + " C " + c1x + " " + c1y + " " + c2x + " " + c2y + " " + tx + " " + ty + "')"; m.style.offsetRotate = 'auto'; } catch (e) {}
         const an = m.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: dur, easing: 'ease-in', fill: 'forwards' });
-        an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(tx, ty, '#ff9a3d'); particles(tx, ty, '#ffb060', 8, 0.7); shake(); } } };
+        an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffb060', 6, 0.5); if (big) { critFlash(tx, ty, '#ff9a3d'); particles(tx, ty, '#ffb060', 8, 0.7); shake(); } } };
         last = Math.max(last, dur);
       }
       if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300);
