@@ -278,14 +278,14 @@ import Layout from '../layouts/Layout.astro';
   .ar-modal-box { width:100%; max-width:340px; background:var(--ar-card); border-radius:16px; overflow:hidden; border:2px solid var(--ar-line); }
 
   /* 編成 */
-  .ar-eq-box { width:100%; max-width:380px; background:var(--ar-card); border-radius:16px; border:2px solid var(--ar-line); max-height:88vh; display:flex; flex-direction:column; }
-  .ar-eq-head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--ar-line); }
+  .ar-eq-box { width:100%; max-width:380px; background:var(--ar-card); border-radius:16px; border:2px solid var(--ar-line); max-height:88vh; display:flex; flex-direction:column; overflow:hidden; }
+  .ar-eq-head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid var(--ar-line); flex-shrink:0; }
   .x-btn { background:none; border:none; color:var(--ar-dim); font-size:20px; cursor:pointer; }
   .ar-eq-slots { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:12px 16px 4px; }
   .ar-eq-slot { aspect-ratio:3/4; border-radius:10px; background:var(--ar-bg); border:1px dashed var(--ar-line); display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; font-size:24px; }
   .ar-eq-slot img { width:100%; height:100%; object-fit:cover; }
   .ar-eq-empty { color:var(--ar-dim); font-size:12px; }
-  .ar-eq-hint { font-size:11px; color:var(--ar-dim); padding:6px 16px 8px; }
+  .ar-eq-hint { font-size:11px; color:var(--ar-dim); padding:6px 16px 8px; flex-shrink:0; }
   .ar-eq-list { display:grid; grid-template-columns:repeat(auto-fill, minmax(90px,1fr)); gap:10px; padding:4px 16px 14px; overflow-y:auto; flex:1; min-height:0; -webkit-overflow-scrolling:touch; }
   .ar-eq-card { aspect-ratio:3/4; border-radius:10px; background:var(--ar-bg); border:2px solid var(--ar-line); overflow:hidden; position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .ar-eq-card img { width:100%; height:100%; object-fit:cover; }
@@ -294,7 +294,8 @@ import Layout from '../layouts/Layout.astro';
   .ar-eq-chk { position:absolute; inset:0; background:rgba(255,210,61,.28); display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; font-weight:800; }
   .ar-eq-card .ar-tbadge { position:absolute; left:3px; bottom:3px; width:18px; height:18px; font-size:10px; }
   .ar-eq-none { grid-column:1/-1; text-align:center; color:var(--ar-dim); padding:24px; }
-  .ar-eq-box .ar-rv-close { margin:0 16px 16px; }
+  .ar-eq-foot { flex-shrink:0; padding:10px 16px 14px; border-top:1px solid var(--ar-line); background:var(--ar-card); }
+  .ar-eq-foot .ar-rv-close { margin:0; }
 
   /* 戰鬥 */
   .ar-battle { position:fixed; inset:0; z-index:65; background:rgba(0,0,0,.9); display:flex; align-items:center; justify-content:center; padding:18px; }
@@ -445,7 +446,7 @@ import Layout from '../layouts/Layout.astro';
     const byId: any = {}; cards.forEach((c) => byId[c.id] = c);
     const render = () => {
       const list = cards.length ? cards.map((c) => { const on = equipSel.includes(c.id); return `<div class="ar-eq-card ${on ? 'on' : ''}" data-id="${esc(c.id)}">${c.photo_url ? `<img src="${esc(c.photo_url)}"/>` : '<span class="ph">🤖</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c}">${TYPE[c.type]?.t}</span>${on ? '<span class="ar-eq-chk">✓</span>' : ''}</div>`; }).join('') : '<div class="ar-eq-none">還沒有卡，先去格納庫創卡</div>';
-      el.innerHTML = `<div class="ar-eq-box"><div class="ar-eq-head"><b>編成戰艦</b><button class="x-btn" id="ar-eq-x">✕</button></div><div class="ar-eq-hint">點卡片放上 / 取下（最多 3 張）　已選 <b style="color:#ffd23d">${equipSel.length}</b>/3　🛡️ 此艦同時為防守隊</div><div class="ar-eq-list">${list}</div><button class="ar-rv-close" id="ar-eq-save">儲存編成</button></div>`;
+      el.innerHTML = `<div class="ar-eq-box"><div class="ar-eq-head"><b>編成戰艦</b><button class="x-btn" id="ar-eq-x">✕</button></div><div class="ar-eq-hint">點卡片放上 / 取下（最多 3 張）　已選 <b style="color:#ffd23d">${equipSel.length}</b>/3　🛡️ 此艦同時為防守隊</div><div class="ar-eq-list">${list}</div><div class="ar-eq-foot"><button class="ar-rv-close" id="ar-eq-save">儲存編成</button></div></div>`;
       $('ar-eq-x')!.addEventListener('click', closeEquip);
       $('ar-eq-save')!.addEventListener('click', saveEquip);
       el.querySelectorAll('.ar-eq-card').forEach((d) => d.addEventListener('click', () => {
