@@ -10,9 +10,11 @@ import { requireUser } from '../../_lib/auth';
 export interface Env { DB: D1Database; JWT_SECRET: string; }
 
 // 招式白名單（與前端 arena.astro 一致；防亂塞）
+const MELEE = ['slash', 'arc', 'cross', 'impact', 'iai', 'thrust', 'spin'];
 const MOVES: Record<string, string[]> = {
   ranged: ['laser', 'cannon', 'shotgun', 'homing', 'wave', 'snipe', 'charge'],
-  melee: ['slash', 'arc', 'cross', 'impact', 'iai', 'thrust', 'spin'],
+  melee: MELEE,
+  evade: MELEE,   // 閃避型的反擊招式共用近戰招
 };
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
