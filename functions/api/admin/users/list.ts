@@ -37,7 +37,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
               CASE WHEN u.password_hash IS NOT NULL THEN 1 ELSE 0 END AS has_pw,
               CASE WHEN u.line_user_id  IS NOT NULL THEN 1 ELSE 0 END AS has_line,
               CASE WHEN u.google_id     IS NOT NULL THEN 1 ELSE 0 END AS has_google,
-              (SELECT COUNT(*) FROM garage_items g WHERE g.user_id = u.id AND g.status != 'wishlist') AS garage_count
+              (SELECT COUNT(*) FROM garage_items g WHERE g.user_id = u.id AND g.status != 'wishlist') AS garage_count,
+              (SELECT ap.rank_score FROM arena_players ap WHERE ap.user_id = u.id) AS rank_score,
+              (SELECT COUNT(*) FROM arena_cards ac WHERE ac.user_id = u.id AND ac.deleted_at IS NULL) AS card_count
        FROM users u
        ${where}
        ORDER BY u.created_at DESC
@@ -61,6 +63,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       google: !!r.has_google,
     },
     garage_count: r.garage_count || 0,
+    rank_score: r.rank_score || 0,
+    card_count: r.card_count || 0,
   }));
 
   return new Response(

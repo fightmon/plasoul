@@ -28,10 +28,10 @@ import Layout from '../../layouts/Layout.astro';
         <table class="tbl">
           <thead>
             <tr>
-              <th>會員</th><th>方案</th><th>登入</th><th>車庫</th><th>註冊</th><th>狀態</th><th></th>
+              <th>會員</th><th>方案</th><th>登入</th><th>車庫</th><th>天梯</th><th>卡片</th><th>註冊</th><th>狀態</th><th></th>
             </tr>
           </thead>
-          <tbody id="rows"><tr><td colspan="7" class="loading-text">載入中…</td></tr></tbody>
+          <tbody id="rows"><tr><td colspan="9" class="loading-text">載入中…</td></tr></tbody>
         </table>
       </div>
       <div class="pager">
@@ -291,15 +291,15 @@ import Layout from '../../layouts/Layout.astro';
   $('next')!.addEventListener('click', () => { if (offset + PAGE < total) { offset += PAGE; load(); } });
 
   async function load() {
-    rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">載入中…</td></tr>';
+    rowsEl.innerHTML = '<tr><td colspan="9" class="loading-text">載入中…</td></tr>';
     const q = ($('q') as HTMLInputElement).value.trim();
     try {
       const res = await fetch(`/api/admin/users/list?q=${encodeURIComponent(q)}&limit=${PAGE}&offset=${offset}`, { credentials: 'include' });
       const d = await res.json();
-      if (!d.ok) { rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">載入失敗</td></tr>'; return; }
+      if (!d.ok) { rowsEl.innerHTML = '<tr><td colspan="9" class="loading-text">載入失敗</td></tr>'; return; }
       total = d.total; current = d.users;
       totalEl.textContent = total.toLocaleString();
-      if (!d.users.length) { rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">查無會員</td></tr>'; }
+      if (!d.users.length) { rowsEl.innerHTML = '<tr><td colspan="9" class="loading-text">查無會員</td></tr>'; }
       else {
         rowsEl.innerHTML = d.users.map((u: any, i: number) => {
           const m: string[] = [];
@@ -312,6 +312,8 @@ import Layout from '../../layouts/Layout.astro';
             <td><span class="badge badge-${esc(u.tier)}">${tierLabel[u.tier] || esc(u.tier)}</span>${u.role === 'admin' ? '<span class="badge badge-admin">admin</span>' : ''}${expiry}</td>
             <td><div class="methods">${m.map((x) => `<span class="m-tag">${x}</span>`).join('') || '<span class="m-tag">—</span>'}</div></td>
             <td>${u.garage_count}</td>
+            <td>${u.rank_score ? u.rank_score.toLocaleString() : '—'}</td>
+            <td>${u.card_count || '—'}</td>
             <td>${fmtDate(u.created_at)}</td>
             <td>${u.suspended ? '<span class="st-susp">已停權</span>' : '<span class="st-ok">正常</span>'}</td>
             <td><button class="row-edit" data-i="${i}">編輯</button></td>
@@ -324,7 +326,7 @@ import Layout from '../../layouts/Layout.astro';
       $('page-info')!.textContent = `${from}–${Math.min(offset + PAGE, total)} / ${total}`;
       ($('prev') as HTMLButtonElement).disabled = offset === 0;
       ($('next') as HTMLButtonElement).disabled = offset + PAGE >= total;
-    } catch { rowsEl.innerHTML = '<tr><td colspan="7" class="loading-text">網路錯誤</td></tr>'; }
+    } catch { rowsEl.innerHTML = '<tr><td colspan="9" class="loading-text">網路錯誤</td></tr>'; }
   }
 
   // ---- modal ----
