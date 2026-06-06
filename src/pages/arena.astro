@@ -77,7 +77,7 @@ import Layout from '../layouts/Layout.astro';
           <span class="ar-en-line"><b id="ar-en">20/20</b> · <span id="ar-en-time">已滿</span></span>
         </button>
         <button class="ar-nav-btn" data-soon="商店"><span class="ar-ni">🛒</span><span class="ar-nl">商店</span></button>
-        <button class="ar-nav-btn" data-tab="record"><span class="ar-ni">📊</span><span class="ar-nl">戰績</span></button>
+        <button class="ar-nav-btn" data-tab="record"><span class="ar-ni">🏆</span><span class="ar-nl">天梯</span></button>
       </nav>
     </div>
 
@@ -89,6 +89,9 @@ import Layout from '../layouts/Layout.astro';
 
     <!-- 編成 -->
     <div id="ar-equip" class="ar-modal" hidden></div>
+
+    <!-- 選對手（天梯） -->
+    <div id="ar-match" class="ar-modal" hidden></div>
 
     <!-- 戰鬥 -->
     <div id="ar-battle" class="ar-battle" hidden></div>
@@ -191,6 +194,36 @@ import Layout from '../layouts/Layout.astro';
   .ar-rec-cstat { text-align:right; flex-shrink:0; }
   .ar-rec-cstat b { display:block; font-size:15px; font-weight:800; }
   .ar-rec-cstat span { font-size:10px; color:var(--ar-dim); }
+
+  /* 排行榜 */
+  .ar-lb { display:flex; flex-direction:column; gap:6px; }
+  .ar-lb-row { display:flex; align-items:center; gap:10px; background:var(--ar-card); border:1px solid var(--ar-line); border-radius:9px; padding:7px 10px; }
+  .ar-lb-row.me { border-color:#ffc23d; background:rgba(255,194,61,.08); }
+  .ar-lb-rank { width:26px; text-align:center; font-weight:800; font-size:14px; color:var(--ar-dim); }
+  .ar-lb-row:nth-child(1) .ar-lb-rank { color:#ffc23d; } .ar-lb-row:nth-child(2) .ar-lb-rank { color:#cfd6e6; } .ar-lb-row:nth-child(3) .ar-lb-rank { color:#e6a86b; }
+  .ar-lb-info { flex:1; min-width:0; }
+  .ar-lb-name { font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ar-lb-fleet { display:flex; gap:3px; margin-top:3px; }
+  .ar-lb-score { font-weight:800; font-size:14px; color:#ffd23d; flex-shrink:0; }
+
+  /* 選對手 */
+  .ar-modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
+  .ar-x { background:transparent; border:none; color:var(--ar-dim); font-size:18px; cursor:pointer; }
+  .ar-match-box { max-width:380px; max-height:88vh; overflow:auto; padding-bottom:14px; }
+  .ar-match-me { text-align:center; font-size:13px; color:var(--ar-dim); margin:0 16px 10px; }
+  .ar-opps { display:flex; flex-direction:column; gap:10px; padding:0 14px; }
+  .ar-opp { background:var(--ar-card2); border:1px solid var(--ar-line); border-radius:12px; padding:10px; }
+  .ar-opp-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .ar-opp-name { font-weight:700; font-size:14px; }
+  .ar-opp-score { font-weight:800; font-size:13px; color:#ffd23d; }
+  .ar-opp-fleet { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px; }
+  .ar-mc { text-align:center; }
+  .ar-mc-img { position:relative; aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:var(--ar-bg); display:flex; align-items:center; justify-content:center; font-size:24px; }
+  .ar-mc-img img { width:100%; height:100%; object-fit:cover; }
+  .ar-mc-img .ar-tbadge { position:absolute; left:3px; bottom:3px; width:18px; height:18px; font-size:10px; }
+  .ar-mc-r { position:absolute; top:3px; right:3px; font-size:9px; font-weight:800; padding:0 4px; border-radius:5px; color:#101010; }
+  .ar-mc-pow { font-size:10px; color:var(--ar-dim); margin-top:3px; }
+  .ar-opp-go { width:100%; }
 
   /* fab */
   .ar-fab { position:fixed; left:50%; transform:translateX(-50%); bottom:112px; z-index:30; padding:14px 30px; border:none; border-radius:999px; background:var(--ar-red); color:#fff; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 8px 24px rgba(238,34,51,.45); }
@@ -382,7 +415,7 @@ import Layout from '../layouts/Layout.astro';
           <button class="ar-edit" id="ar-edit">編成</button>
         </div>
       </div>`;
-    $('ar-sortie')!.addEventListener('click', () => { if (!lineup.length) { toast('先按「編成」把卡放上戰艦'); return; } doBattle(); });
+    $('ar-sortie')!.addEventListener('click', () => { if (!lineup.length) { toast('先按「編成」把卡放上戰艦'); return; } openMatch(); });
     $('ar-edit')!.addEventListener('click', openEquip);
   }
 
@@ -435,14 +468,51 @@ import Layout from '../layouts/Layout.astro';
     } catch { toast('網路錯誤'); }
   }
 
+  // 天梯：選對手
+  let ladderCache: any = null;
+  async function openMatch() {
+    const el = $('ar-match')!;
+    el.innerHTML = '<div class="ar-bt-loading"><div class="ar-spin"></div><div>搜尋對手中…</div></div>';
+    el.removeAttribute('hidden');
+    try {
+      const r = await fetch('/api/card/ladder', { credentials: 'include' });
+      const d = await r.json();
+      if (!d.ok) { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('對手載入失敗'); return; }
+      ladderCache = d; renderMatch(d);
+    } catch { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('網路錯誤'); }
+  }
+  function closeMatch() { const el = $('ar-match')!; el.setAttribute('hidden', ''); el.innerHTML = ''; }
+  function renderMatch(d: any) {
+    const cand = (d.candidates || []).map((o: any, i: number) => {
+      const fleet = (o.fleet || []).map((c: any) => `<div class="ar-mc"><div class="ar-mc-img">${c.photo ? `<img src="${esc(c.photo)}"/>` : '<span>👾</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span><span class="ar-mc-r r-${esc(c.rarity)}">${esc(c.rarity)}</span></div><div class="ar-mc-pow">戰力 ${(c.hp + c.atk + c.def + c.mob)}</div></div>`).join('');
+      return `<div class="ar-opp" data-oid="${esc(o.user_id)}">
+        <div class="ar-opp-head"><span class="ar-opp-name">${esc(o.name)}</span><span class="ar-opp-score">${o.rank_score} 分</span></div>
+        <div class="ar-opp-fleet">${fleet}</div>
+        <button class="ar-sortie ar-opp-go" data-oid="${esc(o.user_id)}">⚔️ 挑戰</button>
+      </div>`;
+    }).join('');
+    const myRank = d.me.rank ? `#${d.me.rank}` : '未上榜';
+    $('ar-match')!.innerHTML = `<div class="ar-modal-box ar-match-box">
+      <div class="ar-modal-head"><b>⚔️ 選擇對手</b><button class="ar-x" id="ar-match-x">✕</button></div>
+      <div class="ar-match-me">我的名次 <b>${myRank}</b> · ${d.me.rank_score} 分</div>
+      <div class="ar-opps">${cand || '<div class="ar-empty-hangar">目前找不到對手</div>'}</div>
+      <button class="ar-edit" id="ar-match-refresh" style="width:100%;margin-top:4px">🔄 換一批對手</button>
+    </div>`;
+    $('ar-match-x')!.addEventListener('click', closeMatch);
+    $('ar-match-refresh')!.addEventListener('click', openMatch);
+    $('ar-match')!.querySelectorAll('.ar-opp-go').forEach((b) => b.addEventListener('click', () => { const oid = (b as HTMLElement).dataset.oid!; closeMatch(); doBattle(oid); }));
+  }
+
   // 戰鬥
-  async function doBattle() {
+  async function doBattle(opponentId?: string) {
     const el = $('ar-battle')!;
     el.innerHTML = '<div class="ar-bt-loading"><div class="ar-spin"></div><div>出擊中…</div></div>';
     el.removeAttribute('hidden');
     let d: any = null;
-    try { const r = await fetch('/api/card/battle', { method: 'POST', credentials: 'include' }); d = await r.json(); if (!r.ok || !d.ok) { el.setAttribute('hidden', ''); el.innerHTML = ''; toast((d && d.message) || '出擊失敗'); return; } }
-    catch { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('網路錯誤'); return; }
+    try {
+      const r = await fetch('/api/card/battle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(opponentId ? { opponent_id: opponentId } : {}) });
+      d = await r.json(); if (!r.ok || !d.ok) { el.setAttribute('hidden', ''); el.innerHTML = ''; toast((d && d.message) || '出擊失敗'); return; }
+    } catch { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('網路錯誤'); return; }
     animateBattle(d);
   }
   function animateBattle(d: any) {
@@ -548,16 +618,16 @@ import Layout from '../layouts/Layout.astro';
 
   // 戰績
   function pct(n: number, d: number) { return d ? Math.round((n / d) * 100) : 0; }
-  function renderRecord() {
+  async function renderRecord() {
     const w = player.wins || 0, l = player.losses || 0, tot = w + l, wr = pct(w, tot);
     const fought = cards.filter((c) => (c.battles || 0) > 0).sort((a, b) => (b.battles || 0) - (a.battles || 0));
     const mvp = fought.slice().sort((a, b) => (b.wins || 0) - (a.wins || 0) || pct(b.wins, b.battles) - pct(a.wins, a.battles))[0];
     const ov = `
       <div class="ar-rec-ov">
-        <div class="ar-rec-stat"><b>${w}</b><span>勝場</span></div>
-        <div class="ar-rec-stat"><b>${l}</b><span>敗場</span></div>
-        <div class="ar-rec-stat"><b>${wr}%</b><span>勝率</span></div>
+        <div class="ar-rec-stat"><b id="ar-myrank">—</b><span>名次</span></div>
         <div class="ar-rec-stat"><b>${player.rank_score || 0}</b><span>段位分</span></div>
+        <div class="ar-rec-stat"><b>${w}</b><span>勝場</span></div>
+        <div class="ar-rec-stat"><b>${wr}%</b><span>勝率</span></div>
       </div>`;
     const mvpHtml = mvp ? `
       <div class="ar-rec-mvp">
@@ -570,7 +640,19 @@ import Layout from '../layouts/Layout.astro';
         <div class="ar-rec-cn"><div class="ar-rec-cname">${esc(c.name)}</div><div class="ar-rec-cbar"><i style="width:${pct(c.wins, c.battles)}%"></i></div></div>
         <div class="ar-rec-cstat"><b>${pct(c.wins, c.battles)}%</b><span>${c.wins || 0}/${c.battles || 0}</span></div>
       </div>`).join('') : '<div class="ar-empty-hangar">還沒有出擊紀錄 ⚔️<br>到大廳按「出擊」開始你的第一場戰鬥！</div>';
-    $('ar-record')!.innerHTML = `<h2 class="ar-h2">📊 戰績</h2>${ov}${mvpHtml}<div class="ar-rec-h">卡片戰績</div><div class="ar-rec-list">${rows}</div>`;
+    $('ar-record')!.innerHTML = `<h2 class="ar-h2">🏆 天梯</h2>${ov}
+      <div class="ar-rec-h">排行榜 Top 30</div>
+      <div class="ar-lb" id="ar-lb"><div class="ar-bt-loading" style="padding:24px"><div class="ar-spin"></div></div></div>
+      <div class="ar-rec-h" style="margin-top:18px">我的機體戰績</div>${mvpHtml}<div class="ar-rec-list">${rows}</div>`;
+    try {
+      const r = await fetch('/api/card/ladder', { credentials: 'include' });
+      const d = await r.json();
+      if (d.ok) {
+        const myr = document.getElementById('ar-myrank'); if (myr) myr.textContent = d.me.rank ? '#' + d.me.rank : '—';
+        const board = (d.top || []).map((row: any) => `<div class="ar-lb-row${row.me ? ' me' : ''}"><span class="ar-lb-rank">${row.rank}</span><div class="ar-lb-info"><div class="ar-lb-name">${esc(row.name)}${row.me ? ' (我)' : ''}</div><div class="ar-lb-fleet">${(row.fleet || []).map((c: any) => `<span class="ar-tbadge ${TYPE[c.type]?.c || ''}" style="width:15px;height:15px;font-size:9px">${TYPE[c.type]?.t || '?'}</span>`).join('')}</div></div><span class="ar-lb-score">${row.rank_score}</span></div>`).join('');
+        const lb = document.getElementById('ar-lb'); if (lb) lb.innerHTML = board || '<div class="ar-empty-hangar">尚無排名</div>';
+      }
+    } catch {}
   }
 
   // tabs

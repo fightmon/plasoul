@@ -34,15 +34,42 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (!rows.length) return new Response(JSON.stringify({ ok: false, message: '出戰卡不存在' }), { status: 400, headers: hdr() });
   const myTeam = rows.map((c) => ({ ...c, photo: c.photo_r2_key ? `/api/screenshot/${c.photo_r2_key}` : null }));
 
-  const foeName = pick(GHOST_TEAMS);
-  const foeTeam = Array.from({ length: 3 }, () => genGhost());
+  // 對手：天梯指定的真人防守艦隊；否則隨機幽靈
+  let body: any = {}; try { body = await context.request.json(); } catch {}
+  const opponentId = typeof body?.opponent_id === 'string' ? body.opponent_id : null;
+  let foeName = pick(GHOST_TEAMS), foeBase = SHIP_HP, foeScore = p?.rank_score || 0;
+  let foeTeam: any[] = [];
+  if (opponentId && opponentId !== auth.sub) {
+    const op = await context.env.DB.prepare(
+      `SELECT p.ship_card_ids, p.ship_base_hp, p.rank_score, u.display_name
+       FROM arena_players p JOIN users u ON u.id = p.user_id WHERE p.user_id = ?`
+    ).bind(opponentId).first<any>();
+    let oids: string[] = []; try { oids = op?.ship_card_ids ? JSON.parse(op.ship_card_ids) : []; } catch {}
+    if (op && oids.length) {
+      const oph = oids.map(() => '?').join(',');
+      const orows = (await context.env.DB.prepare(
+        `SELECT name, type, hp, atk, def, mob, special_name, photo_r2_key FROM arena_cards WHERE user_id = ? AND id IN (${oph}) AND deleted_at IS NULL`
+      ).bind(opponentId, ...oids).all<any>()).results || [];
+      if (orows.length) {
+        foeTeam = orows.map((c) => ({ ...c, photo: c.photo_r2_key ? `/api/screenshot/${c.photo_r2_key}` : null }));
+        foeName = op.display_name || '謎之對手';
+        foeBase = op.ship_base_hp || SHIP_HP;
+        foeScore = op.rank_score || 0;
+      }
+    }
+  }
+  if (!foeTeam.length) foeTeam = Array.from({ length: 3 }, () => genGhost());
 
-  const sim = simulate(myTeam, p?.ship_base_hp || SHIP_HP, foeTeam, SHIP_HP, foeName);
+  const sim = simulate(myTeam, p?.ship_base_hp || SHIP_HP, foeTeam, foeBase, foeName);
 
+  // Elo 式計分（只動攻方；打強者賺多、打弱者賺少 → 天然追趕、防洗分）
   const now = Date.now();
-  let parts = 0, coins = 0, rankDelta = 0;
-  if (sim.win) { parts = 10; coins = 60; rankDelta = 20; } else { parts = 3; coins = 10; rankDelta = -8; }
-  const newRank = Math.max(0, (p?.rank_score || 0) + rankDelta);
+  const myScore = p?.rank_score || 0;
+  const expected = 1 / (1 + Math.pow(10, (foeScore - myScore) / 400));
+  const rankDelta = Math.round(32 * ((sim.win ? 1 : 0) - expected));
+  const newRank = Math.max(0, myScore + rankDelta);
+  let parts = 0, coins = 0;
+  if (sim.win) { parts = 10; coins = 60; } else { parts = 3; coins = 10; }
   await context.env.DB.prepare(
     `UPDATE arena_players SET parts = parts + ?, coins = coins + ?, rank_score = ?, wins = wins + ?, losses = losses + ?, updated_at = ? WHERE user_id = ?`
   ).bind(parts, coins, newRank, sim.win ? 1 : 0, sim.win ? 0 : 1, now, auth.sub).run();
@@ -53,7 +80,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   return new Response(JSON.stringify({
     ok: true, win: sim.win, log: sim.log,
     my: { maxHP: sim.myMax, team: myTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo })) },
-    foe: { name: foeName, maxHP: sim.foeMax, team: foeTeam.map((c) => ({ name: c.name, type: c.type })) },
+    foe: { name: foeName, maxHP: sim.foeMax, team: foeTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo || null })) },
     rewards: { parts, coins, rank_delta: rankDelta, rank_score: newRank },
   }), { status: 200, headers: hdr() });
 };
