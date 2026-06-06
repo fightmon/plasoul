@@ -12,6 +12,9 @@ import { requireUser } from '../../_lib/auth';
 export interface Env { DB: D1Database; JWT_SECRET: string; }
 
 const STAT_BASE = 100, STAT_POOL = 400, SHIP_HP = 800;
+const TIERS = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
+const TIER_MIN = [0, 200, 400, 700, 1000, 1300, 1600, 2000];
+function tierIdx(s: number): number { let i = 0; for (let k = 0; k < TIER_MIN.length; k++) if (s >= TIER_MIN[k]) i = k; return i; }
 const TYPES = ['ranged', 'melee', 'evade'] as const;
 const GHOST_TEAMS = ['流浪傭兵隊', '吉翁殘黨', '宇宙海盜團', '聯邦巡邏隊', '量產軍團', '謎之精英', '深紅騎士團', '廢墟拾荒者'];
 const GHOST_UNITS = ['赤紅突擊', '蒼藍守衛', '疾風斥候', '重砲要塞', '幽冥刺客', '雷光衝鋒', '鋼鐵壁壘', '暗影游擊', '烈焰先鋒', '寒霜哨兵'];
@@ -21,7 +24,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (auth instanceof Response) return auth;
 
   const p = await context.env.DB.prepare(
-    `SELECT ship_card_ids, ship_base_hp, rank_score FROM arena_players WHERE user_id = ?`
+    `SELECT ship_card_ids, ship_base_hp, rank_score, best_rank FROM arena_players WHERE user_id = ?`
   ).bind(auth.sub).first<any>();
   let ids: string[] = [];
   try { ids = p?.ship_card_ids ? JSON.parse(p.ship_card_ids) : []; } catch {}
@@ -70,9 +73,21 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const newRank = Math.max(0, myScore + rankDelta);
   let parts = 0, coins = 0;
   if (sim.win) { parts = 10; coins = 60; } else { parts = 3; coins = 10; }
+
+  // 牌位首達獎：以歷史最高分判定是否跨入新牌位
+  const oldBest = Math.max(p?.best_rank || 0, myScore);
+  const newBest = Math.max(oldBest, newRank);
+  const oldTier = tierIdx(oldBest), newTier = tierIdx(newBest);
+  let tierUp: any = null;
+  if (newTier > oldTier) {
+    const bp = 20, bc = 100 + newTier * 80;
+    parts += bp; coins += bc;
+    tierUp = { tier: TIERS[newTier], bonus_parts: bp, bonus_coins: bc };
+  }
+
   await context.env.DB.prepare(
-    `UPDATE arena_players SET parts = parts + ?, coins = coins + ?, rank_score = ?, wins = wins + ?, losses = losses + ?, updated_at = ? WHERE user_id = ?`
-  ).bind(parts, coins, newRank, sim.win ? 1 : 0, sim.win ? 0 : 1, now, auth.sub).run();
+    `UPDATE arena_players SET parts = parts + ?, coins = coins + ?, rank_score = ?, best_rank = ?, wins = wins + ?, losses = losses + ?, updated_at = ? WHERE user_id = ?`
+  ).bind(parts, coins, newRank, newBest, sim.win ? 1 : 0, sim.win ? 0 : 1, now, auth.sub).run();
   await context.env.DB.prepare(
     `UPDATE arena_cards SET battles = battles + 1, wins = wins + ? WHERE user_id = ? AND id IN (${ph})`
   ).bind(sim.win ? 1 : 0, auth.sub, ...ids).run();
@@ -81,7 +96,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ok: true, win: sim.win, log: sim.log,
     my: { maxHP: sim.myMax, team: myTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo })) },
     foe: { name: foeName, maxHP: sim.foeMax, team: foeTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo || null })) },
-    rewards: { parts, coins, rank_delta: rankDelta, rank_score: newRank },
+    rewards: { parts, coins, rank_delta: rankDelta, rank_score: newRank, tier: TIERS[tierIdx(newRank)], tier_up: tierUp },
   }), { status: 200, headers: hdr() });
 };
 

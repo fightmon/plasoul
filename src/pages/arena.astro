@@ -379,6 +379,8 @@ import Layout from '../layouts/Layout.astro';
   .ar-bt-result { text-align:center; font-size:24px; font-weight:800; margin:12px 0 6px; }
   .ar-bt-result.win { color:#ffd23d; } .ar-bt-result.lose { color:#9aa3bd; }
   .ar-bt-rw { text-align:center; font-size:14px; margin-bottom:12px; }
+  .ar-bt-tierup { text-align:center; font-size:16px; font-weight:800; color:#ffc23d; margin:10px 0 2px; padding:8px; border-radius:10px; background:linear-gradient(135deg,rgba(255,194,61,.18),rgba(255,176,31,.06)); border:1px solid rgba(255,194,61,.45); animation:ar-pop .5s; }
+  .ar-bt-tierup small { display:block; font-size:12px; color:var(--ar-dim); font-weight:600; margin-top:2px; }
   .ar-bt-acts { display:flex; gap:8px; }
 
   .ar-toast { position:fixed; left:50%; bottom:100px; transform:translateX(-50%); z-index:70; background:rgba(0,0,0,.9); color:#fff; padding:10px 18px; border-radius:999px; font-size:13px; }
@@ -389,7 +391,9 @@ import Layout from '../layouts/Layout.astro';
   const $ = (id: string) => document.getElementById(id);
   const esc = (s: any) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
   const TYPE: any = { ranged: { t: '射', c: 't-ranged' }, melee: { t: '近', c: 't-melee' }, evade: { t: '閃', c: 't-evade' } };
-  const RANK = (s: number) => 'F'; // MVP：簡單，之後做 F-SS
+  const TIER_MIN = [0, 200, 400, 700, 1000, 1300, 1600, 2000];
+  const TIER_NAME = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
+  const RANK = (s: number) => { let t = 'F'; for (let k = 0; k < TIER_MIN.length; k++) if ((s || 0) >= TIER_MIN[k]) t = TIER_NAME[k]; return t; };
 
   let cards: any[] = [];
   let player: any = {};
@@ -648,7 +652,8 @@ import Layout from '../layouts/Layout.astro';
       [0, 1, 2].forEach((k) => { const lu = U(loseSide, k); if (lu) lu.classList.add('dim'); const wu = U(winSide, k); if (wu) wu.classList.add('won'); });
       $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on');
       const rw = d.rewards; const sk = $('bt-skip'); if (sk) sk.style.display = 'none';
-      $('bt-end')!.innerHTML = `<div class="ar-bt-result ${d.win ? 'win' : 'lose'}">${d.win ? '🎉 勝利！' : '💧 雖敗猶榮'}</div><div class="ar-bt-rw">🔩+${rw.parts}　🪙+${rw.coins}　段位 ${rw.rank_delta >= 0 ? '+' : ''}${rw.rank_delta}</div><div class="ar-bt-acts"><button class="ar-edit" id="bt-again">再戰</button><button class="ar-rv-close" id="bt-close" style="flex:1">返回大廳</button></div>`;
+      const tu = rw.tier_up ? `<div class="ar-bt-tierup">🎖️ 晉升 <b>${esc(rw.tier_up.tier)}</b> 牌位！<small>🔩+${rw.tier_up.bonus_parts}　🪙+${rw.tier_up.bonus_coins}</small></div>` : '';
+      $('bt-end')!.innerHTML = `${tu}<div class="ar-bt-result ${d.win ? 'win' : 'lose'}">${d.win ? '🎉 勝利！' : '💧 雖敗猶榮'}</div><div class="ar-bt-rw">🔩+${rw.parts}　🪙+${rw.coins}　段位 ${rw.rank_delta >= 0 ? '+' : ''}${rw.rank_delta}${rw.tier ? '（' + esc(rw.tier) + '）' : ''}</div><div class="ar-bt-acts"><button class="ar-edit" id="bt-again">再戰</button><button class="ar-rv-close" id="bt-close" style="flex:1">返回大廳</button></div>`;
       $('bt-again')!.addEventListener('click', () => doBattle());
       $('bt-close')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; loadData(); });
     };
@@ -721,7 +726,7 @@ import Layout from '../layouts/Layout.astro';
     const ov = `
       <div class="ar-rec-ov">
         <div class="ar-rec-stat"><b id="ar-myrank">—</b><span>名次</span></div>
-        <div class="ar-rec-stat"><b>${player.rank_score || 0}</b><span>段位分</span></div>
+        <div class="ar-rec-stat"><b>${RANK(player.rank_score)}</b><span>牌位 ${player.rank_score || 0}</span></div>
         <div class="ar-rec-stat"><b>${w}</b><span>勝場</span></div>
         <div class="ar-rec-stat"><b>${wr}%</b><span>勝率</span></div>
       </div>`;
