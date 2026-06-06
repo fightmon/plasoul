@@ -374,6 +374,7 @@ import Layout from '../layouts/Layout.astro';
   .bt-ball { position:absolute; width:18px; height:18px; border-radius:50%; transform:translate(-50%,-50%); }
   .bt-ball.big { width:28px; height:28px; }
   .bt-bolt { position:absolute; width:12px; height:12px; border-radius:50%; transform:translate(-50%,-50%); background:radial-gradient(circle,#fff,#ffd24d); box-shadow:0 0 8px #ffd24d; }
+  .bt-missile { position:absolute; left:0; top:0; width:14px; height:6px; border-radius:4px; background:linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow:0 0 8px #ff9a3d; offset-rotate:auto; }
   .bt-arc path { fill:none; stroke:#fff; stroke-width:7; stroke-linecap:round; filter:drop-shadow(0 0 6px #9bdcff) drop-shadow(0 0 12px #fff); stroke-dasharray:210; stroke-dashoffset:210; animation:bt-draw .45s ease-out forwards; }
   @keyframes bt-draw { 0%{stroke-dashoffset:210;opacity:1;} 55%{stroke-dashoffset:0;opacity:1;} 100%{stroke-dashoffset:0;opacity:0;} }
   .ar-bt-result { text-align:center; font-size:24px; font-weight:800; margin:12px 0 6px; }
@@ -615,6 +616,24 @@ import Layout from '../layouts/Layout.astro';
         };
         return 480;
       }
+      if (mv === 'homing') {
+        const num = big ? 4 : 3; const back = -fwdOf(atkSide);
+        muzzleFx(aEl, atkSide, false, '#ffb060'); smokeFx(a.x, a.y, atkSide, big);
+        const dr = dEl ? dEl.getBoundingClientRect() : null; const fr = $('bt-field')!.getBoundingClientRect();
+        let last = 360;
+        for (let k = 0; k < num; k++) {
+          let tx: number, ty: number;
+          if (miss) { const mp = missPt(b, atkSide); tx = mp.x; ty = mp.y + (Math.random() * 30 - 15); }
+          else if (dr) { tx = (dr.left - fr.left) + dr.width * (0.28 + Math.random() * 0.44); ty = (dr.top - fr.top) + dr.height * (0.22 + Math.random() * 0.56); }
+          else { tx = b.x; ty = b.y; }
+          const c1x = a.x + back * 64, c1y = a.y - 44 - Math.random() * 20, c2x = (a.x + tx) / 2, c2y = ty - 24;
+          const dur = 360 + k * 90; last = Math.max(last, dur);
+          const m = addFx('bt-missile', 0); try { m.style.offsetPath = "path('M " + a.x + " " + a.y + " C " + c1x + " " + c1y + " " + c2x + " " + c2y + " " + tx + " " + ty + "')"; (m.style as any).offsetRotate = 'auto'; } catch (e) {}
+          const an = m.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: dur, easing: 'ease-in', fill: 'forwards' });
+          an.onfinish = () => { m.remove(); if (!miss) { ringFx(tx, ty, '#ff9a3d', false); partsFx(tx, ty, '#ffb060', 5, .5); if (big) flashFx(tx, ty, '#ff9a3d'); } };
+        }
+        return last;
+      }
       // laser（預設）
       muzzleFx(aEl, atkSide, false, col); apFx(a.x, a.y, col, big);
       timers.push(setTimeout(() => beamPts(a, miss ? missPt(b, atkSide) : b, big, atkSide), 120));
@@ -632,7 +651,7 @@ import Layout from '../layouts/Layout.astro';
       }, 200));
       return 320;
     };
-    const RANGED = ['laser', 'cannon', 'shotgun'];
+    const RANGED = ['laser', 'cannon', 'shotgun', 'homing'];
     const MELEE = ['slash', 'arc', 'cross', 'impact'];
     const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any, meleeRatio = 0.82) => {
       const miss = !!(h && h.dodge);
