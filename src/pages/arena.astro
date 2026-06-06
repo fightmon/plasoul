@@ -209,7 +209,7 @@ import Layout from '../layouts/Layout.astro';
   /* 選對手 */
   .ar-modal-head { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
   .ar-x { background:transparent; border:none; color:var(--ar-dim); font-size:18px; cursor:pointer; }
-  .ar-match-box { max-width:380px; max-height:88vh; overflow:auto; padding-bottom:14px; }
+  .ar-modal-box.ar-match-box { max-width:380px; max-height:88vh; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-bottom:14px; }
   .ar-match-me { text-align:center; font-size:13px; color:var(--ar-dim); margin:0 16px 10px; }
   .ar-opps { display:flex; flex-direction:column; gap:10px; padding:0 14px; }
   .ar-opp { background:var(--ar-card2); border:1px solid var(--ar-line); border-radius:12px; padding:10px; }
@@ -484,7 +484,7 @@ import Layout from '../layouts/Layout.astro';
   function closeMatch() { const el = $('ar-match')!; el.setAttribute('hidden', ''); el.innerHTML = ''; }
   function renderMatch(d: any) {
     const cand = (d.candidates || []).map((o: any, i: number) => {
-      const fleet = (o.fleet || []).map((c: any) => `<div class="ar-mc"><div class="ar-mc-img">${c.photo ? `<img src="${esc(c.photo)}"/>` : '<span>👾</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span><span class="ar-mc-r r-${esc(c.rarity)}">${esc(c.rarity)}</span></div><div class="ar-mc-pow">戰力 ${(c.hp + c.atk + c.def + c.mob)}</div></div>`).join('');
+      const fleet = (o.fleet || []).map((c: any) => `<div class="ar-mc"><div class="ar-mc-img">${c.photo ? `<img src="${esc(c.photo)}"/>` : '<span>👾</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span><span class="ar-mc-r r-${esc(c.rarity)}">${esc(c.rarity)}</span></div></div>`).join('');
       return `<div class="ar-opp" data-oid="${esc(o.user_id)}">
         <div class="ar-opp-head"><span class="ar-opp-name">${esc(o.name)}</span><span class="ar-opp-score">${o.rank_score} 分</span></div>
         <div class="ar-opp-fleet">${fleet}</div>
