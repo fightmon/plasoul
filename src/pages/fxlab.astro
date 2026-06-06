@@ -423,7 +423,14 @@
       chargeRings(a.x, a.y, atk === 'my' ? '#9fe8ff' : '#ffd0d0', chargeT, big);
       glowPulse(atkEl(), '#fff');
       maybeDodge(defEl(), chargeT + 280);
-      setTimeout(() => { const b = cen(defEl()); chargeBeam(a, b, big, missOn()); if (!missOn()) { burst(b.x, b.y, '#fff', big); if (big) setTimeout(shake, 90); } resolve(defEl()); }, chargeT);
+      const dir = atk === 'my' ? 0 : 180; const pcol = atk === 'my' ? '#9fe8ff' : '#ffd0d0';
+      setTimeout(() => {
+        const b = cen(defEl()); chargeBeam(a, b, big, missOn());
+        setTimeout(() => {
+          if (!missOn()) { burst(b.x, b.y, '#fff', big); particlesDir(b.x, b.y, dir, pcol, big ? 30 : 16); if (big) { critFlash(b.x, b.y, '#9fe8ff'); shake(); setTimeout(shake, 90); } }
+          resolve(defEl());
+        }, 200);
+      }, chargeT);
     }
     function eHoming() {
       const big = critOn(); const a = frontEdge(atkEl()); const n = big ? 6 : 2; const back = atk === 'my' ? -1 : 1;
