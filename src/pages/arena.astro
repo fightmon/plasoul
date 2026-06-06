@@ -899,6 +899,11 @@ import Layout from '../layouts/Layout.astro';
           const d2 = attack('foe', foeType, aFoe, 'my', aMy, ev.toMe, r);
           resolveAt = Math.max(d1, d2);
         }
+        // 反擊/盾反：閃避或盾反會打回攻方一部分傷害，顯示在攻方身上（單向攻擊回合才補；平手回合已雙向顯示）
+        if (resolveAt >= 0) {
+          if (ev.rps === 1 && myType !== 'evade' && ev.toMe && ev.toMe.dmg) timers.push(setTimeout(() => { hitCard('my', aMy); dmgNum(U('my', aMy), '-' + ev.toMe.dmg, 'block'); }, resolveAt));
+          if (ev.rps === -1 && foeType !== 'evade' && ev.toFoe && ev.toFoe.dmg) timers.push(setTimeout(() => { hitCard('foe', aFoe); dmgNum(U('foe', aFoe), '-' + ev.toFoe.dmg, 'block'); }, resolveAt));
+        }
         // 血條在命中瞬間才更新（與斬擊/雷射同步）
         if (ev.ult) timers.push(setTimeout(() => { playUlt(ev.ult); timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), 600)); }, 520));
         else if (resolveAt >= 0) timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), resolveAt));

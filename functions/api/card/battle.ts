@@ -116,8 +116,8 @@ function simulate(my: any[], myBase: number, foe: any[], foeBase: number, foeNam
     else if (r === -1) { const h = hit(b, a, true); myHP -= h.dmg; foeHP -= h.reflect; ev.toMe = pub(h); if (h.reflect) ev.toFoe = { dmg: h.reflect, crit: false, block: false, dodge: false }; }
     else { const ha = hit(a, b, false), hb = hit(b, a, false); foeHP -= ha.dmg + hb.reflect; myHP -= hb.dmg + ha.reflect; ev.toFoe = pub(ha); ev.toMe = pub(hb); }
 
-    if (!myUlt && myHP > 0 && myHP <= myMax * 0.3) { myUlt = true; const d = Math.round(sum(my, 'atk') * 1.2); foeHP -= d; ev.ult = { side: 'my', name: my[0].special_name || '總攻擊', dmg: d }; }
-    else if (!foeUlt && foeHP > 0 && foeHP <= foeMax * 0.3) { foeUlt = true; const d = Math.round(sum(foe, 'atk') * 1.2); myHP -= d; ev.ult = { side: 'foe', name: '總攻擊', dmg: d }; }
+    if (!myUlt && myHP > 0 && myHP <= myMax * 0.3) { myUlt = true; const d = Math.round(effAtkSum(my) * 0.9); foeHP -= d; ev.ult = { side: 'my', name: my[0].special_name || '總攻擊', dmg: d }; }
+    else if (!foeUlt && foeHP > 0 && foeHP <= foeMax * 0.3) { foeUlt = true; const d = Math.round(effAtkSum(foe) * 0.9); myHP -= d; ev.ult = { side: 'foe', name: '總攻擊', dmg: d }; }
 
     myHP = Math.max(0, Math.round(myHP)); foeHP = Math.max(0, Math.round(foeHP));
     ev.myHP = myHP; ev.foeHP = foeHP;
@@ -126,13 +126,19 @@ function simulate(my: any[], myBase: number, foe: any[], foeBase: number, foeNam
   return { win: myHP > foeHP, log, myMax, foeMax };
 }
 
+// 攻擊邊際遞減：超過門檻的部分只算 SOFT_MUL 倍 → 壓制無腦堆攻擊（公平性平衡，見 scripts/sim-fairness.mjs）
+const SOFT_THR = 150, SOFT_MUL = 0.30;
+function effAtk(a: number): number { return a <= SOFT_THR ? a : SOFT_THR + (a - SOFT_THR) * SOFT_MUL; }
+function effAtkSum(arr: any[]): number { return arr.reduce((s, c) => s + effAtk(c.atk || 0), 0); }
+
 function hit(att: any, def: any, rpsWin: boolean) {
-  if (rand() < clamp(def.mob / 1500, 0, 0.32)) return { dmg: 0, reflect: 0, dodge: true, crit: false, block: false };
-  let d = att.atk - def.def * 0.5; if (d < 5) d = 5;
-  if (rpsWin) d *= 1.5;
-  const crit = rand() < clamp(att.atk / 1700, 0, 0.30); if (crit) d *= 1.5;
-  let reflect = 0; const block = rand() < clamp(def.def / 1700, 0, 0.30);
-  if (block) { d *= 0.5; reflect = Math.round(def.def * 0.3); }
+  // 閃避（機動）：上限 40%；閃過 → 反擊攻方一部分戰力（讓機動有輸出回報、剋制重砲）
+  if (rand() < clamp(def.mob / 1000, 0, 0.40)) return { dmg: 0, reflect: Math.round(effAtk(att.atk) * 0.6), dodge: true, crit: false, block: false };
+  let d = effAtk(att.atk) - def.def * 0.30; if (d < 5) d = 5;
+  if (rpsWin) d *= 1.40;
+  const crit = rand() < 0.15; if (crit) d *= 1.40;   // 固定爆率（不再吃攻擊，拆掉攻擊三重得利）
+  let reflect = 0; const block = rand() < clamp(def.def / 1500, 0, 0.35);
+  if (block) { d *= 0.5; reflect = Math.round(def.def * 0.35); }
   return { dmg: Math.max(1, Math.round(d)), reflect, dodge: false, crit, block };
 }
 function pub(h: any) { return { dmg: h.dmg, crit: h.crit, block: h.block, dodge: h.dodge }; }
