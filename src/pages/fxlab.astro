@@ -390,16 +390,22 @@
       else if (big) setTimeout(shake, last);
     }
     function eWave() {
-      const big = critOn(); const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = big ? 5 : 3; maybeDodge(defEl(), 520);
-      glowPulse(atkEl(), atk === 'my' ? '#7fd0ff' : '#ff8a8a');
+      const big = critOn(); const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = big ? 5 : 3;
+      const CH = 360;   // 蓄力時間
+      // 蓄力：漸層圓在發射點由小變大
+      const g = add('fl-charge ' + cc(), CH + 40); g.style.left = a.x + 'px'; g.style.top = a.y + 'px'; g.style.animationDuration = (CH / 1000) + 's';
+      maybeDodge(defEl(), CH + 520);
       const mp = missOn() ? missPoint(b) : null;
       const ex = mp ? mp.x : (big ? b.x + (atk === 'my' ? 90 : -90) : b.x);   // 暴擊貫穿 / MISS 穿出視窗
       const ey = mp ? mp.y : b.y;
-      for (let k = 0; k < n; k++) setTimeout(() => {
-        const s = add('fl-sonic ' + side + ' ' + cc(), 640); s.style.left = a.x + 'px'; s.style.top = a.y + 'px';
-        s.animate([{ transform: 'translate(-50%,-50%) scale(.45)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.85)', opacity: .95, offset: .2 }, { transform: 'translate(calc(-50% + ' + (ex - a.x) + 'px), calc(-50% + ' + (ey - a.y) + 'px)) scale(' + (big ? 2.1 : 1.7) + ')', opacity: 0 }], { duration: 560, easing: 'ease-out', fill: 'forwards' });
-      }, k * 100);
-      setTimeout(() => { if (!missOn()) { if (big) { burst(b.x, b.y, '#c9a3ff', true); setTimeout(() => burst(b.x, b.y, '#fff', true), 110); } else ring(b.x, b.y, '#9b6bff', true); } resolve(defEl()); }, 540);
+      setTimeout(() => {   // 蓄滿後放聲波
+        glowPulse(atkEl(), atk === 'my' ? '#7fd0ff' : '#ff8a8a');
+        for (let k = 0; k < n; k++) setTimeout(() => {
+          const s = add('fl-sonic ' + side + ' ' + cc(), 640); s.style.left = a.x + 'px'; s.style.top = a.y + 'px';
+          s.animate([{ transform: 'translate(-50%,-50%) scale(.45)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.85)', opacity: .95, offset: .2 }, { transform: 'translate(calc(-50% + ' + (ex - a.x) + 'px), calc(-50% + ' + (ey - a.y) + 'px)) scale(' + (big ? 2.1 : 1.7) + ')', opacity: 0 }], { duration: 560, easing: 'ease-out', fill: 'forwards' });
+        }, k * 100);
+      }, CH);
+      setTimeout(() => { if (!missOn()) { if (big) { burst(b.x, b.y, '#c9a3ff', true); setTimeout(() => burst(b.x, b.y, '#fff', true), 110); } else ring(b.x, b.y, '#9b6bff', true); } resolve(defEl()); }, CH + 540);
     }
     function eSnipe() {
       const big = critOn(); const b = cen(defEl()); maybeDodge(defEl(), 640);
