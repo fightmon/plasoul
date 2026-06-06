@@ -347,6 +347,14 @@ import Layout from '../layouts/Layout.astro';
   .ar-tone-opt { display:flex; align-items:baseline; gap:10px; background:var(--ar-card2); border:1px solid var(--ar-line); border-radius:10px; padding:11px 14px; color:var(--ar-text); cursor:pointer; text-align:left; }
   .ar-tone-opt b { font-size:15px; flex-shrink:0; } .ar-tone-opt small { color:var(--ar-dim); font-size:12px; }
   .ar-tone-opt.on { border-color:#ffc23d; background:rgba(255,194,61,.1); }
+  .ar-tone-chip small { color:var(--ar-dim); font-size:11px; font-weight:400; margin-left:4px; }
+  .ar-cz { margin:14px 0 4px; padding-top:12px; border-top:1px solid var(--ar-line); }
+  .ar-cz-h { font-size:13px; color:var(--ar-text); font-weight:700; margin:8px 0 7px; }
+  .ar-cz-h small { color:var(--ar-dim); font-size:11px; font-weight:400; margin-left:5px; }
+  .ar-cz-row { display:flex; flex-wrap:wrap; gap:6px; }
+  .ar-cz-chip { padding:6px 11px; background:var(--ar-card2); border:1px solid var(--ar-line); border-radius:20px; color:var(--ar-dim); font-size:12.5px; cursor:pointer; transition:.12s; }
+  .ar-cz-chip.on { border-color:#ffc23d; background:rgba(255,194,61,.16); color:#ffd23d; }
+  .ar-cz-note { font-size:12px; color:var(--ar-dim); padding:6px 0 2px; }
   /* 戰鬥・雙排佈陣（佔滿中段）*/
   .bt-field { position:relative; z-index:1; flex:1; min-height:0; overflow:hidden; }
   .bt-field.shake { animation:bt-shake .3s; }
@@ -461,6 +469,16 @@ import Layout from '../layouts/Layout.astro';
   const setTone = (t: string) => { try { localStorage.setItem('ps_tone', t); } catch {} };
   const toneName = (t: string) => TONES[t] ? TONES[t].name : '熱血';
 
+  // 招式目錄（每張卡依天性可多掛；moves=null 視為全掛）。射/近有招池；閃以反擊為主，暫不開放選招。
+  const MOVE_POOL: any = { ranged: ['laser', 'cannon', 'shotgun', 'homing', 'wave', 'snipe', 'charge'], melee: ['slash', 'arc', 'cross', 'impact', 'iai', 'thrust', 'spin'] };
+  const MOVE_NAME: any = { laser: '雷射', cannon: '加農炮', shotgun: '散彈槍', homing: '追蹤飛彈', wave: '能量波', snipe: '狙擊', charge: '蓄力炮', slash: '斬擊', arc: '弧斬', cross: '十字斬', impact: '衝擊波', iai: '居合', thrust: '突刺', spin: '迴旋斬' };
+  // 解析卡片啟用的招式（給戰鬥隨機抽）：moves 為 JSON 字串；null/空/全選 → 全池
+  const movesOf = (card: any, type: string): string[] => {
+    const pool = MOVE_POOL[type]; if (!pool) return [];
+    if (card && card.moves) { try { const m = JSON.parse(card.moves); if (Array.isArray(m) && m.length) { const f = pool.filter((x: string) => m.includes(x)); if (f.length) return f; } } catch {} }
+    return pool;
+  };
+
   let cards: any[] = [];
   let player: any = {};
 
@@ -509,7 +527,7 @@ import Layout from '../layouts/Layout.astro';
           <button class="ar-edit" id="ar-edit">編成</button>
         </div>
       </div>`;
-    $('ar-fleet')!.insertAdjacentHTML('beforeend', `<button class="ar-tone-chip" id="ar-tone">🗣️ 我的語氣：<b>${esc(toneName(getTone()))}</b></button>`);
+    $('ar-fleet')!.insertAdjacentHTML('beforeend', `<button class="ar-tone-chip" id="ar-tone">🗣️ 預設語氣：<b>${esc(toneName(getTone()))}</b><small>（未單獨設定的卡用這個）</small></button>`);
     $('ar-sortie')!.addEventListener('click', () => { if (!lineup.length) { toast('先按「編成」把卡放上戰艦'); return; } openMatch(); });
     $('ar-edit')!.addEventListener('click', openEquip);
     $('ar-tone')!.addEventListener('click', openTone);
@@ -580,7 +598,7 @@ import Layout from '../layouts/Layout.astro';
   function closeMatch() { const el = $('ar-match')!; el.setAttribute('hidden', ''); el.innerHTML = ''; }
   function openTone() {
     const el = $('ar-tone-modal')!; const cur = getTone();
-    el.innerHTML = `<div class="ar-modal-box ar-match-box"><div class="ar-modal-head"><b>🗣️ 選擇放話語氣</b><button class="ar-x" id="ar-tone-x">✕</button></div><div class="ar-tone-list">${TONE_KEYS.map((k) => `<button class="ar-tone-opt${k === cur ? ' on' : ''}" data-k="${k}"><b>${esc(toneName(k))}</b><small>「${esc(TONES[k].atk[0])}」</small></button>`).join('')}</div></div>`;
+    el.innerHTML = `<div class="ar-modal-box ar-match-box"><div class="ar-modal-head"><b>🗣️ 預設放話語氣</b><button class="ar-x" id="ar-tone-x">✕</button></div><div class="ar-tone-list">${TONE_KEYS.map((k) => `<button class="ar-tone-opt${k === cur ? ' on' : ''}" data-k="${k}"><b>${esc(toneName(k))}</b><small>「${esc(TONES[k].atk[0])}」</small></button>`).join('')}</div></div>`;
     el.removeAttribute('hidden');
     $('ar-tone-x')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; });
     el.querySelectorAll('.ar-tone-opt').forEach((b) => b.addEventListener('click', () => { setTone((b as HTMLElement).dataset.k!); el.setAttribute('hidden', ''); el.innerHTML = ''; renderFleet(); toast('語氣已設定 ✅'); }));
@@ -646,9 +664,9 @@ import Layout from '../layouts/Layout.astro';
     const shake = () => { const f = $('bt-field')!; f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 320); };
     // 放話（依語氣；LINE 風：我方左、對方右，帶說話卡頭像）
     const pickL = (a: string[]) => a[Math.floor(Math.random() * a.length)];
-    const toneOf = (side: string) => side === 'my' ? getTone() : TONE_KEYS[Math.floor(Math.random() * TONE_KEYS.length)];
+    const toneOf = (side: string) => { const c = side === 'my' ? myTeam[aMy] : foeTeam[aFoe]; if (c && c.tone_id && TONES[c.tone_id]) return c.tone_id; return side === 'my' ? getTone() : TONE_KEYS[Math.floor(Math.random() * TONE_KEYS.length)]; };
     const say = (side: string, situ: string) => {
-      const p = TONES[toneOf(side)][situ]; if (!p || !p.length) return;
+      const tk = toneOf(side); const p = TONES[tk] && TONES[tk][situ]; if (!p || !p.length) return;
       const card = side === 'my' ? myTeam[aMy] : foeTeam[aFoe];
       const av = card && card.photo ? `<img src="${esc(card.photo)}" alt=""/>` : (side === 'my' ? '🤖' : '👾');
       const t = $('bt-talk'); if (!t) return;
@@ -768,15 +786,14 @@ import Layout from '../layouts/Layout.astro';
       }, 200));
       return 320;
     };
-    const RANGED = ['laser', 'cannon', 'shotgun', 'homing', 'wave', 'snipe', 'charge'];
-    const MELEE = ['slash', 'arc', 'cross', 'impact', 'iai', 'thrust', 'spin'];
+    const pickMove = (atkSide: string, atkK: number, type: string): string => { const card = atkSide === 'my' ? myTeam[atkK] : foeTeam[atkK]; const pool = movesOf(card, type); return pool[Math.floor(Math.random() * pool.length)]; };
     const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any, meleeRatio = 0.82) => {
       const miss = !!(h && h.dodge);
       const big = !!(h && h.crit);
       const defEl = U(defSide, defK); const dir = atkSide === 'my' ? 0 : 180;
       let impact = 320;
-      if (atkType === 'ranged') impact = mvRanged(RANGED[Math.floor(Math.random() * RANGED.length)], atkSide, atkK, defSide, defK, big, miss);
-      else if (atkType === 'melee') impact = mvMelee(MELEE[Math.floor(Math.random() * MELEE.length)], atkSide, atkK, defSide, defK, big, miss, meleeRatio);
+      if (atkType === 'ranged') impact = mvRanged(pickMove(atkSide, atkK, 'ranged'), atkSide, atkK, defSide, defK, big, miss);
+      else if (atkType === 'melee') impact = mvMelee(pickMove(atkSide, atkK, 'melee'), atkSide, atkK, defSide, defK, big, miss, meleeRatio);
       else impact = mvRanged('laser', atkSide, atkK, defSide, defK, big, miss);
       if (miss) timers.push(setTimeout(() => missHop(defSide, defK), Math.max(0, impact - 130)));
       timers.push(setTimeout(() => { if (big && !miss) shake(); applyHit(defSide, defK, h); if (!miss && atkType === 'melee') partsDir(cen(defEl).x, cen(defEl).y, dir, '#ffd24d', big ? 8 : 5); }, impact));
@@ -984,6 +1001,7 @@ import Layout from '../layouts/Layout.astro';
   function showDetail(c: any) {
     const pow = c.hp + c.atk + c.def + c.mob;
     const el = $('ar-detail')!;
+    const czMoves = new Set<string>(movesOf(c, c.type));   // 目前啟用的招式（全掛時=整池）
     el.innerHTML = `
       <div class="ar-modal-box c-${esc(c.rarity)}">
         <div class="ar-rv-img" style="position:relative"><span class="ar-rar r-${esc(c.rarity)}">${esc(c.rarity)}</span>${c.photo_url ? `<img src="${esc(c.photo_url)}" alt=""/>` : ''}</div>
@@ -997,10 +1015,49 @@ import Layout from '../layouts/Layout.astro';
             <div class="ar-rv-stat"><b>${c.mob}</b><small>機動</small></div>
           </div>
           <div class="ar-rv-special">💥 <b>${esc(c.special_name)}</b>　${esc(c.special_desc)}</div>
+          <div class="ar-cz">
+            <div class="ar-cz-h">🗣️ 語氣 <small>單選一種</small></div>
+            <div class="ar-cz-row" id="cz-tones">
+              <button class="ar-cz-chip${!c.tone_id ? ' on' : ''}" data-tk="">預設</button>
+              ${TONE_KEYS.map((k) => `<button class="ar-cz-chip${c.tone_id === k ? ' on' : ''}" data-tk="${esc(k)}">${esc(toneName(k))}</button>`).join('')}
+            </div>
+            ${MOVE_POOL[c.type] ? `
+            <div class="ar-cz-h">⚔️ 招式 <small>可全掛，至少留一招</small></div>
+            <div class="ar-cz-row" id="cz-moves">
+              ${MOVE_POOL[c.type].map((m: string) => `<button class="ar-cz-chip${czMoves.has(m) ? ' on' : ''}" data-mv="${esc(m)}">${esc(MOVE_NAME[m] || m)}</button>`).join('')}
+            </div>` : '<div class="ar-cz-note">閃避型以「閃避反擊」為主，暫無招式可選。</div>'}
+            <button class="ar-edit" id="cz-save" style="width:100%;margin-top:10px">💾 儲存自訂</button>
+          </div>
           <button class="ar-rv-close" id="ar-dt-close">關閉（戰力 ${pow}）</button>
         </div>
       </div>`;
     el.removeAttribute('hidden');
+    let czTone = c.tone_id || '';
+    // 語氣單選
+    el.querySelectorAll('#cz-tones .ar-cz-chip').forEach((b) => b.addEventListener('click', () => {
+      czTone = (b as HTMLElement).dataset.tk || '';
+      el.querySelectorAll('#cz-tones .ar-cz-chip').forEach((x) => x.classList.remove('on'));
+      b.classList.add('on');
+    }));
+    // 招式多選（至少一招）
+    el.querySelectorAll('#cz-moves .ar-cz-chip').forEach((b) => b.addEventListener('click', () => {
+      const mv = (b as HTMLElement).dataset.mv!;
+      if (czMoves.has(mv)) { if (czMoves.size <= 1) { toast('至少要留一招'); return; } czMoves.delete(mv); b.classList.remove('on'); }
+      else { czMoves.add(mv); b.classList.add('on'); }
+    }));
+    $('cz-save')?.addEventListener('click', async () => {
+      const pool: string[] = MOVE_POOL[c.type] || [];
+      const arr = Array.from(czMoves);
+      const movesPayload = pool.length && arr.length && arr.length < pool.length ? arr : null;   // 全掛/空 → null
+      const btn = $('cz-save') as HTMLButtonElement; if (btn) { btn.disabled = true; btn.textContent = '儲存中…'; }
+      try {
+        const r = await fetch('/api/card/customize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ card_id: c.id, tone_id: czTone || null, moves: movesPayload }) });
+        const j = await r.json();
+        if (!r.ok || !j.ok) { toast((j && j.message) || '儲存失敗'); if (btn) { btn.disabled = false; btn.textContent = '💾 儲存自訂'; } return; }
+        c.tone_id = j.tone_id || null; c.moves = j.moves || null;   // 同步本地（下場戰鬥即生效）
+        toast('已儲存 ✅'); el.setAttribute('hidden', ''); el.innerHTML = '';
+      } catch { toast('網路錯誤'); if (btn) { btn.disabled = false; btn.textContent = '💾 儲存自訂'; } }
+    });
     $('ar-dt-close')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; });
     el.addEventListener('click', (e) => { if (e.target === el) { el.setAttribute('hidden', ''); el.innerHTML = ''; } });
   }

@@ -23,7 +23,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   ).bind(auth.sub).first<any>();
 
   const rows = (await context.env.DB.prepare(
-    `SELECT id, name, photo_r2_key, type, hp, atk, def, mob, terrain, special_name, special_desc, flavor, rarity, wins, battles, created_at
+    `SELECT id, name, photo_r2_key, type, hp, atk, def, mob, terrain, special_name, special_desc, flavor, rarity, wins, battles, tone_id, moves, created_at
      FROM arena_cards WHERE user_id = ? AND deleted_at IS NULL
      ORDER BY created_at DESC`
   ).bind(auth.sub).all<any>()).results || [];
@@ -33,6 +33,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     hp: r.hp, atk: r.atk, def: r.def, mob: r.mob,
     terrain: r.terrain, special_name: r.special_name, special_desc: r.special_desc, flavor: r.flavor,
     rarity: r.rarity, wins: r.wins, battles: r.battles,
+    tone_id: r.tone_id || null, moves: r.moves || null,
     photo_url: r.photo_r2_key ? `/api/screenshot/${r.photo_r2_key}` : null,
   }));
 

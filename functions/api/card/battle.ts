@@ -32,7 +32,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   const ph = ids.map(() => '?').join(',');
   const rows = (await context.env.DB.prepare(
-    `SELECT id, name, type, hp, atk, def, mob, special_name, photo_r2_key FROM arena_cards WHERE user_id = ? AND id IN (${ph}) AND deleted_at IS NULL`
+    `SELECT id, name, type, hp, atk, def, mob, special_name, photo_r2_key, tone_id, moves FROM arena_cards WHERE user_id = ? AND id IN (${ph}) AND deleted_at IS NULL`
   ).bind(auth.sub, ...ids).all<any>()).results || [];
   if (!rows.length) return new Response(JSON.stringify({ ok: false, message: '出戰卡不存在' }), { status: 400, headers: hdr() });
   const myTeam = rows.map((c) => ({ ...c, photo: c.photo_r2_key ? `/api/screenshot/${c.photo_r2_key}` : null }));
@@ -51,7 +51,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (op && oids.length) {
       const oph = oids.map(() => '?').join(',');
       const orows = (await context.env.DB.prepare(
-        `SELECT name, type, hp, atk, def, mob, special_name, photo_r2_key FROM arena_cards WHERE user_id = ? AND id IN (${oph}) AND deleted_at IS NULL`
+        `SELECT name, type, hp, atk, def, mob, special_name, photo_r2_key, tone_id, moves FROM arena_cards WHERE user_id = ? AND id IN (${oph}) AND deleted_at IS NULL`
       ).bind(opponentId, ...oids).all<any>()).results || [];
       if (orows.length) {
         foeTeam = orows.map((c) => ({ ...c, photo: c.photo_r2_key ? `/api/screenshot/${c.photo_r2_key}` : null }));
@@ -94,8 +94,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   return new Response(JSON.stringify({
     ok: true, win: sim.win, log: sim.log,
-    my: { maxHP: sim.myMax, team: myTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo })) },
-    foe: { name: foeName, maxHP: sim.foeMax, team: foeTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo || null })) },
+    my: { maxHP: sim.myMax, team: myTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo, tone_id: c.tone_id || null, moves: c.moves || null })) },
+    foe: { name: foeName, maxHP: sim.foeMax, team: foeTeam.map((c) => ({ name: c.name, type: c.type, photo: c.photo || null, tone_id: c.tone_id || null, moves: c.moves || null })) },
     rewards: { parts, coins, rank_delta: rankDelta, rank_score: newRank, tier: TIERS[tierIdx(newRank)], tier_up: tierUp },
   }), { status: 200, headers: hdr() });
 };
