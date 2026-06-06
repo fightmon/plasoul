@@ -93,6 +93,9 @@ import Layout from '../layouts/Layout.astro';
     <!-- 選對手（天梯） -->
     <div id="ar-match" class="ar-modal" hidden></div>
 
+    <!-- 語氣選擇 -->
+    <div id="ar-tone-modal" class="ar-modal" hidden></div>
+
     <!-- 戰鬥 -->
     <div id="ar-battle" class="ar-battle" hidden></div>
 
@@ -328,6 +331,13 @@ import Layout from '../layouts/Layout.astro';
   .bt-talk { position:absolute; left:0; right:0; bottom:60px; z-index:4; display:flex; justify-content:center; padding:0 16px; pointer-events:none; opacity:0; transform:translateY(6px); transition:opacity .18s, transform .18s; }
   .bt-talk.on { opacity:1; transform:translateY(0); }
   .bt-talk span { max-width:92%; background:rgba(0,0,0,.62); color:#fff; font-size:14px; font-weight:700; line-height:1.4; padding:8px 16px; border-radius:10px; border-left:3px solid #ffd23d; box-shadow:0 4px 16px rgba(0,0,0,.4); }
+  /* 語氣選擇 */
+  .ar-tone-chip { display:block; width:100%; margin-top:10px; padding:9px; background:var(--ar-card); border:1px solid var(--ar-line); border-radius:10px; color:var(--ar-dim); font-size:13px; cursor:pointer; }
+  .ar-tone-chip b { color:#ffd23d; }
+  .ar-tone-list { display:flex; flex-direction:column; gap:8px; padding:0 14px 14px; }
+  .ar-tone-opt { display:flex; align-items:baseline; gap:10px; background:var(--ar-card2); border:1px solid var(--ar-line); border-radius:10px; padding:11px 14px; color:var(--ar-text); cursor:pointer; text-align:left; }
+  .ar-tone-opt b { font-size:15px; flex-shrink:0; } .ar-tone-opt small { color:var(--ar-dim); font-size:12px; }
+  .ar-tone-opt.on { border-color:#ffc23d; background:rgba(255,194,61,.1); }
   /* 戰鬥・雙排佈陣（佔滿中段）*/
   .bt-field { position:relative; z-index:1; flex:1; min-height:0; overflow:hidden; }
   .bt-field.shake { animation:bt-shake .3s; }
@@ -434,6 +444,19 @@ import Layout from '../layouts/Layout.astro';
   const TIER_NAME = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
   const RANK = (s: number) => { let t = 'F'; for (let k = 0; k < TIER_MIN.length; k++) if ((s || 0) >= TIER_MIN[k]) t = TIER_NAME[k]; return t; };
 
+  // 放話語氣（5 套；之後可擴 16）
+  const TONES: any = {
+    hot: { name: '熱血', atk: ['上啊！', '全力衝刺！', '燃燒吧！', '看我的！'], crit: ['必殺！', '全彈發射！', '轟掉你！'], dodge: ['這點程度傷不了我！', '太天真了！'], ult: ['天地烈猛斬！', '燃燒殆盡吧！'] },
+    cool: { name: '冷靜', atk: ['鎖定完畢。', '開火。', '計算無誤。', '就是現在。'], crit: ['命中要害。', '一擊足矣。', '結束了。'], dodge: ['早已預判。', '徒勞。', '看穿了。'], ult: ['奧義・解放。', '終結程序，啟動。'] },
+    evil: { name: '腹黑', atk: ['正合我意～', '乖乖中計吧。', '嘻嘻，上鉤了。'], crit: ['這就是你的下場♪', '痛嗎？真可惜～'], dodge: ['哎呀，沒打中呢～', '你太可愛了。'], ult: ['陪我玩到最後吧♪', '絕望的滋味如何？'] },
+    chuni: { name: '中二', atk: ['黑暗之刃，飲血！', '吾名之下，臣服吧！', '禁忌之力，解放！'], crit: ['這就是真正的力量！', '黑炎，吞噬一切！'], dodge: ['哼，雕蟲小技。', '我的結界無懈可擊。'], ult: ['終焉之刻——降臨！', '沉睡的力量，覺醒吧！'] },
+    cute: { name: '可愛', atk: ['嘿咻～接招！', '啦啦啦～打你囉！', '咻咻咻！'], crit: ['碰！中啦～', '耶！超痛的吧？'], dodge: ['咦～沒打到耶～', '嘿嘿，閃過啦！'], ult: ['必殺技～發射！', '看我的大絕招～！'] },
+  };
+  const TONE_KEYS = ['hot', 'cool', 'evil', 'chuni', 'cute'];
+  const getTone = () => { try { const t = localStorage.getItem('ps_tone'); return t && TONES[t] ? t : 'hot'; } catch { return 'hot'; } };
+  const setTone = (t: string) => { try { localStorage.setItem('ps_tone', t); } catch {} };
+  const toneName = (t: string) => TONES[t] ? TONES[t].name : '熱血';
+
   let cards: any[] = [];
   let player: any = {};
 
@@ -482,8 +505,10 @@ import Layout from '../layouts/Layout.astro';
           <button class="ar-edit" id="ar-edit">編成</button>
         </div>
       </div>`;
+    $('ar-fleet')!.insertAdjacentHTML('beforeend', `<button class="ar-tone-chip" id="ar-tone">🗣️ 我的語氣：<b>${esc(toneName(getTone()))}</b></button>`);
     $('ar-sortie')!.addEventListener('click', () => { if (!lineup.length) { toast('先按「編成」把卡放上戰艦'); return; } openMatch(); });
     $('ar-edit')!.addEventListener('click', openEquip);
+    $('ar-tone')!.addEventListener('click', openTone);
   }
 
   function renderHangar() {
@@ -549,6 +574,13 @@ import Layout from '../layouts/Layout.astro';
     } catch { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('網路錯誤'); }
   }
   function closeMatch() { const el = $('ar-match')!; el.setAttribute('hidden', ''); el.innerHTML = ''; }
+  function openTone() {
+    const el = $('ar-tone-modal')!; const cur = getTone();
+    el.innerHTML = `<div class="ar-modal-box ar-match-box"><div class="ar-modal-head"><b>🗣️ 選擇放話語氣</b><button class="ar-x" id="ar-tone-x">✕</button></div><div class="ar-tone-list">${TONE_KEYS.map((k) => `<button class="ar-tone-opt${k === cur ? ' on' : ''}" data-k="${k}"><b>${esc(toneName(k))}</b><small>「${esc(TONES[k].atk[0])}」</small></button>`).join('')}</div></div>`;
+    el.removeAttribute('hidden');
+    $('ar-tone-x')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; });
+    el.querySelectorAll('.ar-tone-opt').forEach((b) => b.addEventListener('click', () => { setTone((b as HTMLElement).dataset.k!); el.setAttribute('hidden', ''); el.innerHTML = ''; renderFleet(); toast('語氣已設定 ✅'); }));
+  }
   function renderMatch(d: any) {
     const cand = (d.candidates || []).map((o: any, i: number) => {
       const fleet = (o.fleet || []).map((c: any) => `<div class="ar-mc"><div class="ar-mc-img">${c.photo ? `<img src="${esc(c.photo)}"/>` : '<span>👾</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span><span class="ar-mc-r r-${esc(c.rarity)}">${esc(c.rarity)}</span></div></div>`).join('');
@@ -608,13 +640,11 @@ import Layout from '../layouts/Layout.astro';
     const reset = () => { [0, 1, 2].forEach((k) => { place('my', k, false); place('foe', k, false); }); $('bt-fx')!.innerHTML = ''; };
     const setHP = (my: number, foe: number) => { const mb = $('bt-my'), fb = $('bt-foe'); if (mb) (mb as HTMLElement).style.width = Math.max(0, Math.round(my / myMax * 100)) + '%'; if (fb) (fb as HTMLElement).style.width = Math.max(0, Math.round(foe / foeMax * 100)) + '%'; };
     const shake = () => { const f = $('bt-field')!; f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 320); };
-    // 放話台詞
-    const T_ATK = ['看我的！', '吃我這招！', '鎖定，開火！', '無處可逃！', '上啊！', '決勝負了！'];
-    const T_CRIT = ['全彈發射！', '正中要害！', '這一擊，終結！', '看招——爆裂！', '感受這股力量！'];
-    const T_DODGE = ['太慢了！', '想打中我還早！', '被我看穿了！', '沒想到被我猜中你的攻擊了吧？', '可惜，沒中！'];
-    const T_ULT = ['天地烈猛斬！', '奧義・全力解放！', '見識真正的力量！', '這就是我的覺悟！', '終焉，降臨！'];
+    // 放話（依語氣）
     const pickL = (a: string[]) => a[Math.floor(Math.random() * a.length)];
     const taunt = (text: string) => { const t = $('bt-talk'); if (!t) return; t.innerHTML = '<span>' + esc(text) + '</span>'; t.classList.add('on'); clearTimeout((t as any)._tt); (t as any)._tt = setTimeout(() => t.classList.remove('on'), 1700); };
+    const toneOf = (side: string) => side === 'my' ? getTone() : TONE_KEYS[Math.floor(Math.random() * TONE_KEYS.length)];
+    const say = (side: string, situ: string) => { const p = TONES[toneOf(side)][situ]; if (p && p.length) taunt(pickL(p)); };
     // 以「卡片實際位置」為基準算特效座標（永遠對準目標卡正中）
     const cen = (el: HTMLElement | null) => { const fr = $('bt-field')!.getBoundingClientRect(); if (!el) return { x: fr.width / 2, y: fr.height / 2 }; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; };
     const laserFx = (attEl: HTMLElement | null, defEl: HTMLElement | null, big: boolean, side: string, weak = false, miss = false) => { if (!attEl || !defEl) return; const a = cen(attEl), b = cen(defEl); if (miss) { const fr = $('bt-field')!.getBoundingClientRect(); b.x = side === 'my' ? fr.width + 80 : -80; b.y -= 14; } const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = document.createElement('div'); n.className = 'bt-laser ' + (side === 'my' ? 'l-my' : 'l-foe') + (big ? ' big' : '') + (weak ? ' weak' : ''); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 550); };
@@ -760,7 +790,7 @@ import Layout from '../layouts/Layout.astro';
       const ultName = mono === 'ranged' ? '全射・總軌道炮擊' : mono === 'melee' ? '全近・超絕一閃' : mono === 'evade' ? '全閃・殘影殲滅' : (ult.name || '總攻擊');
       $('bt-darken')!.classList.add('on');
       $('bt-banner')!.textContent = '⚡ 覺醒・' + ultName; $('bt-banner')!.classList.add('on');
-      taunt(pickL(T_ULT));
+      say(side, 'ult');
       [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.add('ult'); });
       if (mono === 'ranged') {
         [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const aEl = U(side, k); const a = frontPt(aEl, side); apFx(a.x, a.y, col, true); setTimeout(() => { [0, 1, 2].forEach((j) => { const dEl = U(other, j); if (dEl) beamPts(a, cen(dEl), true, side); }); }, 200); }, k * 150)));
@@ -802,15 +832,13 @@ import Layout from '../layouts/Layout.astro';
         // 血條在命中瞬間才更新（與斬擊/雷射同步）
         if (ev.ult) timers.push(setTimeout(() => { playUlt(ev.ult); timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), 600)); }, 520));
         else if (resolveAt >= 0) timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), resolveAt));
-        // 放話（taunt）
+        // 放話（依語氣）
         if (!ev.ult) {
-          let line: string | null = null;
-          const evaded = (ev.rps === 1 && myType === 'evade') || (ev.rps === -1 && foeType === 'evade');
-          const crit = (ev.toFoe && ev.toFoe.crit) || (ev.toMe && ev.toMe.crit);
-          if (evaded) line = pickL(T_DODGE);
-          else if (crit) line = pickL(T_CRIT);
-          else if (Math.random() < 0.4) line = pickL(T_ATK);
-          if (line) timers.push(setTimeout(() => taunt(line as string), 260));
+          let sp: string | null = null, situ = 'atk';
+          if (ev.rps === 1 && myType === 'evade') { sp = 'my'; situ = 'dodge'; }
+          else if (ev.rps === -1 && foeType === 'evade') { sp = 'foe'; situ = 'dodge'; }
+          else { const w = ev.rps === -1 ? 'foe' : 'my'; const crit = (ev.toFoe && ev.toFoe.crit) || (ev.toMe && ev.toMe.crit); if (crit) { sp = w; situ = 'crit'; } else if (Math.random() < 0.4) { sp = w; situ = 'atk'; } }
+          if (sp) timers.push(setTimeout(() => say(sp as string, situ), 260));
         }
         // 下一回合：依本回合招式長度自適應 + 整體放慢（看得清楚）
         let pace = resolveAt >= 0 ? resolveAt : 760;   // 閃避反擊約 760
