@@ -346,25 +346,26 @@
       n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>';
     }
 
+    // 定向顆粒：沿 dirDeg 方向呈扇形噴散（往對方卡後方）
+    function particlesDir(x, y, dirDeg, color, count) { const col = color || '#9fe8ff'; for (let k = 0; k < count; k++) { const ang = (dirDeg + (Math.random() * 70 - 35)) * Math.PI / 180; const dist = 42 + Math.random() * 72; const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist; const sz = 5 + Math.random() * 6; const p = add('fl-particle', 680); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = col; p.style.boxShadow = '0 0 7px ' + col; p.animate([{ transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 520 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' }); } }
+
     // ---- 射擊類 ----
     function eLaser() {
-      const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const col = atk === 'my' ? '#3aa0ff' : '#ff5a5a';
+      const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const col = atk === 'my' ? '#3aa0ff' : '#ff5a5a'; const dir = atk === 'my' ? 0 : 180;
       if (big) {
         const fwd = atk === 'my' ? 1 : -1; const parts = splitDmg(999, 3);
         maybeDodge(defEl(), 560);
         for (let s = 0; s < 3; s++) {
           const oy = (s - 1) * 34; const sx = a.x + fwd * Math.random() * 30; const a2 = { x: sx, y: a.y + oy }, b2 = { x: b.x, y: a.y + oy };  // 上中下、橫向、起點 X 隨機
-          const end2 = missOn() ? missPoint(b2) : b2;
-          setTimeout(() => { aperture(a2.x, a2.y, col, false); setTimeout(() => { beam(a2, b2, false, missOn(), true); sparksAlong(a2, end2, col); if (!missOn()) { flinch(defEl()); dmgPt(b.x, a.y + oy, '-' + parts[s] + '!', 'crit'); flare(b.x, a.y + oy, col); scorch(b.x, a.y + oy, col); } }, 150); }, s * 130);
+          setTimeout(() => { aperture(a2.x, a2.y, col, false); setTimeout(() => { beam(a2, b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b.x, a.y + oy, '-' + parts[s] + '!', 'crit'); particlesDir(b.x, a.y + oy, dir, col, 10); } }, 150); }, s * 130);
         }
         if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300); else setTimeout(shake, 700);
         return;
       }
       maybeDodge(defEl(), 490);
       muzzle(atkEl()); aperture(a.x, a.y, col, false);
-      const end = missOn() ? missPoint(b) : b;
-      setTimeout(() => { beam(a, b, false, missOn(), true); sparksAlong(a, end, col); setTimeout(() => sparksAlong(a, end, col), 130); }, 210);
-      setTimeout(() => { if (!missOn()) { flare(b.x, b.y, col); scorch(b.x, b.y, col); prismSplit(b.x, b.y, atk === 'my' ? 0 : 180); } resolve(defEl()); }, 460);
+      setTimeout(() => { beam(a, b, false, missOn()); }, 210);
+      setTimeout(() => { if (!missOn()) particlesDir(b.x, b.y, dir, col, 14); resolve(defEl()); }, 460);
     }
     function eCannon() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 350);
