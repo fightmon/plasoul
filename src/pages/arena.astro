@@ -362,6 +362,7 @@ import Layout from '../layouts/Layout.astro';
   .bt-flash.big { width:120px; height:120px; } .bt-flash.huge { width:175px; height:175px; }
   @keyframes bt-flashk { to { transform:translate(-50%,-50%) scale(1.5); opacity:0; } }
   .bt-particle { position:absolute; width:7px; height:7px; border-radius:50%; transform:translate(-50%,-50%); }
+  .bt-ghost { position:absolute; aspect-ratio:3/4; border-radius:10px; overflow:hidden; border:2px solid var(--ar-line); pointer-events:none; filter:brightness(.8) saturate(.6); z-index:3; }
   .bt-smoke { position:absolute; border-radius:50%; background:radial-gradient(circle,rgba(214,218,228,.82),rgba(190,194,205,.4) 55%,transparent 72%); }
   .bt-muzzle { position:absolute; width:26px; height:26px; border-radius:50%; transform:translate(-50%,-50%) scale(.5); opacity:.9; animation:bt-muzk .25s ease-out forwards; }
   .bt-muzzle.big { width:42px; height:42px; }
@@ -651,16 +652,29 @@ import Layout from '../layouts/Layout.astro';
       $('bt-again')!.addEventListener('click', () => doBattle());
       $('bt-close')!.addEventListener('click', () => { el.setAttribute('hidden', ''); el.innerHTML = ''; loadData(); });
     };
+    const ghostDash = (elm: HTMLElement | null, side: string) => { if (!elm) return; const away = fwdOf(side); for (let g = 0; g < 3; g++) setTimeout(() => { const cl = elm.cloneNode(true) as HTMLElement; cl.removeAttribute('id'); cl.classList.add('bt-ghost'); const r = elm.getBoundingClientRect(), fr = $('bt-field')!.getBoundingClientRect(); cl.style.left = (r.left - fr.left) + 'px'; cl.style.top = (r.top - fr.top) + 'px'; cl.style.width = r.width + 'px'; $('bt-field')!.appendChild(cl); cl.animate([{ transform: 'translate(' + (away * 22 * (g + 1)) + 'px,-6px)', opacity: .4 }, { transform: 'translate(' + (away * 22 * (g + 1)) + 'px,-6px)', opacity: 0 }], { duration: 360, easing: 'ease-out' }); setTimeout(() => cl.remove(), 380); }, g * 45); };
     const playUlt = (ult: any) => {
       const side = ult.side, other = side === 'my' ? 'foe' : 'my';
-      $('bt-darken')!.classList.add('on');
-      $('bt-banner')!.textContent = '⚡ 覺醒・' + ult.name; $('bt-banner')!.classList.add('on');
       const team = side === 'my' ? myTeam : foeTeam;
+      const types = team.map((c: any) => (c && c.type) || 'ranged');
+      const mono = types.length >= 3 && types.every((t: string) => t === types[0]) ? types[0] : null;
+      const col = side === 'my' ? '#3aa0ff' : '#ff5a5a';
+      const ultName = mono === 'ranged' ? '全射・總軌道炮擊' : mono === 'melee' ? '全近・超絕一閃' : mono === 'evade' ? '全閃・殘影殲滅' : (ult.name || '總攻擊');
+      $('bt-darken')!.classList.add('on');
+      $('bt-banner')!.textContent = '⚡ 覺醒・' + ultName; $('bt-banner')!.classList.add('on');
       [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.add('ult'); });
-      [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const t = team[k] ? team[k].type : 'ranged'; const aEl = U(side, k), dEl = U(other, k); if (t === 'melee') { lungeTo(side, k, other, k, 0.82); setTimeout(() => slashFx(dEl, true), 200); } else laserFx(aEl, dEl, true, side); }, k * 140)));
+      if (mono === 'ranged') {
+        [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const aEl = U(side, k); const a = frontPt(aEl, side); apFx(a.x, a.y, col, true); setTimeout(() => { [0, 1, 2].forEach((j) => { const dEl = U(other, j); if (dEl) beamPts(a, cen(dEl), true, side); }); }, 200); }, k * 150)));
+      } else if (mono === 'melee') {
+        [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const j = Math.min(k, 2); lungeTo(side, k, other, j, 0.82); setTimeout(() => { const dEl = U(other, j); if (dEl) { const c = cen(dEl); slashFx(dEl, true); ringFx(c.x, c.y, '#ffb13d', true); } }, 200); }, k * 180)));
+      } else if (mono === 'evade') {
+        [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const aEl = U(side, k); ghostDash(aEl, side); const j = Math.min(k, 2); lungeTo(side, k, other, j, 0.85); setTimeout(() => { const dEl = U(other, j); if (dEl) slashFx(dEl, false); }, 200); }, k * 140)));
+      } else {
+        [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const t = team[k] ? team[k].type : 'ranged'; const aEl = U(side, k), dEl = U(other, k); if (t === 'melee') { lungeTo(side, k, other, k, 0.82); setTimeout(() => slashFx(dEl, true), 200); } else beamPts(frontPt(aEl, side), cen(dEl), true, side); }, k * 140)));
+      }
       shake();
-      timers.push(setTimeout(() => { [0, 1, 2].forEach((k) => hitCard(other, k)); dmgNum(U(other, 1) || U(other, 0), '-' + ult.dmg + '!!', 'crit'); shake(); }, 580));
-      timers.push(setTimeout(() => { $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on'); [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.remove('ult'); }); }, 1500));
+      timers.push(setTimeout(() => { [0, 1, 2].forEach((k) => hitCard(other, k)); const tEl = U(other, 1) || U(other, 0); const tc = cen(tEl); if (mono) flashFx(tc.x, tc.y, col); partsFx(tc.x, tc.y, col, 18, 1); dmgNum(tEl, '-' + ult.dmg + '!!', 'crit'); shake(); }, 640));
+      timers.push(setTimeout(() => { $('bt-darken')!.classList.remove('on'); $('bt-banner')!.classList.remove('on'); [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.remove('ult'); }); }, 1600));
     };
     const play = () => {
       if (skipped) return;
