@@ -328,17 +328,18 @@ import Layout from '../layouts/Layout.astro';
   .ar-bar.foe i { background:linear-gradient(90deg,#ff8a8a,#ff5a5a); }
   .bt-foot { position:relative; z-index:2; text-align:center; padding:8px 0 max(14px,env(safe-area-inset-bottom)); }
   /* 放話框（G世代/超機大戰風）*/
-  .bt-talk { position:absolute; left:0; right:0; bottom:58px; z-index:4; display:flex; padding:0 14px; pointer-events:none; opacity:0; transform:translateY(6px); transition:opacity .18s, transform .18s; }
-  .bt-talk.on { opacity:1; transform:translateY(0); }
-  .bt-talk.me { justify-content:flex-start; }
-  .bt-talk.foe { justify-content:flex-end; }
+  .bt-talk { position:absolute; left:0; right:0; bottom:58px; z-index:4; display:flex; flex-direction:column; gap:6px; padding:0 14px; pointer-events:none; }
+  .bt-row { display:flex; transition:opacity .2s; animation:bt-rowin .22s ease-out; }
+  .bt-row.me { justify-content:flex-start; }
+  .bt-row.foe { justify-content:flex-end; }
+  @keyframes bt-rowin { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
   .bt-bubble { display:flex; align-items:flex-end; gap:8px; max-width:82%; }
-  .bt-talk.foe .bt-bubble { flex-direction:row-reverse; }
+  .bt-row.foe .bt-bubble { flex-direction:row-reverse; }
   .bt-av { width:38px; height:38px; border-radius:50%; overflow:hidden; flex-shrink:0; background:var(--ar-card2); display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid rgba(255,255,255,.25); }
   .bt-av img { width:100%; height:100%; object-fit:cover; }
   .bt-bubble span { font-size:14px; font-weight:600; line-height:1.4; padding:9px 14px; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,.45); color:#fff; }
-  .bt-talk.me .bt-bubble span { background:rgba(45,95,170,.95); border-bottom-left-radius:4px; }
-  .bt-talk.foe .bt-bubble span { background:rgba(48,48,58,.95); border-bottom-right-radius:4px; }
+  .bt-row.me .bt-bubble span { background:rgba(45,95,170,.95); border-bottom-left-radius:4px; }
+  .bt-row.foe .bt-bubble span { background:rgba(48,48,58,.95); border-bottom-right-radius:4px; }
   /* 語氣選擇 */
   .ar-tone-chip { display:block; width:100%; margin-top:10px; padding:9px; background:var(--ar-card); border:1px solid var(--ar-line); border-radius:10px; color:var(--ar-dim); font-size:13px; cursor:pointer; }
   .ar-tone-chip b { color:#ffd23d; }
@@ -656,9 +657,11 @@ import Layout from '../layouts/Layout.astro';
       const card = side === 'my' ? myTeam[aMy] : foeTeam[aFoe];
       const av = card && card.photo ? `<img src="${esc(card.photo)}" alt=""/>` : (side === 'my' ? '🤖' : '👾');
       const t = $('bt-talk'); if (!t) return;
-      t.className = 'bt-talk on ' + (side === 'my' ? 'me' : 'foe');
-      t.innerHTML = `<div class="bt-bubble"><div class="bt-av">${av}</div><span>${esc(pickL(p))}</span></div>`;
-      clearTimeout((t as any)._tt); (t as any)._tt = setTimeout(() => t.classList.remove('on'), 1700);
+      const row = document.createElement('div'); row.className = 'bt-row ' + (side === 'my' ? 'me' : 'foe');
+      row.innerHTML = `<div class="bt-bubble"><div class="bt-av">${av}</div><span>${esc(pickL(p))}</span></div>`;
+      t.appendChild(row);
+      while (t.children.length > 2) t.removeChild(t.firstChild as Node);   // 超過 2 欄 → 最舊往上擠掉
+      setTimeout(() => { row.style.opacity = '0'; setTimeout(() => row.remove(), 220); }, 2800);   // 靜置後自動淡出
     };
     // 以「卡片實際位置」為基準算特效座標（永遠對準目標卡正中）
     const cen = (el: HTMLElement | null) => { const fr = $('bt-field')!.getBoundingClientRect(); if (!el) return { x: fr.width / 2, y: fr.height / 2 }; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; };
