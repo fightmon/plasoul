@@ -278,7 +278,7 @@ import Layout from '../layouts/Layout.astro';
   /* detail modal */
   .ar-modal { position:fixed; inset:0; z-index:55; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:20px; }
   .ar-modal[hidden]{ display:none; }
-  .ar-modal-box { width:100%; max-width:340px; background:var(--ar-card); border-radius:16px; overflow:hidden; border:2px solid var(--ar-line); }
+  .ar-modal-box { width:100%; max-width:340px; background:var(--ar-card); border-radius:16px; overflow:hidden; overflow-y:auto; max-height:90vh; -webkit-overflow-scrolling:touch; border:2px solid var(--ar-line); }
 
   /* 編成 */
   .ar-eq-box { width:100%; max-width:380px; background:var(--ar-card); border-radius:16px; border:2px solid var(--ar-line); max-height:88vh; display:flex; flex-direction:column; overflow:hidden; }
