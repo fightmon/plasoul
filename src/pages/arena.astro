@@ -453,15 +453,10 @@ import Layout from '../layouts/Layout.astro';
   const TIER_NAME = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'];
   const RANK = (s: number) => { let t = 'F'; for (let k = 0; k < TIER_MIN.length; k++) if ((s || 0) >= TIER_MIN[k]) t = TIER_NAME[k]; return t; };
 
-  // 放話語氣（5 套；之後可擴 16）
-  const TONES: any = {
-    hot: { name: '熱血', atk: ['上啊！', '全力衝刺！', '燃燒吧！', '看我的！'], crit: ['必殺！', '全彈發射！', '轟掉你！'], dodge: ['這點程度傷不了我！', '太天真了！'], ult: ['天地烈猛斬！', '燃燒殆盡吧！'] },
-    cool: { name: '冷靜', atk: ['鎖定完畢。', '開火。', '計算無誤。', '就是現在。'], crit: ['命中要害。', '一擊足矣。', '結束了。'], dodge: ['早已預判。', '徒勞。', '看穿了。'], ult: ['奧義・解放。', '終結程序，啟動。'] },
-    evil: { name: '腹黑', atk: ['正合我意～', '乖乖中計吧。', '嘻嘻，上鉤了。'], crit: ['這就是你的下場♪', '痛嗎？真可惜～'], dodge: ['哎呀，沒打中呢～', '你太可愛了。'], ult: ['陪我玩到最後吧♪', '絕望的滋味如何？'] },
-    chuni: { name: '中二', atk: ['黑暗之刃，飲血！', '吾名之下，臣服吧！', '禁忌之力，解放！'], crit: ['這就是真正的力量！', '黑炎，吞噬一切！'], dodge: ['哼，雕蟲小技。', '我的結界無懈可擊。'], ult: ['終焉之刻——降臨！', '沉睡的力量，覺醒吧！'] },
-    cute: { name: '可愛', atk: ['嘿咻～接招！', '啦啦啦～打你囉！', '咻咻咻！'], crit: ['碰！中啦～', '耶！超痛的吧？'], dodge: ['咦～沒打到耶～', '嘿嘿，閃過啦！'], ult: ['必殺技～發射！', '看我的大絕招～！'] },
-  };
-  const TONE_KEYS = ['hot', 'cool', 'evil', 'chuni', 'cute'];
+  // 放話語氣：資料化（/data/tones.json 按需載入；之後可擴到上百種）
+  let TONES: any = { hot: { name: '熱血', atk: ['上啊！', '看我的！'], crit: ['必殺！'], dodge: ['太天真了！'], ult: ['全力解放！'] } };  // 最小 fallback
+  let TONE_KEYS: string[] = ['hot'];
+  fetch('/data/tones.json').then((r) => (r.ok ? r.json() : null)).then((d) => { if (d && typeof d === 'object') { TONES = d; TONE_KEYS = Object.keys(d); } }).catch(() => {});
   const getTone = () => { try { const t = localStorage.getItem('ps_tone'); return t && TONES[t] ? t : 'hot'; } catch { return 'hot'; } };
   const setTone = (t: string) => { try { localStorage.setItem('ps_tone', t); } catch {} };
   const toneName = (t: string) => TONES[t] ? TONES[t].name : '熱血';
