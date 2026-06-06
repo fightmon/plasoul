@@ -353,6 +353,28 @@ import Layout from '../layouts/Layout.astro';
   .bt-banner { position:absolute; left:0; right:0; top:44%; text-align:center; font-size:22px; font-weight:900; color:#ffd23d; text-shadow:0 2px 12px #000; opacity:0; transform:scale(.6); transition:opacity .2s, transform .2s; z-index:8; pointer-events:none; }
   .bt-banner.on { opacity:1; transform:scale(1); }
   .bt-skip { display:block; margin:0 auto 8px; background:transparent; border:1px solid var(--ar-line); color:var(--ar-dim); padding:7px 18px; border-radius:999px; font-size:12px; cursor:pointer; }
+
+  /* === fxlab 招式移植特效 === */
+  .bt-ring { position:absolute; width:48px; height:48px; border:3px solid #fff; border-radius:50%; opacity:.95; transform:translate(-50%,-50%) scale(.2); animation:bt-ringk .6s ease-out forwards; }
+  .bt-ring.big { width:60px; height:60px; }
+  @keyframes bt-ringk { to { transform:translate(-50%,-50%) scale(3.2); opacity:0; } }
+  .bt-flash { position:absolute; width:80px; height:80px; border-radius:50%; transform:translate(-50%,-50%) scale(.4); opacity:.9; background:radial-gradient(circle,#fff,transparent 68%); animation:bt-flashk .32s ease-out forwards; }
+  .bt-flash.big { width:120px; height:120px; } .bt-flash.huge { width:175px; height:175px; }
+  @keyframes bt-flashk { to { transform:translate(-50%,-50%) scale(1.5); opacity:0; } }
+  .bt-particle { position:absolute; width:7px; height:7px; border-radius:50%; transform:translate(-50%,-50%); }
+  .bt-smoke { position:absolute; border-radius:50%; background:radial-gradient(circle,rgba(214,218,228,.82),rgba(190,194,205,.4) 55%,transparent 72%); }
+  .bt-muzzle { position:absolute; width:26px; height:26px; border-radius:50%; transform:translate(-50%,-50%) scale(.5); opacity:.9; animation:bt-muzk .25s ease-out forwards; }
+  .bt-muzzle.big { width:42px; height:42px; }
+  @keyframes bt-muzk { to { transform:translate(-50%,-50%) scale(1.4); opacity:0; } }
+  .bt-ap { position:absolute; width:26px; height:64px; border:3px solid #3aa0ff; border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 14px currentColor; color:#3aa0ff; animation:bt-apk .5s ease-out forwards; }
+  .bt-ap.big { width:38px; height:92px; }
+  .bt-ap::before { content:''; position:absolute; left:50%; top:50%; width:12px; height:12px; border-radius:50%; background:#fff; transform:translate(-50%,-50%); box-shadow:0 0 10px #fff; }
+  @keyframes bt-apk { 0%{opacity:.3; transform:translate(-50%,-50%) scale(.25);} 42%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) scale(1);} }
+  .bt-ball { position:absolute; width:18px; height:18px; border-radius:50%; transform:translate(-50%,-50%); }
+  .bt-ball.big { width:28px; height:28px; }
+  .bt-bolt { position:absolute; width:12px; height:12px; border-radius:50%; transform:translate(-50%,-50%); background:radial-gradient(circle,#fff,#ffd24d); box-shadow:0 0 8px #ffd24d; }
+  .bt-arc path { fill:none; stroke:#fff; stroke-width:7; stroke-linecap:round; filter:drop-shadow(0 0 6px #9bdcff) drop-shadow(0 0 12px #fff); stroke-dasharray:210; stroke-dashoffset:210; animation:bt-draw .45s ease-out forwards; }
+  @keyframes bt-draw { 0%{stroke-dashoffset:210;opacity:1;} 55%{stroke-dashoffset:0;opacity:1;} 100%{stroke-dashoffset:0;opacity:0;} }
   .ar-bt-result { text-align:center; font-size:24px; font-weight:800; margin:12px 0 6px; }
   .ar-bt-result.win { color:#ffd23d; } .ar-bt-result.lose { color:#9aa3bd; }
   .ar-bt-rw { text-align:center; font-size:14px; margin-bottom:12px; }
@@ -547,17 +569,76 @@ import Layout from '../layouts/Layout.astro';
     const missHop = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('mhop'); setTimeout(() => u && u.classList.remove('mhop'), 440); } };
     const hitCard = (side: string, k: number) => { const u = U(side, k); if (u) { u.classList.add('hit'); setTimeout(() => u && u.classList.remove('hit'), 420); } };
     const applyHit = (defSide: string, defK: number, h: any) => { if (!h) return; const defEl = U(defSide, defK); if (h.dodge) { dmgNum(defEl, 'MISS', 'miss'); return; } hitCard(defSide, defK); dmgNum(defEl, '-' + h.dmg + (h.crit ? '!' : ''), h.crit ? 'crit' : (h.block ? 'block' : '')); };
+    // ===== fxlab 招式移植：特效原語 =====
+    const addFx = (cls: string, life: number) => { const n = document.createElement('div'); n.className = cls; $('bt-fx')!.appendChild(n); if (life) setTimeout(() => n.remove(), life); return n; };
+    const fwdOf = (s: string) => s === 'my' ? 1 : -1;
+    const frontPt = (elm: HTMLElement | null, side: string) => { const c = cen(elm); if (!elm) return c; const r = elm.getBoundingClientRect(); return { x: c.x + fwdOf(side) * (r.width / 2 - 24), y: c.y }; };
+    const missPt = (b: any, side: string) => { const fr = $('bt-field')!.getBoundingClientRect(); return { x: side === 'my' ? fr.width + 80 : -80, y: b.y - 12 }; };
+    const ringFx = (x: number, y: number, color: string, big: boolean) => { const n = addFx('bt-ring' + (big ? ' big' : ''), 640); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; };
+    const burstFx = (x: number, y: number, color: string, big: boolean) => { ringFx(x, y, color, big); const f = addFx('bt-flash' + (big ? ' big' : ''), 340); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; };
+    const flashFx = (x: number, y: number, color: string) => { const f = addFx('bt-flash huge', 360); f.style.left = x + 'px'; f.style.top = y + 'px'; f.style.background = 'radial-gradient(circle,#fff 12%,' + color + ' 46%,transparent 72%)'; ringFx(x, y, '#fff', true); };
+    const partsFx = (x: number, y: number, color: string, num: number, mul: number) => { const m = mul || 1; for (let k = 0; k < num; k++) { const ang = Math.random() * Math.PI * 2; const dist = (44 + Math.random() * 64) * m; const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist; const sz = 5 + Math.random() * 5; const p = addFx('bt-particle', 620); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = color; p.style.boxShadow = '0 0 7px ' + color; p.animate([{ transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px),calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 540, easing: 'ease-out', fill: 'forwards' }); } };
+    const partsDir = (x: number, y: number, dir: number, color: string, num: number) => { for (let k = 0; k < num; k++) { const ang = (dir + (Math.random() * 70 - 35)) * Math.PI / 180; const dist = 38 + Math.random() * 56; const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist; const sz = 4 + Math.random() * 5; const p = addFx('bt-particle', 560); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = color; p.style.boxShadow = '0 0 6px ' + color; p.animate([{ transform: 'translate(-50%,-50%) scale(1.1)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px),calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 520, easing: 'ease-out', fill: 'forwards' }); } };
+    const smokeFx = (x: number, y: number, side: string, big: boolean) => { const back = -fwdOf(side); const cnt = big ? 11 : 6; for (let k = 0; k < cnt; k++) { const s = addFx('bt-smoke', 900); const dx = back * (16 + Math.random() * (big ? 78 : 48)) + (Math.random() * 22 - 11); const dy = (Math.random() * (big ? 66 : 44) - (big ? 33 : 22)); const sz = (big ? 22 : 16) + Math.random() * (big ? 28 : 18); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.width = sz + 'px'; s.style.height = sz + 'px'; s.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: .78 }, { transform: 'translate(calc(-50% + ' + dx + 'px),calc(-50% + ' + dy + 'px)) scale(2)', opacity: 0 }], { duration: 720 + Math.random() * 240, easing: 'ease-out', fill: 'forwards' }); } };
+    const muzzleFx = (elm: HTMLElement | null, side: string, big: boolean, color?: string) => { const p = frontPt(elm, side); const col = color || (side === 'my' ? '#3aa0ff' : '#ff5a5a'); const m = addFx('bt-muzzle' + (big ? ' big' : ''), 260); m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; m.style.background = 'radial-gradient(circle,#fff,' + col + ' 55%,transparent 74%)'; };
+    const apFx = (x: number, y: number, color: string, big: boolean) => { const n = addFx('bt-ap' + (big ? ' big' : ''), 540); n.style.left = x + 'px'; n.style.top = y + 'px'; n.style.borderColor = color; (n.style as any).color = color; };
+    const beamPts = (a: any, b: any, big: boolean, side: string) => { const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 16 : 6; const n = addFx('bt-laser ' + (side === 'my' ? 'l-my' : 'l-foe') + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; };
+    const arcFx = (c: any, big: boolean) => { const size = big ? 150 : 110; const ns = 'http://www.w3.org/2000/svg'; const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('class', 'bt-arc'); svg.setAttribute('width', String(size)); svg.setAttribute('height', String(size)); svg.setAttribute('viewBox', '0 0 100 100'); svg.style.position = 'absolute'; const p = document.createElementNS(ns, 'path'); p.setAttribute('d', 'M 78 16 A 60 60 0 0 0 22 84'); svg.appendChild(p); svg.style.left = c.x + 'px'; svg.style.top = c.y + 'px'; svg.style.transform = 'translate(-50%,-50%)'; $('bt-fx')!.appendChild(svg); setTimeout(() => svg.remove(), 540); };
+
+    // ===== 招式（純視覺，回傳命中時間 ms）=====
+    const mvRanged = (mv: string, atkSide: string, atkK: number, defSide: string, defK: number, big: boolean, miss: boolean): number => {
+      const aEl = U(atkSide, atkK), dEl = U(defSide, defK); const a = frontPt(aEl, atkSide), b = cen(dEl); const col = atkSide === 'my' ? '#3aa0ff' : '#ff5a5a'; const dir = atkSide === 'my' ? 0 : 180;
+      if (mv === 'cannon') {
+        muzzleFx(aEl, atkSide, true, '#ffd24d'); smokeFx(a.x, a.y, atkSide, big);
+        const t = miss ? missPt(b, atkSide) : b; const bcol = atkSide === 'my' ? '#7fd0ff' : '#ff8a8a';
+        const ball = addFx('bt-ball' + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px'; ball.style.background = 'radial-gradient(circle,#fff,' + bcol + ')'; ball.style.boxShadow = '0 0 14px ' + bcol;
+        const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (t.x - a.x) + 'px),calc(-50% + ' + (t.y - a.y) + 'px)) scale(1)' }], { duration: 300, easing: 'ease-in' });
+        an.onfinish = () => { ball.remove(); if (!miss) { burstFx(b.x, b.y, '#ffd24d', big); partsFx(b.x, b.y, '#ffd24d', big ? 18 : 10, big ? 1 : .55); if (big) flashFx(b.x, b.y, '#ffd24d'); } };
+        return 300;
+      }
+      if (mv === 'shotgun') {
+        const pellets = big ? 5 : 3; const sx = a.x + (b.x - a.x) * 0.5, sy = a.y + (b.y - a.y) * 0.5;
+        muzzleFx(aEl, atkSide, big, '#ffd24d'); smokeFx(a.x, a.y, atkSide, big);
+        const dr = dEl ? dEl.getBoundingClientRect() : null; const fr = $('bt-field')!.getBoundingClientRect();
+        const ball = addFx('bt-ball', 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px'; ball.style.background = 'radial-gradient(circle,#fff,#ffd24d)'; ball.style.boxShadow = '0 0 12px #ffd24d';
+        const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (sx - a.x) + 'px),calc(-50% + ' + (sy - a.y) + 'px)) scale(1)' }], { duration: 220, easing: 'linear' });
+        an.onfinish = () => { ball.remove(); ringFx(sx, sy, '#ffd24d', false);
+          for (let k = 0; k < pellets; k++) { let tx: number, ty: number; if (miss) { const mp = missPt(b, atkSide); tx = mp.x + (Math.random() * 40 - 20); ty = mp.y + (Math.random() * 40 - 20); } else if (dr) { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.18 + Math.random() * 0.64); } else { tx = b.x; ty = b.y; }
+            const p = addFx('bt-bolt', 0); p.style.left = sx + 'px'; p.style.top = sy + 'px'; const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - sx) + 'px),calc(-50% + ' + (ty - sy) + 'px))' }], { duration: 240, easing: 'linear' }); pa.onfinish = () => { p.remove(); if (!miss) { ringFx(tx, ty, '#ffd24d', false); partsFx(tx, ty, '#ffd24d', 5, .5); } };
+          }
+          if (!miss && big) setTimeout(() => flashFx(b.x, b.y, '#ffd24d'), 230);
+        };
+        return 480;
+      }
+      // laser（預設）
+      muzzleFx(aEl, atkSide, false, col); apFx(a.x, a.y, col, big);
+      timers.push(setTimeout(() => beamPts(a, miss ? missPt(b, atkSide) : b, big, atkSide), 120));
+      if (!miss) timers.push(setTimeout(() => partsDir(b.x, b.y, dir, col, big ? 12 : 8), 360));
+      return 360;
+    };
+    const mvMelee = (mv: string, atkSide: string, atkK: number, defSide: string, defK: number, big: boolean, miss: boolean, ratio: number): number => {
+      lungeTo(atkSide, atkK, defSide, defK, miss ? 0.58 : ratio);
+      const dEl = U(defSide, defK);
+      if (!miss) timers.push(setTimeout(() => { const c = cen(dEl);
+        if (mv === 'arc') arcFx(c, big);
+        else if (mv === 'cross') { slashFx(dEl, big); setTimeout(() => ringFx(c.x, c.y, '#ffb13d', true), 60); }
+        else if (mv === 'impact') { ringFx(c.x, c.y, '#fff', true); setTimeout(() => ringFx(c.x, c.y, '#ffd24d', true), 90); }
+        else slashFx(dEl, big);
+      }, 200));
+      return 320;
+    };
+    const RANGED = ['laser', 'cannon', 'shotgun'];
+    const MELEE = ['slash', 'arc', 'cross', 'impact'];
     const attack = (atkSide: string, atkType: string, atkK: number, defSide: string, defK: number, h: any, meleeRatio = 0.82) => {
       const miss = !!(h && h.dodge);
       const big = !!(h && h.crit);
-      const attEl = U(atkSide, atkK), defEl = U(defSide, defK);
-      let impact = 240;
-      if (atkType === 'ranged') { laserFx(attEl, defEl, big, atkSide, false, miss); impact = 240; }
-      else if (atkType === 'melee') { lungeTo(atkSide, atkK, defSide, defK, miss ? 0.58 : meleeRatio); if (!miss) timers.push(setTimeout(() => slashFx(defEl, big), 200)); impact = 320; }
-      else { laserFx(attEl, defEl, big, atkSide, false, miss); impact = 240; }
-      if (miss) timers.push(setTimeout(() => missHop(defSide, defK), atkType === 'melee' ? 170 : 150));
-      // 命中瞬間才結算：扣血數字 + 震動（MISS 不震動、不紅染）
-      timers.push(setTimeout(() => { if (big && !miss) shake(); applyHit(defSide, defK, h); }, impact));
+      const defEl = U(defSide, defK); const dir = atkSide === 'my' ? 0 : 180;
+      let impact = 320;
+      if (atkType === 'ranged') impact = mvRanged(RANGED[Math.floor(Math.random() * RANGED.length)], atkSide, atkK, defSide, defK, big, miss);
+      else if (atkType === 'melee') impact = mvMelee(MELEE[Math.floor(Math.random() * MELEE.length)], atkSide, atkK, defSide, defK, big, miss, meleeRatio);
+      else impact = mvRanged('laser', atkSide, atkK, defSide, defK, big, miss);
+      if (miss) timers.push(setTimeout(() => missHop(defSide, defK), Math.max(0, impact - 130)));
+      timers.push(setTimeout(() => { if (big && !miss) shake(); applyHit(defSide, defK, h); if (!miss && atkType === 'melee') partsDir(cen(defEl).x, cen(defEl).y, dir, '#ffd24d', big ? 8 : 5); }, impact));
       return impact;
     };
     const end = () => {
