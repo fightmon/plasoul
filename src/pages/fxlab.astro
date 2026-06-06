@@ -14,32 +14,36 @@
 </head>
 <body>
   <div class="fl-wrap">
-    <div class="fl-sticky">
-      <div class="fl-top">
-        <a class="fl-back" href="/arena/">← 競技場</a>
-        <span class="fl-title">招式實驗室</span>
-        <button class="fl-tg" id="fl-mode">1 機 ▢</button>
-        <button class="fl-tg" id="fl-dir">攻方：我方 ▶</button>
-      </div>
+    <div class="fl-top">
+      <a class="fl-back" href="/arena/">← 競技場</a>
+      <span class="fl-title">招式實驗室</span>
+      <button class="fl-tg" id="fl-dir">攻方：我方 ▶</button>
+    </div>
 
+    <div class="fl-stage" id="fl-stage">
+      <div class="fl-stars"></div>
+      <div class="fl-hd">
+        <div class="side"><div class="fl-pname">我方</div><div class="fl-bar"><i></i></div></div>
+        <div class="fl-round">VS</div>
+        <div class="side"><div class="fl-pname" style="text-align:right">敵方</div><div class="fl-bar foe"><i></i></div></div>
+      </div>
       <div class="fl-field" id="fl-field">
         <div class="fl-darken" id="fl-darken"></div>
         <div class="fl-u my-side" data-i="0" id="fl-my-0"><div class="fl-noimg t-my">🤖</div></div>
-        <div class="fl-u my-side" data-i="1" id="fl-my-1"><div class="fl-noimg t-my">🤖</div><span class="fl-name">我方</span></div>
+        <div class="fl-u my-side active" data-i="1" id="fl-my-1"><div class="fl-noimg t-my">🤖</div><span class="fl-name">我方</span></div>
         <div class="fl-u my-side" data-i="2" id="fl-my-2"><div class="fl-noimg t-my">🤖</div></div>
         <div class="fl-u foe-side" data-i="0" id="fl-foe-0"><div class="fl-noimg t-foe">👾</div></div>
-        <div class="fl-u foe-side" data-i="1" id="fl-foe-1"><div class="fl-noimg t-foe">👾</div><span class="fl-name">敵方</span></div>
+        <div class="fl-u foe-side active" data-i="1" id="fl-foe-1"><div class="fl-noimg t-foe">👾</div><span class="fl-name">敵方</span></div>
         <div class="fl-u foe-side" data-i="2" id="fl-foe-2"><div class="fl-noimg t-foe">👾</div></div>
         <div class="fl-fx" id="fl-fx"></div>
         <div class="fl-banner" id="fl-banner"></div>
       </div>
+    </div>
 
-      <div class="fl-toggles">
-        <label class="fl-chk"><input type="checkbox" id="fl-crit" /> 暴擊</label>
-        <label class="fl-chk"><input type="checkbox" id="fl-miss" /> MISS</label>
-        <button class="fl-act" id="fl-rand">🎲 隨機</button>
-        <button class="fl-act" id="fl-seq">▶ 依序</button>
-      </div>
+    <div class="fl-toggles">
+      <label class="fl-chk"><input type="checkbox" id="fl-crit" /> 暴擊</label>
+      <label class="fl-chk"><input type="checkbox" id="fl-miss" /> MISS</label>
+      <span class="fl-hint2">點下面招式 → 上方場景演示</span>
     </div>
 
     <div class="fl-cats">
@@ -71,7 +75,7 @@
       </div>
 
       <div class="fl-cat">
-        <button class="fl-cat-h">閃避類（受攻擊方示範）<i>▾</i></button>
+        <button class="fl-cat-h">閃避類（對方先攻 → 閃避 → 回擊）<i>▾</i></button>
         <div class="fl-grid">
           <button class="fl-btn" data-fx="dduck">下蹲閃</button>
           <button class="fl-btn" data-fx="dback">後撤閃</button>
@@ -83,49 +87,41 @@
         </div>
       </div>
 
-      <div class="fl-cat">
-        <button class="fl-cat-h">🌟 大絕招（自動切 3 機）<i>▾</i></button>
-        <div class="fl-grid">
-          <button class="fl-btn fl-btn-ult" data-fx="ultg">通用必殺</button>
-          <button class="fl-btn fl-btn-ult" data-fx="ultr">全射・總軌道炮擊</button>
-          <button class="fl-btn fl-btn-ult" data-fx="ultm">全近・超絕一閃</button>
-          <button class="fl-btn fl-btn-ult" data-fx="ulte">全閃・殘影殲滅</button>
-        </div>
-      </div>
     </div>
 
-    <p class="fl-hint">舞台固定在上方，按下面任何招都看得到。勾「暴擊／MISS」看不同狀態；大絕招會自動切到 3 機、用該天性的簽名演出。</p>
+    <p class="fl-hint">場景與真實戰鬥同款（星空＋血條＋小隊叢集）。閃避類會先由對方射擊、再閃避回擊。勾「暴擊／MISS」看不同狀態。大絕招暫時隱藏。</p>
   </div>
 
   <style is:global>
     * { box-sizing: border-box; }
     body { margin: 0; background: #07090f; color: #e8ecf5; font-family: -apple-system, "Noto Sans TC", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-    .fl-wrap { max-width: 520px; margin: 0 auto; padding: 0 12px 40px; }
-
-    /* 固定舞台 */
-    .fl-sticky { position: sticky; top: 0; z-index: 30; background: #07090f; padding: 8px 0; }
-    .fl-top { display: flex; align-items: center; gap: 8px; padding: 2px 2px 8px; flex-wrap: wrap; }
+    .fl-wrap { max-width: 560px; margin: 0 auto; padding: 0 0 40px; }
+    .fl-top { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
     .fl-back { color: #9fb0d0; text-decoration: none; font-size: 13px; }
     .fl-title { font-weight: 800; font-size: 15px; }
-    .fl-tg { background: #18203a; color: #cfe; border: 1px solid #2c3a5e; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer; }
-    .fl-tg#fl-dir { margin-left: auto; }
-    .fl-tg.on { background: linear-gradient(135deg, #3b82f6, #1e50e5); border-color: #5b86ff; }
+    .fl-tg { background: #18203a; color: #cfe; border: 1px solid #2c3a5e; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: auto; }
 
-    .fl-field { position: relative; height: clamp(210px, 34vh, 300px); background: radial-gradient(circle at 50% 45%, #1a2447, #070a14); border-radius: 14px; overflow: hidden; border: 1px solid #20294a; }
+    /* 真實戰鬥同款場景 */
+    .fl-stage { position: relative; width: 100%; height: 58vh; min-height: 360px; background: radial-gradient(circle at 50% 40%, #16223f 0%, #0a0e1c 62%, #060812 100%); overflow: hidden; }
+    .fl-stars { position: absolute; inset: 0; background-image: radial-gradient(1.5px 1.5px at 20% 28%, #fff, transparent), radial-gradient(1.5px 1.5px at 72% 18%, #cde, transparent), radial-gradient(1px 1px at 42% 70%, #fff, transparent), radial-gradient(1px 1px at 86% 58%, #bcf, transparent), radial-gradient(1px 1px at 58% 88%, #fff, transparent), radial-gradient(1px 1px at 12% 80%, #ace, transparent); opacity: .5; }
+    .fl-hd { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 10px; padding: 10px 14px; z-index: 6; }
+    .fl-hd .side { flex: 1; }
+    .fl-pname { font-size: 12px; font-weight: 700; color: #cdd7ee; margin-bottom: 5px; }
+    .fl-bar { height: 13px; background: rgba(0,0,0,.45); border-radius: 999px; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+    .fl-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #36d97b, #26b765); }
+    .fl-bar.foe i { background: linear-gradient(90deg, #e84b4b, #ff6b6b); }
+    .fl-round { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #4a5a85; background: rgba(10,14,28,.7); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #cdd7ee; flex-shrink: 0; }
+
+    .fl-field { position: absolute; inset: 0; z-index: 1; }
     .fl-field.fl-shake { animation: fl-shake .3s; }
     @keyframes fl-shake { 0%,100%{transform:translateX(0);} 20%{transform:translateX(-7px);} 40%{transform:translateX(7px);} 60%{transform:translateX(-5px);} 80%{transform:translateX(5px);} }
 
-    .fl-u { position: absolute; width: 84px; aspect-ratio: 3/4; top: 32%; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; background: #141c34; z-index: 2; transition: top .25s, left .25s, right .25s, transform .2s, opacity .2s, width .2s; }
-    .my-side { left: 9%; } .foe-side { right: 9%; }
-    /* 1 機：只留中間 */
-    .fl-field:not(.m3) .fl-u[data-i="0"], .fl-field:not(.m3) .fl-u[data-i="2"] { opacity: 0; pointer-events: none; }
-    .fl-field:not(.m3) .my-side[data-i="1"] { left: 13%; } .fl-field:not(.m3) .foe-side[data-i="1"] { right: 13%; }
-    /* 3 機 */
-    .fl-field.m3 .fl-u { width: 72px; }
-    .fl-field.m3 .fl-u[data-i="0"] { top: 5%; } .fl-field.m3 .fl-u[data-i="1"] { top: 35%; } .fl-field.m3 .fl-u[data-i="2"] { top: 65%; }
-    .fl-field.m3 .fl-u[data-i="1"] { box-shadow: 0 0 0 2px rgba(120,170,255,.55); }
+    .fl-u { position: absolute; width: 24%; max-width: 96px; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; background: #141c34; filter: brightness(.6); transition: top .3s cubic-bezier(.3,1.3,.5,1), left .3s, right .3s, transform .25s, opacity .2s, filter .3s; z-index: 2; }
+    .fl-u.active { filter: brightness(1); box-shadow: 0 0 0 2px rgba(120,170,255,.6), 0 6px 22px rgba(0,0,0,.5); z-index: 5; }
+    #fl-my-0 { top: 19%; left: 3%; } #fl-my-1 { top: 40%; left: 13%; } #fl-my-2 { top: 61%; left: 3%; }
+    #fl-foe-0 { top: 19%; right: 3%; } #fl-foe-1 { top: 40%; right: 13%; } #fl-foe-2 { top: 61%; right: 3%; }
 
-    .fl-noimg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+    .fl-noimg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 30px; }
     .fl-noimg.t-my { background: #1c3a66; } .fl-noimg.t-foe { background: #5a2a1c; }
     .fl-name { position: absolute; left: 0; right: 0; bottom: 0; font-size: 9px; text-align: center; background: rgba(0,0,0,.6); padding: 1px; }
 
@@ -235,13 +231,12 @@
     @keyframes fl-spink { 0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.5);} 40%{opacity:1;} 100%{opacity:0;transform:translate(-50%,-50%) rotate(330deg) scale(1.25);} }
 
     /* 控制 + 類別收合 */
-    .fl-toggles { display: flex; align-items: center; gap: 10px; margin: 10px 2px 0; flex-wrap: wrap; }
+    .fl-toggles { display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 12px; flex-wrap: wrap; }
     .fl-chk { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
     .fl-chk input { width: 18px; height: 18px; }
-    .fl-act { background: #1f2a48; color: #dfe; border: 1px solid #34466e; border-radius: 10px; padding: 7px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
-    .fl-act#fl-seq { margin-left: auto; }
+    .fl-hint2 { color: #7c8bab; font-size: 12px; margin-left: auto; }
 
-    .fl-cats { margin-top: 8px; }
+    .fl-cats { margin-top: 4px; padding: 0 12px; }
     .fl-cat { border: 1px solid #1c2748; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
     .fl-cat-h { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #10162c; color: #cdd7ee; border: none; padding: 12px 14px; font-size: 14px; font-weight: 800; cursor: pointer; }
     .fl-cat-h i { transition: transform .2s; font-style: normal; color: #6f80a8; }
@@ -252,7 +247,7 @@
     .fl-btn { background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; border-radius: 10px; padding: 13px 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
     .fl-btn:active { background: #233156; transform: scale(.97); }
     .fl-btn-ult { background: linear-gradient(135deg, #3a2a12, #2a1a30); border-color: #5a4a2a; color: #ffe6a8; }
-    .fl-hint { color: #7c8bab; font-size: 12px; line-height: 1.6; margin: 14px 2px 0; }
+    .fl-hint { color: #7c8bab; font-size: 12px; line-height: 1.6; margin: 14px 0 0; padding: 0 12px; }
   </style>
 
   <script>
@@ -268,8 +263,6 @@
     const cc = () => atk === 'my' ? 'c-my' : 'c-foe';
     const critOn = () => $('fl-crit').checked;
     const missOn = () => $('fl-miss').checked;
-    const live = () => field().classList.contains('m3') ? [0, 1, 2] : [1];
-    function setMode(on) { field().classList.toggle('m3', on); const b = $('fl-mode'); b.textContent = on ? '3 機 ▣' : '1 機 ▢'; b.classList.toggle('on', on); }
 
     function cen(el) { const fr = field().getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; }
     const cardCen = (s, i) => cen(card(s, i));
@@ -544,55 +537,33 @@
     function dSpin(el) { el.animate([{ transform: 'rotate(0) translateY(0)' }, { transform: 'rotate(360deg) translateY(-24px)', offset: .5 }, { transform: 'rotate(360deg) translateY(0)' }], { duration: 560, easing: 'ease-in-out' }); }
     function dRoll(el) { const a = awayOf(el); el.animate([{ transform: 'translateX(0) rotate(0)' }, { transform: 'translateX(' + (a * 50) + 'px) rotate(' + (a * 360) + 'deg)', offset: .5 }, { transform: 'translateX(0) rotate(0)' }], { duration: 600, easing: 'ease-in-out' }); }
 
-    // ---- 大絕招（自動切 3 機）----
-    function banner(t) { const b = $('fl-banner'); b.textContent = t; b.classList.add('on'); }
-    function ultStart(name) { setMode(true); $('fl-darken').classList.add('on'); banner(name); }
-    function ultEnd() { setTimeout(() => { $('fl-darken').classList.remove('on'); $('fl-banner').classList.remove('on'); }, 1800); }
-    function ultGeneric() {
-      ultStart('⚡ 覺醒・總攻擊'); const A = live(), o = oth();
-      A.forEach((i, k) => setTimeout(() => { const a = cardCen(atk, i); const dEl = card(o, Math.min(i, 2)); if (dEl) beam(a, cen(dEl), true, false); }, 120 + k * 140));
-      setTimeout(() => { [0, 1, 2].forEach((j) => { const e = card(o, j); if (e) { hitFx(e); dmg(e, '-' + (800 + j * 30) + '!', 'crit'); } }); shake(); setTimeout(shake, 90); }, 120 + A.length * 140 + 360);
-      ultEnd();
-    }
-    function ultRanged() {
-      ultStart('⚡ 全射・總軌道炮擊'); const A = live(), o = oth();
-      A.forEach((i, k) => setTimeout(() => {
-        const a = cardCen(atk, i); const g = add('fl-charge ' + cc(), 380); g.style.left = a.x + 'px'; g.style.top = a.y + 'px'; g.style.animationDuration = '.38s';
-        setTimeout(() => { [0, 1, 2].forEach((j) => { const dEl = card(o, j); if (dEl) hugeBeam(a, cen(dEl)); }); }, 360);
-      }, 200 + k * 170));
-      setTimeout(() => { [0, 1, 2].forEach((j) => { const e = card(o, j); if (e) { hitFx(e); burst(cen(e).x, cen(e).y, '#7fd0ff', true); dmg(e, '-' + (900 + j * 40) + '!!', 'crit'); } }); shake(); setTimeout(shake, 100); }, 200 + A.length * 170 + 420);
-      ultEnd();
-    }
-    function ultMelee() {
-      ultStart('⚡ 全近・超絕一閃'); const A = live(), o = oth();
-      A.forEach((i, k) => setTimeout(() => { const j = Math.min(i, 2); lungeIdx(atk, i, o, j, 0.82, () => { const dEl = card(o, j); if (dEl) { const c = cen(dEl); slashAt(c, true); hitFx(dEl); } }); }, 150 + k * 190));
-      setTimeout(() => { const e = card(o, 1) || card(o, 0); if (e) { const c = cen(e); slashAt(c, true); ring(c.x, c.y, '#ffb13d', true); burst(c.x, c.y, '#ffd24d', true); } [0, 1, 2].forEach((j) => { const x = card(o, j); if (x) { hitFx(x); dmg(x, '-' + (1000 + j * 50) + '!!', 'crit'); } }); shake(); setTimeout(shake, 100); }, 150 + A.length * 190 + 320);
-      ultEnd();
-    }
-    function ultEvade() {
-      ultStart('⚡ 全閃・殘影殲滅'); const A = live(), o = oth(); const away = atk === 'my' ? 1 : -1;
-      A.forEach((i, k) => setTimeout(() => {
-        const aEl = card(atk, i); for (let g = 0; g < 3; g++) setTimeout(() => spawnGhost(aEl, away * 22 * (g + 1), -6 * (g + 1)), g * 45);
-        const j = Math.min(i, 2); lungeIdx(atk, i, o, j, 0.85, () => { const dEl = card(o, j); if (dEl) { const c = cen(dEl); slashAt(c, false); hitFx(dEl); dmg(dEl, '-' + (600 + j * 20), ''); } });
-      }, 120 + k * 150));
-      setTimeout(() => { [0, 1, 2].forEach((j) => { const e = card(o, j); if (e) { hitFx(e); dmg(e, '-' + (500 + j * 40) + '!', 'crit'); } }); shake(); }, 120 + A.length * 150 + 360);
-      ultEnd();
+    // ---- 閃避完整流程：對方先射擊（落空）→ 防守方閃避 → 近身回擊 ----
+    function playDodge(dodgeFn) {
+      const aEl = atkEl(), dEl = defEl();
+      const a = frontEdge(aEl), b = cen(dEl);
+      const col = atk === 'my' ? '#3aa0ff' : '#ff5a5a';
+      muzzle(aEl); aperture(a.x, a.y, col, false);
+      setTimeout(() => beam(a, b, false, true), 170);                 // 對方射擊（miss=穿過去）
+      setTimeout(() => { dodgeFn(dEl); dmg(dEl, '閃避', 'miss'); }, 250);   // 閃避
+      setTimeout(() => {                                              // 近身回擊（防守方衝向攻方）
+        const big = critOn();
+        lungeIdx(oth(), 1, atk, 1, missOn() ? 0.5 : 0.78, () => {
+          if (missOn()) { missDodge(atkEl()); dmg(atkEl(), 'MISS', 'miss'); return; }
+          slashAt(cen(atkEl()), big); hitFx(atkEl());
+          dmg(atkEl(), '-' + (big ? '999!' : '350'), big ? 'crit' : ''); if (big) shake();
+        });
+      }, 640);
     }
 
     const FX = {
       laser: eLaser, cannon: eCannon, shotgun: eShotgun, shot: eShot, charge: eCharge, homing: eHoming, wave: eWave, snipe: eSnipe,
       slash: eSlash, arc: eArc, iai: eIai, thrust: eThrust, cross: eCross, spin: eSpin, impact: eImpact,
-      dduck: () => dDuck(defEl()), dback: () => dBack(defEl()), dside: () => dSide(defEl()), dafter: () => dAfter(defEl()), dblink: () => dBlink(defEl()), dspin: () => dSpin(defEl()), droll: () => dRoll(defEl()),
-      ultg: ultGeneric, ultr: ultRanged, ultm: ultMelee, ulte: ultEvade,
+      dduck: () => playDodge(dDuck), dback: () => playDodge(dBack), dside: () => playDodge(dSide), dafter: () => playDodge(dAfter), dblink: () => playDodge(dBlink), dspin: () => playDodge(dSpin), droll: () => playDodge(dRoll),
     };
-    const NAMES = Object.keys(FX);
 
     document.querySelectorAll('.fl-btn').forEach((b) => b.addEventListener('click', () => { const f = FX[b.dataset.fx]; if (f) f(); }));
     document.querySelectorAll('.fl-cat-h').forEach((h) => h.addEventListener('click', () => { const cat = h.parentElement; const was = cat.classList.contains('open'); document.querySelectorAll('.fl-cat').forEach((c) => c.classList.remove('open')); if (!was) cat.classList.add('open'); }));
-    $('fl-mode').addEventListener('click', () => setMode(!field().classList.contains('m3')));
     $('fl-dir').addEventListener('click', () => { atk = atk === 'my' ? 'foe' : 'my'; $('fl-dir').textContent = '攻方：' + (atk === 'my' ? '我方 ▶' : '敵方 ◀'); });
-    $('fl-rand').addEventListener('click', () => { FX[NAMES[Math.floor(Math.random() * NAMES.length)]](); });
-    $('fl-seq').addEventListener('click', () => { NAMES.forEach((n, i) => setTimeout(() => FX[n](), i * 1300)); });
   </script>
 </body>
 </html>

@@ -27,7 +27,7 @@ function hit(att, def, rpsWin) {
   if (R() < clamp(def.mob / F.dodgeDiv, 0, F.dodgeCap)) return { dmg: 0, reflect: Math.round(effAtk(att.atk) * F.dodgeCtr) };
   let d = effAtk(att.atk) - def.def * F.defMul; if (d < 5) d = 5;
   if (rpsWin) d *= F.rpsMul;
-  const critP = F.critFlat != null ? F.critFlat : clamp(att.atk / F.critDiv, 0, F.critCap);
+  const critP = (F.critFlat != null ? F.critFlat : clamp(att.atk / F.critDiv, 0, F.critCap)) + (att.critBonus || 0);
   if (R() < critP) d *= F.critMul;
   let reflect = 0;
   if (R() < clamp(def.def / F.blockDiv, 0, F.blockCap)) { d *= F.blockMul; reflect = Math.round(def.def * F.reflectMul); }
@@ -119,6 +119,49 @@ console.log('\n最佳公式參數：'); console.log(JSON.stringify(best.f));
 // 鎖定採用版（手選自搜尋結果，確定性複驗）
 const FINAL = { dodgeDiv: 1000, dodgeCap: 0.40, critFlat: 0.15, critDiv: 1700, critCap: 0.30, defMul: 0.30, critMul: 1.4, rpsMul: 1.40, blockDiv: 1500, blockCap: 0.35, blockMul: 0.5, reflectMul: 0.35, ultMul: 0.9, dodgeCtr: 0.6, atkThr: 150, atkMul: 0.30 };
 report('FINAL（採用版，固定）', FINAL);
+
+// ===== 5) 道具/欄位 影響量化（FINAL 公式，50% = 無優勢）=====
+F = FINAL;
+const mixed3 = () => [card('ranged', W.bal), card('melee', W.bal), card('evade', W.bal)];
+function equip(mods) {
+  return () => {
+    const ts = ['ranged', 'melee', 'evade']; const n = mods.slots || 3; const fl = [];
+    for (let i = 0; i < n; i++) { const c = card(ts[i % 3], W.bal); if (mods.atkAdd) c.atk += mods.atkAdd; if (mods.critBonus) c.critBonus = mods.critBonus; fl.push(c); }
+    if (mods.rareAtkOne) fl[0].atk += mods.rareAtkOne;
+    return fl;
+  };
+}
+const N5 = 120000;
+console.log('\n========== 5) 道具/欄位影響（我方裝備 vs 對方素裝均衡，50%=無優勢）==========');
+const items = [
+  ['素裝 vs 素裝（基準）', mixed3],
+  ['全卡 攻+10', equip({ atkAdd: 10 })],
+  ['全卡 攻+30', equip({ atkAdd: 30 })],
+  ['全卡 爆率+10%', equip({ critBonus: 0.10 })],
+  ['全卡 攻+10 且 爆+10%', equip({ atkAdd: 10, critBonus: 0.10 })],
+  ['單張好寶 攻+40', equip({ rareAtkOne: 40 })],
+  ['＋1 欄位（4 卡）', equip({ slots: 4 })],
+  ['＋2 欄位（5 卡）', equip({ slots: 5 })],
+];
+for (const [lab, mk] of items) console.log('  ' + pad(lab, 22) + (winRate(mk, mixed3, N5) * 100).toFixed(1) + '%');
+console.log('\n-- 你的問題：單張好寶(3格) vs 4格素裝 --');
+console.log('  ' + pad('好寶攻+40(3格) vs 4格', 22) + (winRate(equip({ rareAtkOne: 40 }), equip({ slots: 4 }), N5) * 100).toFixed(1) + '%');
+console.log('  ' + pad('好寶攻+80(3格) vs 4格', 22) + (winRate(equip({ rareAtkOne: 80 }), equip({ slots: 4 }), N5) * 100).toFixed(1) + '%');
+console.log('  ' + pad('3格素 vs 4格素', 22) + (winRate(mixed3, equip({ slots: 4 }), N5) * 100).toFixed(1) + '%');
+console.log('  ' + pad('4格素 vs 5格素', 22) + (winRate(equip({ slots: 4 }), equip({ slots: 5 }), N5) * 100).toFixed(1) + '%');
+
+// ===== 6) 母艦道具欄：塞滿中等道具的疊加差距（每欄=一個道具，輪流 攻+10%/爆+12%/HP+12%）=====
+function loadout(k) {
+  return () => {
+    let hpM = 1, atkM = 1, critA = 0;
+    for (let i = 0; i < k; i++) { const t = i % 3; if (t === 0) atkM += 0.10; else if (t === 1) critA += 0.12; else hpM += 0.12; }
+    return mixed3().map((c) => ({ ...c, hp: Math.round(c.hp * hpM), atk: Math.round(c.atk * atkM), critBonus: critA }));
+  };
+}
+console.log('\n========== 6) 母艦道具欄疊加（每欄=中等道具，vs 素裝，50%=無優勢）==========');
+for (const k of [1, 2, 3, 5]) console.log('  ' + pad(`裝 ${k} 個道具`, 22) + (winRate(loadout(k), mixed3, N5) * 100).toFixed(1) + '%');
+console.log('  ' + pad('5道具 vs 3道具', 22) + (winRate(loadout(5), loadout(3), N5) * 100).toFixed(1) + '%');
+console.log('  ' + pad('好寶3道具 vs 普通5道具', 22) + (winRate(loadout(3), loadout(5), N5) * 100).toFixed(1) + '%（換個角度：道具少但…還是看數量）');
 
 // === 4) 天梯爬升模擬：玩家固定 build，攻打靜態種子（種子分數不動）===
 console.log('\n=== 4) 天梯爬升（攻方限定 Elo，種子靜態）===');
