@@ -151,7 +151,7 @@
     .fl-flash { position: absolute; width: 80px; height: 80px; border-radius: 50%; transform: translate(-50%,-50%) scale(.4); opacity: .9; background: radial-gradient(circle,#fff,transparent 68%); animation: fl-flashk .32s ease-out forwards; }
     .fl-flash.big { width: 118px; height: 118px; }
     .fl-flash.huge { width: 180px; height: 180px; }
-    .fl-smoke { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(205,208,218,.6), transparent 70%); }
+    .fl-smoke { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(214,218,228,.85), rgba(190,194,205,.4) 55%, transparent 72%); }
     @keyframes fl-flashk { to { transform: translate(-50%,-50%) scale(1.5); opacity: 0; } }
     .fl-redtint { filter: brightness(1.1) saturate(2.2) sepia(.45) hue-rotate(-25deg); }
     .fl-particle { position: absolute; width: 7px; height: 7px; border-radius: 50%; transform: translate(-50%,-50%); }
@@ -262,7 +262,7 @@
     function burst(x, y, color, big) { const r = add('fl-ring', 680); r.style.left = x + 'px'; r.style.top = y + 'px'; if (color) r.style.borderColor = color; r.style.setProperty('--rs', big ? '4.4' : '3.4'); const f = add('fl-flash' + (big ? ' big' : ''), 340); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; }
     function critFlash(x, y, color) { const c = color || '#ffd24d'; const f = add('fl-flash huge', 380); f.style.left = x + 'px'; f.style.top = y + 'px'; f.style.background = 'radial-gradient(circle,#fff 12%,' + c + ' 46%,transparent 72%)'; ring(x, y, '#fff', true); setTimeout(() => ring(x, y, c, true), 90); setTimeout(() => ring(x, y, c, true), 180); }
     // 發射煙霧（往發射方向後方擴散，像炮筒噴煙）
-    function smoke(x, y) { const back = atk === 'my' ? -1 : 1; for (let k = 0; k < 6; k++) { const s = add('fl-smoke', 780); const dx = back * (16 + Math.random() * 46) + (Math.random() * 18 - 9); const dy = (Math.random() * 40 - 20); const sz = 14 + Math.random() * 18; s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.width = sz + 'px'; s.style.height = sz + 'px'; s.animate([{ transform: 'translate(-50%,-50%) scale(.5)', opacity: .55 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(1.8)', opacity: 0 }], { duration: 640 + Math.random() * 220, easing: 'ease-out', fill: 'forwards' }); } }
+    function smoke(x, y, big) { const back = atk === 'my' ? -1 : 1; const n = big ? 13 : 7; for (let k = 0; k < n; k++) { const s = add('fl-smoke', 1000); const dx = back * (18 + Math.random() * (big ? 90 : 56)) + (Math.random() * 26 - 13); const dy = (Math.random() * (big ? 80 : 50) - (big ? 40 : 25)); const sz = (big ? 24 : 17) + Math.random() * (big ? 34 : 22); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.width = sz + 'px'; s.style.height = sz + 'px'; s.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: .8 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(2.1)', opacity: 0 }], { duration: 760 + Math.random() * 320, easing: 'ease-out', fill: 'forwards' }); } }
     function flinch(el) { const fwd = atk === 'my' ? 1 : -1; el.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (fwd * 5) + 'px,1px)', offset: .4 }, { transform: 'translate(0,0)' }], { duration: 150, easing: 'ease-out' }); el.classList.add('fl-redtint'); setTimeout(() => el.classList.remove('fl-redtint'), 150); }
     function particles(x, y, color, count, mul) { const col = color || '#ffd24d'; const m2 = mul || 1; for (let k = 0; k < count; k++) { const ang = Math.random() * Math.PI * 2; const dist = (55 + Math.random() * 95) * m2; const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist; const sz = (6 + Math.random() * 8) * (m2 < 1 ? 0.8 : 1); const p = add('fl-particle', 780); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = col; p.style.boxShadow = '0 0 8px ' + col; p.animate([{ transform: 'translate(-50%,-50%) scale(1.3)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 560 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' }); } }
     function dmg(el, txt, cls) { if (!el) return; const c = cen(el); const n = add('fl-dmg ' + cls, 850); n.textContent = txt; n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; }
@@ -340,7 +340,7 @@
     }
     function eCannon() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 350);
-      recoil(atkEl(), 16); muzzle(atkEl(), true, '#ffd24d'); smoke(a.x, a.y);
+      recoil(atkEl(), 16); muzzle(atkEl(), true, '#ffd24d'); smoke(a.x, a.y, big);
       const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = mp ? mp.y : b.y;
       const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
       const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px)) scale(1)' }], { duration: 300, easing: 'ease-in' });
@@ -350,7 +350,7 @@
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const pellets = big ? 5 : 3;
       const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
       const splitX = a.x + (b.x - a.x) * 0.5, splitY = a.y + (b.y - a.y) * 0.5;   // 中途就爆開
-      recoil(atkEl(), 14); muzzle(atkEl(), big, '#ffd24d'); smoke(a.x, a.y); maybeDodge(defEl(), 480);
+      recoil(atkEl(), 14); muzzle(atkEl(), big, '#ffd24d'); smoke(a.x, a.y, big); maybeDodge(defEl(), 480);
       const ball = add('fl-ball ' + cc(), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
       const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - a.y) + 'px)) scale(1)' }], { duration: 220, easing: 'linear' });
       an.onfinish = () => {
@@ -400,6 +400,7 @@
       const big = critOn(); const a = frontEdge(atkEl()); const n = big ? 6 : 2; const back = atk === 'my' ? -1 : 1;
       const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
       const parts = splitDmg(big ? 999 : 350, n);
+      smoke(a.x, a.y, big);
       maybeDodge(defEl(), 570);
       let last = 0;
       for (let k = 0; k < n; k++) {
@@ -411,11 +412,10 @@
         const dur = 520 + k * 95;                                                  // 同時發射、飛行時間不同→錯開命中
         const m = add('fl-missile', 0); try { m.style.offsetPath = "path('M " + a.x + " " + a.y + " C " + c1x + " " + c1y + " " + c2x + " " + c2y + " " + tx + " " + ty + "')"; m.style.offsetRotate = 'auto'; } catch (e) {}
         const an = m.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: dur, easing: 'ease-in', fill: 'forwards' });
-        an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
+        an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(tx, ty, '#ff9a3d'); particles(tx, ty, '#ffb060', 8, 0.7); shake(); } } };
         last = Math.max(last, dur);
       }
       if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300);
-      else if (big) setTimeout(() => { const bc = { x: (dr.left - fr.left) + dr.width / 2, y: (dr.top - fr.top) + dr.height / 2 }; critFlash(bc.x, bc.y, '#ff9a3d'); particles(bc.x, bc.y, '#ffb060', 20, 1); shake(); }, last);
     }
     function eWave() {
       const big = critOn(); const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = big ? 5 : 3;
