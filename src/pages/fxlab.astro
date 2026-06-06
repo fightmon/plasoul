@@ -14,12 +14,6 @@
 </head>
 <body>
   <div class="fl-wrap">
-    <div class="fl-top">
-      <a class="fl-back" href="/arena/">← 競技場</a>
-      <span class="fl-title">招式實驗室</span>
-      <button class="fl-tg" id="fl-dir">攻方：我方 ▶</button>
-    </div>
-
     <div class="fl-stage" id="fl-stage">
       <div class="fl-stars"></div>
       <div class="fl-hd">
@@ -40,69 +34,30 @@
       </div>
     </div>
 
-    <div class="fl-toggles">
-      <label class="fl-chk"><input type="checkbox" id="fl-crit" /> 暴擊</label>
-      <label class="fl-chk"><input type="checkbox" id="fl-miss" /> MISS</label>
-      <span class="fl-hint2">點下面招式 → 上方場景演示</span>
+    <div class="fl-panel">
+      <div class="fl-ctrl">
+        <div class="fl-tabs">
+          <button class="fl-tab on" data-cat="ranged">射</button>
+          <button class="fl-tab" data-cat="melee">近</button>
+          <button class="fl-tab" data-cat="evade">閃</button>
+        </div>
+        <div class="fl-states">
+          <button class="fl-st" id="fl-crit" title="暴擊">暴</button>
+          <button class="fl-st" id="fl-miss" title="MISS">M</button>
+          <button class="fl-st" id="fl-dir" title="守=對方攻擊">守</button>
+        </div>
+      </div>
+      <div class="fl-moves" id="fl-moves"></div>
     </div>
-
-    <div class="fl-cats">
-      <div class="fl-cat open">
-        <button class="fl-cat-h">射擊類 <i>▾</i></button>
-        <div class="fl-grid">
-          <button class="fl-btn" data-fx="laser">雷射光束</button>
-          <button class="fl-btn" data-fx="cannon">炮彈</button>
-          <button class="fl-btn" data-fx="shotgun">散彈槍</button>
-          <button class="fl-btn" data-fx="shot">散彈連發</button>
-          <button class="fl-btn" data-fx="charge">蓄力光束砲</button>
-          <button class="fl-btn" data-fx="homing">追蹤飛彈</button>
-          <button class="fl-btn" data-fx="wave">能量波</button>
-          <button class="fl-btn" data-fx="snipe">狙擊</button>
-        </div>
-      </div>
-
-      <div class="fl-cat">
-        <button class="fl-cat-h">斬擊／近身類 <i>▾</i></button>
-        <div class="fl-grid">
-          <button class="fl-btn" data-fx="slash">直線斬</button>
-          <button class="fl-btn" data-fx="arc">月牙弧斬</button>
-          <button class="fl-btn" data-fx="iai">居合連斬</button>
-          <button class="fl-btn" data-fx="thrust">突刺</button>
-          <button class="fl-btn" data-fx="cross">十字爆裂斬</button>
-          <button class="fl-btn" data-fx="spin">迴旋斬</button>
-          <button class="fl-btn" data-fx="impact">重擊衝撞</button>
-        </div>
-      </div>
-
-      <div class="fl-cat">
-        <button class="fl-cat-h">閃避類（對方先攻 → 閃避 → 回擊）<i>▾</i></button>
-        <div class="fl-grid">
-          <button class="fl-btn" data-fx="dduck">下蹲閃</button>
-          <button class="fl-btn" data-fx="dback">後撤閃</button>
-          <button class="fl-btn" data-fx="dside">側移閃</button>
-          <button class="fl-btn" data-fx="dafter">殘影閃</button>
-          <button class="fl-btn" data-fx="dblink">瞬移閃</button>
-          <button class="fl-btn" data-fx="dspin">旋身閃</button>
-          <button class="fl-btn" data-fx="droll">翻滾閃</button>
-        </div>
-      </div>
-
-    </div>
-
-    <p class="fl-hint">場景與真實戰鬥同款（星空＋血條＋小隊叢集）。閃避類會先由對方射擊、再閃避回擊。勾「暴擊／MISS」看不同狀態。大絕招暫時隱藏。</p>
   </div>
 
   <style is:global>
     * { box-sizing: border-box; }
     body { margin: 0; background: #07090f; color: #e8ecf5; font-family: -apple-system, "Noto Sans TC", system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-    .fl-wrap { max-width: 560px; margin: 0 auto; padding: 0 0 40px; }
-    .fl-top { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
-    .fl-back { color: #9fb0d0; text-decoration: none; font-size: 13px; }
-    .fl-title { font-weight: 800; font-size: 15px; }
-    .fl-tg { background: #18203a; color: #cfe; border: 1px solid #2c3a5e; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 700; cursor: pointer; margin-left: auto; }
+    .fl-wrap { max-width: 560px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 
-    /* 真實戰鬥同款場景 */
-    .fl-stage { position: relative; width: 100%; height: 58vh; min-height: 360px; background: radial-gradient(circle at 50% 40%, #16223f 0%, #0a0e1c 62%, #060812 100%); overflow: hidden; }
+    /* 真實戰鬥同款場景（佔滿上方剩餘空間）*/
+    .fl-stage { position: relative; flex: 1; min-height: 0; width: 100%; background: radial-gradient(circle at 50% 40%, #16223f 0%, #0a0e1c 62%, #060812 100%); overflow: hidden; }
     .fl-stars { position: absolute; inset: 0; background-image: radial-gradient(1.5px 1.5px at 20% 28%, #fff, transparent), radial-gradient(1.5px 1.5px at 72% 18%, #cde, transparent), radial-gradient(1px 1px at 42% 70%, #fff, transparent), radial-gradient(1px 1px at 86% 58%, #bcf, transparent), radial-gradient(1px 1px at 58% 88%, #fff, transparent), radial-gradient(1px 1px at 12% 80%, #ace, transparent); opacity: .5; }
     .fl-hd { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 10px; padding: 10px 14px; z-index: 6; }
     .fl-hd .side { flex: 1; }
@@ -230,24 +185,19 @@
     .fl-spin { position: absolute; width: 92px; height: 92px; border-radius: 50%; transform: translate(-50%,-50%); background: conic-gradient(from 0deg, transparent, #fff, transparent 55%); -webkit-mask: radial-gradient(transparent 54%, #000 56%); mask: radial-gradient(transparent 54%, #000 56%); animation: fl-spink .5s ease-out forwards; }
     @keyframes fl-spink { 0%{opacity:0;transform:translate(-50%,-50%) rotate(0) scale(.5);} 40%{opacity:1;} 100%{opacity:0;transform:translate(-50%,-50%) rotate(330deg) scale(1.25);} }
 
-    /* 控制 + 類別收合 */
-    .fl-toggles { display: flex; align-items: center; gap: 12px; margin: 0; padding: 10px 12px; flex-wrap: wrap; }
-    .fl-chk { font-size: 14px; display: inline-flex; align-items: center; gap: 5px; }
-    .fl-chk input { width: 18px; height: 18px; }
-    .fl-hint2 { color: #7c8bab; font-size: 12px; margin-left: auto; }
-
-    .fl-cats { margin-top: 4px; padding: 0 12px; }
-    .fl-cat { border: 1px solid #1c2748; border-radius: 12px; margin-bottom: 8px; overflow: hidden; }
-    .fl-cat-h { width: 100%; display: flex; align-items: center; justify-content: space-between; background: #10162c; color: #cdd7ee; border: none; padding: 12px 14px; font-size: 14px; font-weight: 800; cursor: pointer; }
-    .fl-cat-h i { transition: transform .2s; font-style: normal; color: #6f80a8; }
-    .fl-cat.open .fl-cat-h i { transform: rotate(180deg); }
-    .fl-cat:not(.open) .fl-grid { display: none; }
-    .fl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
-    @media (max-width: 360px) { .fl-grid { grid-template-columns: repeat(2, 1fr); } }
-    .fl-btn { background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; border-radius: 10px; padding: 13px 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
-    .fl-btn:active { background: #233156; transform: scale(.97); }
-    .fl-btn-ult { background: linear-gradient(135deg, #3a2a12, #2a1a30); border-color: #5a4a2a; color: #ffe6a8; }
-    .fl-hint { color: #7c8bab; font-size: 12px; line-height: 1.6; margin: 14px 0 0; padding: 0 12px; }
+    /* 底部控制面板（固定，不出框）*/
+    .fl-panel { flex-shrink: 0; background: #0b0f1c; border-top: 1px solid #1c2748; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
+    .fl-ctrl { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .fl-tabs { display: flex; gap: 6px; }
+    .fl-tab { width: 40px; height: 34px; border-radius: 9px; background: #141c34; border: 1px solid #2c3a5e; color: #cdd7ee; font-size: 16px; font-weight: 800; cursor: pointer; }
+    .fl-tab.on { background: linear-gradient(135deg, #3b82f6, #1e50e5); border-color: #5b86ff; color: #fff; }
+    .fl-states { display: flex; gap: 6px; margin-left: auto; }
+    .fl-st { width: 34px; height: 34px; border-radius: 9px; background: #141c34; border: 1px solid #2c3a5e; color: #8294b8; font-size: 15px; font-weight: 800; cursor: pointer; }
+    .fl-st.on { background: #e0a93b; border-color: #ffd27a; color: #1a1205; }
+    #fl-dir.on { background: #c0453b; border-color: #ff8a7a; color: #fff; }
+    .fl-moves { display: flex; flex-wrap: wrap; gap: 6px; }
+    .fl-mv { flex: 1 1 calc(20% - 6px); min-width: 52px; height: 42px; border-radius: 9px; background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .fl-mv:active { background: #233156; transform: scale(.96); }
   </style>
 
   <script>
@@ -261,8 +211,8 @@
     const atkEl = () => card(atk, 1);
     const defEl = () => card(oth(), 1);
     const cc = () => atk === 'my' ? 'c-my' : 'c-foe';
-    const critOn = () => $('fl-crit').checked;
-    const missOn = () => $('fl-miss').checked;
+    const critOn = () => $('fl-crit').classList.contains('on');
+    const missOn = () => $('fl-miss').classList.contains('on');
 
     function cen(el) { const fr = field().getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; }
     const cardCen = (s, i) => cen(card(s, i));
@@ -561,9 +511,27 @@
       dduck: () => playDodge(dDuck), dback: () => playDodge(dBack), dside: () => playDodge(dSide), dafter: () => playDodge(dAfter), dblink: () => playDodge(dBlink), dspin: () => playDodge(dSpin), droll: () => playDodge(dRoll),
     };
 
-    document.querySelectorAll('.fl-btn').forEach((b) => b.addEventListener('click', () => { const f = FX[b.dataset.fx]; if (f) f(); }));
-    document.querySelectorAll('.fl-cat-h').forEach((h) => h.addEventListener('click', () => { const cat = h.parentElement; const was = cat.classList.contains('open'); document.querySelectorAll('.fl-cat').forEach((c) => c.classList.remove('open')); if (!was) cat.classList.add('open'); }));
-    $('fl-dir').addEventListener('click', () => { atk = atk === 'my' ? 'foe' : 'my'; $('fl-dir').textContent = '攻方：' + (atk === 'my' ? '我方 ▶' : '敵方 ◀'); });
+    // 分類 → 招式列（每招 3 字內；射/近/閃）
+    const MOVES = {
+      ranged: [['laser', '雷射'], ['cannon', '炮彈'], ['shotgun', '散彈'], ['shot', '連發'], ['charge', '蓄力'], ['homing', '追蹤'], ['wave', '波動'], ['snipe', '狙擊']],
+      melee: [['slash', '直斬'], ['arc', '弧斬'], ['iai', '居合'], ['thrust', '突刺'], ['cross', '十字'], ['spin', '迴旋'], ['impact', '重擊']],
+      evade: [['dduck', '下蹲'], ['dback', '後撤'], ['dside', '側移'], ['dafter', '殘影'], ['dblink', '瞬移'], ['dspin', '旋身'], ['droll', '翻滾']],
+    };
+    function renderMoves(cat) {
+      const m = $('fl-moves');
+      m.innerHTML = MOVES[cat].map(([k, lab]) => '<button class="fl-mv" data-fx="' + k + '">' + lab + '</button>').join('');
+      m.querySelectorAll('.fl-mv').forEach((b) => b.addEventListener('click', () => { const f = FX[b.dataset.fx]; if (f) f(); }));
+    }
+    document.querySelectorAll('.fl-tab').forEach((t) => t.addEventListener('click', () => {
+      document.querySelectorAll('.fl-tab').forEach((x) => x.classList.remove('on'));
+      t.classList.add('on'); renderMoves(t.dataset.cat);
+    }));
+    renderMoves('ranged');
+
+    // 狀態鈕：0/1 切換（亮起=1）
+    $('fl-crit').addEventListener('click', () => $('fl-crit').classList.toggle('on'));
+    $('fl-miss').addEventListener('click', () => $('fl-miss').classList.toggle('on'));
+    $('fl-dir').addEventListener('click', () => { const on = $('fl-dir').classList.toggle('on'); atk = on ? 'foe' : 'my'; });   // 守=1 → 對方攻擊
   </script>
 </body>
 </html>
