@@ -262,6 +262,8 @@
     function dmg(el, txt, cls) { if (!el) return; const c = cen(el); const n = add('fl-dmg ' + cls, 850); n.textContent = txt; n.style.left = c.x + 'px'; n.style.top = c.y + 'px'; }
     function dmgPt(x, y, txt, cls) { const n = add('fl-dmg ' + cls, 850); n.textContent = txt; n.style.left = x + 'px'; n.style.top = y + 'px'; }
     function RI(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+    // 多發攻擊：把總傷害拆成 n 份小數字（總和剛好 = total）
+    function splitDmg(total, n) { const p = []; let rem = total; for (let k = 0; k < n; k++) { const left = n - k; if (left === 1) { p.push(rem); break; } let v = Math.max(1, Math.round((rem / left) * (0.6 + Math.random() * 0.8))); v = Math.min(v, rem - (left - 1)); p.push(v); rem -= v; } return p; }
     function hitFx(el) { if (!el) return; el.style.setProperty('--rec', el.id.indexOf('foe') >= 0 ? '13px' : '-13px'); el.classList.add('fl-hit'); setTimeout(() => el.classList.remove('fl-hit'), 420); }
     function missDodge(el) { el.style.setProperty('--hx', el.id.indexOf('foe') >= 0 ? '16px' : '-16px'); el.classList.add('fl-hop'); setTimeout(() => el.classList.remove('fl-hop'), 460); }
     function maybeDodge(el, impactDelay) { if (missOn()) setTimeout(() => missDodge(el), Math.max(0, impactDelay - 260)); }
@@ -316,13 +318,13 @@
     function eLaser() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const col = atk === 'my' ? '#3aa0ff' : '#ff5a5a';
       if (big) {
-        const fwd = atk === 'my' ? 1 : -1;
+        const fwd = atk === 'my' ? 1 : -1; const parts = splitDmg(999, 3);
         maybeDodge(defEl(), 560);
         for (let s = 0; s < 3; s++) {
           const oy = (s - 1) * 34; const sx = a.x + fwd * Math.random() * 30; const a2 = { x: sx, y: a.y + oy }, b2 = { x: b.x, y: a.y + oy };  // 上中下、橫向、起點 X 隨機
-          setTimeout(() => { aperture(a2.x, a2.y, col, false); setTimeout(() => beam(a2, b2, false, missOn()), 150); }, s * 130);
+          setTimeout(() => { aperture(a2.x, a2.y, col, false); setTimeout(() => { beam(a2, b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b.x, a.y + oy, '-' + parts[s] + '!', 'crit'); } }, 150); }, s * 130);
         }
-        setTimeout(() => resolve(defEl()), 680);
+        if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300); else setTimeout(shake, 700);
         return;
       }
       maybeDodge(defEl(), 490);
@@ -340,13 +342,14 @@
     }
     function eShot() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), Math.round((impact + 220) / 2) + 30);
+      const parts = splitDmg(critOn() ? 999 : 350, cnt);
       vibrate(atkEl(), impact);
       for (let k = 0; k < cnt; k++) setTimeout(() => {
         muzzle(atkEl(), false, '#ffd24d');
         const off = critOn() ? Math.sin(k * 0.85) * 36 : (k - (cnt - 1) / 2) * 10; const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = (mp ? mp.y : b.y) + off;
         const bo = add('fl-bolt' + (critOn() ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
         const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
-        an.onfinish = () => { bo.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + RI(critOn() ? 14 : 8, critOn() ? 28 : 16), critOn() ? 'crit' : ''); } };
+        an.onfinish = () => { bo.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (critOn() ? '!' : ''), critOn() ? 'crit' : ''); } };
       }, k * 55);
       if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 240);
       else if (critOn()) setTimeout(shake, impact);
@@ -368,6 +371,7 @@
     function eHoming() {
       const big = critOn(); const a = frontEdge(atkEl()); const n = big ? 6 : 2; const back = atk === 'my' ? -1 : 1;
       const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
+      const parts = splitDmg(big ? 999 : 350, n);
       maybeDodge(defEl(), 570);
       let last = 0;
       for (let k = 0; k < n; k++) {
@@ -379,10 +383,11 @@
         const dur = 520 + k * 95;                                                  // 同時發射、飛行時間不同→錯開命中
         const m = add('fl-missile', 0); try { m.style.offsetPath = "path('M " + a.x + " " + a.y + " C " + c1x + " " + c1y + " " + c2x + " " + c2y + " " + tx + " " + ty + "')"; m.style.offsetRotate = 'auto'; } catch (e) {}
         const an = m.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: dur, easing: 'ease-in', fill: 'forwards' });
-        an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(defEl()); } };
+        an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
         last = Math.max(last, dur);
       }
-      setTimeout(() => resolve(defEl()), last + 60);
+      if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300);
+      else if (big) setTimeout(shake, last);
     }
     function eWave() {
       const big = critOn(); const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = big ? 5 : 3; maybeDodge(defEl(), 520);
@@ -398,16 +403,17 @@
     }
     function eSnipe() {
       const big = critOn(); const b = cen(defEl()); maybeDodge(defEl(), 640);
-      const shots = big ? 3 : 1;
+      const shots = big ? 3 : 1; const parts = big ? splitDmg(999, 3) : null;
       for (let s = 0; s < shots; s++) {
         const cx = b.x + (s - (shots - 1) / 2) * 16, cy = b.y + (s - (shots - 1) / 2) * 18;
         const cr = add('fl-cross', 560); cr.style.left = cx + 'px'; cr.style.top = cy + 'px';
         setTimeout(() => {
           const a = frontEdge(atkEl()); beam(a, { x: cx, y: cy }, false, missOn()); recoil(atkEl(), 6); muzzle(atkEl());
-          if (!missOn()) { burst(cx, cy, '#fff', big); if (big) shake(); }
+          if (!missOn()) { burst(cx, cy, '#fff', big); if (big) { shake(); flinch(defEl()); dmgPt(cx, cy, '-' + parts[s] + '!', 'crit'); } }
         }, 360 + s * 170);
       }
-      setTimeout(() => resolve(defEl()), 360 + (shots - 1) * 170 + 60);
+      if (big) { if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 660); }
+      else setTimeout(() => resolve(defEl()), 600);
     }
 
     // ---- 斬擊／近身類 ----
