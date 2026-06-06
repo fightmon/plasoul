@@ -324,6 +324,10 @@ import Layout from '../layouts/Layout.astro';
   .ar-bar i { display:block; height:100%; background:linear-gradient(90deg,#3ddc84,#7ee0a0); transition:width .35s; }
   .ar-bar.foe i { background:linear-gradient(90deg,#ff8a8a,#ff5a5a); }
   .bt-foot { position:relative; z-index:2; text-align:center; padding:8px 0 max(14px,env(safe-area-inset-bottom)); }
+  /* 放話框（G世代/超機大戰風）*/
+  .bt-talk { position:absolute; left:0; right:0; bottom:60px; z-index:4; display:flex; justify-content:center; padding:0 16px; pointer-events:none; opacity:0; transform:translateY(6px); transition:opacity .18s, transform .18s; }
+  .bt-talk.on { opacity:1; transform:translateY(0); }
+  .bt-talk span { max-width:92%; background:rgba(0,0,0,.62); color:#fff; font-size:14px; font-weight:700; line-height:1.4; padding:8px 16px; border-radius:10px; border-left:3px solid #ffd23d; box-shadow:0 4px 16px rgba(0,0,0,.4); }
   /* 戰鬥・雙排佈陣（佔滿中段）*/
   .bt-field { position:relative; z-index:1; flex:1; min-height:0; overflow:hidden; }
   .bt-field.shake { animation:bt-shake .3s; }
@@ -593,16 +597,24 @@ import Layout from '../layouts/Layout.astro';
         <div class="bt-hd-side foe"><div class="bt-pname">${esc(d.foe.name)}</div><div class="ar-bar foe"><i id="bt-foe" style="width:100%"></i></div></div>
       </div>
       <div class="bt-field" id="bt-field"><div class="bt-darken" id="bt-darken"></div>${myTeam.map((c: any, k: number) => unit(c, 'my', k)).join('')}${foeTeam.map((c: any, k: number) => unit(c, 'foe', k)).join('')}<div class="bt-fx" id="bt-fx"></div><div class="bt-banner" id="bt-banner"></div></div>
+      <div class="bt-talk" id="bt-talk"></div>
       <div class="bt-foot"><button class="bt-skip" id="bt-skip">跳過 ⏩</button></div>
       <div id="bt-end"></div>
     </div>`;
     const lines = d.log || []; let i = 0; const timers: any[] = []; let skipped = false; let aMy = 0, aFoe = 0;
-    const SLOT = ['4%', '37%', '70%'];
+    const SLOT = ['14%', '36%', '58%'];   // 上中段叢集，營造小隊感
     const U = (side: string, k: number) => $(`bt-${side}-${k}`);
     const place = (side: string, k: number, active: boolean) => { const u = U(side, k); if (!u) return; u.classList.remove('hit', 'dodge', 'lunge', 'ult', 'dim', 'won'); u.classList.toggle('active', active); u.style.top = active ? '36%' : SLOT[k]; if (side === 'my') u.style.left = active ? '13%' : '3%'; else u.style.right = active ? '13%' : '3%'; };
     const reset = () => { [0, 1, 2].forEach((k) => { place('my', k, false); place('foe', k, false); }); $('bt-fx')!.innerHTML = ''; };
     const setHP = (my: number, foe: number) => { const mb = $('bt-my'), fb = $('bt-foe'); if (mb) (mb as HTMLElement).style.width = Math.max(0, Math.round(my / myMax * 100)) + '%'; if (fb) (fb as HTMLElement).style.width = Math.max(0, Math.round(foe / foeMax * 100)) + '%'; };
     const shake = () => { const f = $('bt-field')!; f.classList.add('shake'); setTimeout(() => f.classList.remove('shake'), 320); };
+    // 放話台詞
+    const T_ATK = ['看我的！', '吃我這招！', '鎖定，開火！', '無處可逃！', '上啊！', '決勝負了！'];
+    const T_CRIT = ['全彈發射！', '正中要害！', '這一擊，終結！', '看招——爆裂！', '感受這股力量！'];
+    const T_DODGE = ['太慢了！', '想打中我還早！', '被我看穿了！', '沒想到被我猜中你的攻擊了吧？', '可惜，沒中！'];
+    const T_ULT = ['天地烈猛斬！', '奧義・全力解放！', '見識真正的力量！', '這就是我的覺悟！', '終焉，降臨！'];
+    const pickL = (a: string[]) => a[Math.floor(Math.random() * a.length)];
+    const taunt = (text: string) => { const t = $('bt-talk'); if (!t) return; t.innerHTML = '<span>' + esc(text) + '</span>'; t.classList.add('on'); clearTimeout((t as any)._tt); (t as any)._tt = setTimeout(() => t.classList.remove('on'), 1700); };
     // 以「卡片實際位置」為基準算特效座標（永遠對準目標卡正中）
     const cen = (el: HTMLElement | null) => { const fr = $('bt-field')!.getBoundingClientRect(); if (!el) return { x: fr.width / 2, y: fr.height / 2 }; const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; };
     const laserFx = (attEl: HTMLElement | null, defEl: HTMLElement | null, big: boolean, side: string, weak = false, miss = false) => { if (!attEl || !defEl) return; const a = cen(attEl), b = cen(defEl); if (miss) { const fr = $('bt-field')!.getBoundingClientRect(); b.x = side === 'my' ? fr.width + 80 : -80; b.y -= 14; } const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = document.createElement('div'); n.className = 'bt-laser ' + (side === 'my' ? 'l-my' : 'l-foe') + (big ? ' big' : '') + (weak ? ' weak' : ''); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; $('bt-fx')!.appendChild(n); setTimeout(() => n.remove(), 550); };
@@ -748,6 +760,7 @@ import Layout from '../layouts/Layout.astro';
       const ultName = mono === 'ranged' ? '全射・總軌道炮擊' : mono === 'melee' ? '全近・超絕一閃' : mono === 'evade' ? '全閃・殘影殲滅' : (ult.name || '總攻擊');
       $('bt-darken')!.classList.add('on');
       $('bt-banner')!.textContent = '⚡ 覺醒・' + ultName; $('bt-banner')!.classList.add('on');
+      taunt(pickL(T_ULT));
       [0, 1, 2].forEach((k) => { const u = U(side, k); if (u) u.classList.add('ult'); });
       if (mono === 'ranged') {
         [0, 1, 2].forEach((k) => timers.push(setTimeout(() => { const aEl = U(side, k); const a = frontPt(aEl, side); apFx(a.x, a.y, col, true); setTimeout(() => { [0, 1, 2].forEach((j) => { const dEl = U(other, j); if (dEl) beamPts(a, cen(dEl), true, side); }); }, 200); }, k * 150)));
@@ -789,6 +802,16 @@ import Layout from '../layouts/Layout.astro';
         // 血條在命中瞬間才更新（與斬擊/雷射同步）
         if (ev.ult) timers.push(setTimeout(() => { playUlt(ev.ult); timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), 600)); }, 520));
         else if (resolveAt >= 0) timers.push(setTimeout(() => setHP(ev.myHP, ev.foeHP), resolveAt));
+        // 放話（taunt）
+        if (!ev.ult) {
+          let line: string | null = null;
+          const evaded = (ev.rps === 1 && myType === 'evade') || (ev.rps === -1 && foeType === 'evade');
+          const crit = (ev.toFoe && ev.toFoe.crit) || (ev.toMe && ev.toMe.crit);
+          if (evaded) line = pickL(T_DODGE);
+          else if (crit) line = pickL(T_CRIT);
+          else if (Math.random() < 0.4) line = pickL(T_ATK);
+          if (line) timers.push(setTimeout(() => taunt(line as string), 260));
+        }
         // 下一回合：依本回合招式長度自適應 + 整體放慢（看得清楚）
         let pace = resolveAt >= 0 ? resolveAt : 760;   // 閃避反擊約 760
         if (ev.ult) pace = Math.max(pace, 1400);
