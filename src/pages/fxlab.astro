@@ -152,6 +152,24 @@
     .fl-flash.big { width: 118px; height: 118px; }
     .fl-flash.huge { width: 180px; height: 180px; }
     .fl-smoke { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(214,218,228,.85), rgba(190,194,205,.4) 55%, transparent 72%); }
+    /* 電漿纏繞（光束上的電弧）*/
+    .fl-laser u { display: block; position: absolute; left: 0; top: 50%; width: 100%; height: 70%; transform: translateY(-50%); background: repeating-linear-gradient(90deg, transparent 0 5px, rgba(255,255,255,.9) 5px 7px, transparent 7px 13px); mix-blend-mode: screen; animation: fl-crackle .16s linear infinite; }
+    @keyframes fl-crackle { to { background-position: 13px 0; } }
+    .fl-spark { position: absolute; width: 6px; height: 6px; border-radius: 50%; transform: translate(-50%,-50%); animation: fl-sparkk .22s ease-out forwards; }
+    @keyframes fl-sparkk { 0%{ opacity:1; transform: translate(-50%,-50%) scale(1.4);} 100%{ opacity:0; transform: translate(-50%,-50%) scale(.3);} }
+    /* 命中爆閃（鏡頭光斑）*/
+    .fl-flare { position: absolute; width: 78px; height: 78px; transform: translate(-50%,-50%); background: radial-gradient(circle, #fff 8%, transparent 52%); animation: fl-flarek .42s ease-out forwards; }
+    .fl-flare::before, .fl-flare::after { content: ''; position: absolute; left: 50%; top: 50%; background: currentColor; box-shadow: 0 0 10px currentColor; }
+    .fl-flare::before { width: 100%; height: 3px; transform: translate(-50%,-50%); }
+    .fl-flare::after { height: 100%; width: 3px; transform: translate(-50%,-50%); }
+    @keyframes fl-flarek { 0%{ opacity:0; transform: translate(-50%,-50%) scale(.3);} 30%{ opacity:1; transform: translate(-50%,-50%) scale(1);} 100%{ opacity:0; transform: translate(-50%,-50%) scale(1.25);} }
+    /* 灼燒焦痕 */
+    .fl-scorch { position: absolute; width: 30px; height: 30px; border-radius: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle, rgba(40,20,12,.85), rgba(90,45,22,.4) 60%, transparent); animation: fl-scorchk .72s ease-out forwards; }
+    @keyframes fl-scorchk { 0%{ opacity:.9; transform: translate(-50%,-50%) scale(.6);} 30%{ transform: translate(-50%,-50%) scale(1);} 100%{ opacity:0; transform: translate(-50%,-50%) scale(1.05);} }
+    /* 稜鏡分光 */
+    .fl-prism { position: absolute; height: 4px; transform-origin: left center; border-radius: 4px; }
+    .fl-prism i { display: block; width: 100%; height: 100%; border-radius: 4px; background: inherit; box-shadow: 0 0 8px currentColor; transform-origin: left; animation: fl-prismk .45s ease-out forwards; }
+    @keyframes fl-prismk { 0%{ transform: scaleX(0); opacity: .4;} 40%{ transform: scaleX(1); opacity: 1;} 100%{ transform: scaleX(1); opacity: 0;} }
     @keyframes fl-flashk { to { transform: translate(-50%,-50%) scale(1.5); opacity: 0; } }
     .fl-redtint { filter: brightness(1.1) saturate(2.2) sepia(.45) hue-rotate(-25deg); }
     .fl-particle { position: absolute; width: 7px; height: 7px; border-radius: 50%; transform: translate(-50%,-50%); }
@@ -280,7 +298,15 @@
       if (big) shake();
     }
 
-    function beam(a, b, big, miss) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 16 : 6; const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; }
+    function beam(a, b, big, miss, plasma) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 16 : 6; const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
+    // 電漿火花沿光束散布
+    function sparksAlong(a, b, color) { for (let k = 0; k < 5; k++) { const t = 0.12 + Math.random() * 0.76; const x = a.x + (b.x - a.x) * t + (Math.random() * 12 - 6), y = a.y + (b.y - a.y) * t + (Math.random() * 16 - 8); const s = add('fl-spark', 240); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = color; s.style.boxShadow = '0 0 9px ' + color; } }
+    // 命中爆閃（鏡頭光斑）
+    function flare(x, y, color) { const n = add('fl-flare', 440); n.style.left = x + 'px'; n.style.top = y + 'px'; n.style.color = color; }
+    // 灼燒焦痕（漸退）
+    function scorch(x, y, color) { const n = add('fl-scorch', 720); n.style.left = x + 'px'; n.style.top = y + 'px'; n.style.boxShadow = '0 0 16px ' + color; }
+    // 稜鏡分光：命中後裂成數道彩色分光
+    function prismSplit(x, y, dirDeg) { const cols = ['#ff5a5a', '#ffd24d', '#5affa0', '#5ab0ff', '#c97dff']; [-24, -8, 8, 24].forEach((da, i) => { const len = 64 + Math.random() * 46; const n = add('fl-prism', 480); n.style.left = x + 'px'; n.style.top = y + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + (dirDeg + da) + 'deg)'; n.style.background = 'linear-gradient(90deg,' + cols[(i + Math.floor(Math.random() * 5)) % 5] + ',transparent)'; n.innerHTML = '<i></i>'; }); }
     function hugeBeam(a, b) { const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy) + 120; const ang = Math.atan2(dy, dx) * 180 / Math.PI; const n = add('fl-laser ' + cc() + ' huge', 600); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = '-15px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>'; }
     function slashAt(c, big) { const s = add('fl-slash' + (big ? ' big' : ''), 520); s.style.left = c.x + 'px'; s.style.top = c.y + 'px'; }
     function spawnGhost(el, dx, dy) { const g = el.cloneNode(true); g.removeAttribute('id'); g.classList.add('fl-ghost'); const r = el.getBoundingClientRect(), fr = field().getBoundingClientRect(); g.style.left = (r.left - fr.left) + 'px'; g.style.top = (r.top - fr.top) + 'px'; g.style.width = r.width + 'px'; field().appendChild(g); g.animate([{ transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: .45 }, { transform: 'translate(' + dx + 'px,' + dy + 'px)', opacity: 0 }], { duration: 380, easing: 'ease-out' }); setTimeout(() => g.remove(), 400); }
@@ -328,15 +354,17 @@
         maybeDodge(defEl(), 560);
         for (let s = 0; s < 3; s++) {
           const oy = (s - 1) * 34; const sx = a.x + fwd * Math.random() * 30; const a2 = { x: sx, y: a.y + oy }, b2 = { x: b.x, y: a.y + oy };  // 上中下、橫向、起點 X 隨機
-          setTimeout(() => { aperture(a2.x, a2.y, col, false); setTimeout(() => { beam(a2, b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b.x, a.y + oy, '-' + parts[s] + '!', 'crit'); } }, 150); }, s * 130);
+          const end2 = missOn() ? missPoint(b2) : b2;
+          setTimeout(() => { aperture(a2.x, a2.y, col, false); setTimeout(() => { beam(a2, b2, false, missOn(), true); sparksAlong(a2, end2, col); if (!missOn()) { flinch(defEl()); dmgPt(b.x, a.y + oy, '-' + parts[s] + '!', 'crit'); flare(b.x, a.y + oy, col); scorch(b.x, a.y + oy, col); } }, 150); }, s * 130);
         }
         if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300); else setTimeout(shake, 700);
         return;
       }
       maybeDodge(defEl(), 490);
       muzzle(atkEl()); aperture(a.x, a.y, col, false);
-      setTimeout(() => { beam(a, b, false, missOn()); }, 210);
-      setTimeout(() => resolve(defEl()), 400);
+      const end = missOn() ? missPoint(b) : b;
+      setTimeout(() => { beam(a, b, false, missOn(), true); sparksAlong(a, end, col); setTimeout(() => sparksAlong(a, end, col), 130); }, 210);
+      setTimeout(() => { if (!missOn()) { flare(b.x, b.y, col); scorch(b.x, b.y, col); prismSplit(b.x, b.y, atk === 'my' ? 0 : 180); } resolve(defEl()); }, 460);
     }
     function eCannon() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 350);
