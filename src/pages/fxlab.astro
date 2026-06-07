@@ -411,10 +411,32 @@
 
       if (lv === 2) {
         const fs2 = foes(); const second = Math.random() < 0.5 ? fs2[0] : fs2[2];   // 隨機上或下
-        if (!aoeOn()) { if (!big) multiSingle(2); else diveStrafe(card(oth(), 1), 4, 70); return; }   // 單2發 / 單暴4發(幅度小)
-        const targets = [fs2[1], second];   // 全：中間 + 隨機上/下
-        if (!big) swivelFire(targets); else flyBarrage(targets, 3);   // 全2發 / 全暴 2卡各3發=6
-        return;
+        if (!aoeOn()) {
+          if (!big) {
+            // LV2 單：2 發直線（彈著只變 X、Y 固定中心；起點有 X/Y 小變化）
+            const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
+            const cy = (dr.top - fr.top) + dr.height * 0.5; const fe = frontEdge(aEl); const parts = splitDmg(350, 2);
+            maybeDodge(defEl(), 460);
+            for (let s = 0; s < 2; s++) {
+              const a = { x: fe.x + (Math.random() * 20 - 10), y: cy + (Math.random() * 24 - 12) };
+              const b = { x: (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5), y: cy };
+              setTimeout(() => { muzzleAt(a.x, a.y, false, col); aperture(a.x, a.y, col, false, angOf(a, b)); setTimeout(() => { beam(a, missOn() ? missPoint(b) : b, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b.x, b.y, '-' + parts[s], ''); particlesDir(b.x, b.y, dir, col, 10); } else if (s === 0) dmg(defEl(), 'MISS', 'miss'); }, 120); }, s * 150);
+            }
+            return;
+          }
+          diveStrafe(card(oth(), 1), 4, 70); return;   // 單暴 4 發(幅度小)
+        }
+        // 全：卡不轉角，依序對 [中, 隨機上/下] 各射 1 發
+        const targets = [fs2[1], second];
+        if (!big) {
+          const dm = splitDmg(350, targets.length);
+          targets.forEach((f, k) => setTimeout(() => {
+            const b = randPt(f); if (missOn()) missDodge(f); const a = shoot(b, missOn());
+            setTimeout(() => { if (!missOn()) { hitFx(f); flinch(f); dmgPt(b.x, b.y, '-' + dm[k], ''); particlesDir(b.x, b.y, angOf(a, b), col, 10); } else dmg(f, 'MISS', 'miss'); }, 130);
+          }, k * 220));
+          return;
+        }
+        flyBarrage(targets, 2); return;   // 全暴：2 卡各 2 發
       }
 
       if (!aoeOn()) {
