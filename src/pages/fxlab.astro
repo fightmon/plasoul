@@ -656,7 +656,8 @@
       glowPulse(aEl, '#fff');
       const h = big ? 30 : 16; const outDur = 400 + lv * 200 + (big ? 300 : 0);   // 輸出時間隨等級↑、暴更久(轉得更慢)
       // 持續光束：1 張=定點久射；多張=光束掃射貫穿
-      const sweepBeam = (targets, perTarget) => {
+      const sweepBeam = (targets) => {
+        const fwd = atk === 'my' ? 1 : -1;
         const a0 = frontEdge(aEl); const pts = targets.map((f) => cen(f)); const single = targets.length === 1;
         const angA = (p) => Math.atan2(p.y - a0.y, p.x - a0.x) * 180 / Math.PI;
         const angFrom = angA(pts[0]), angTo = single ? angFrom : angA(pts[pts.length - 1]);
@@ -669,28 +670,26 @@
         beam.style.boxShadow = '0 0 ' + (big ? 24 : 15) + 'px ' + sh;
         beam.animate([{ transform: 'rotate(' + angFrom + 'deg)', opacity: 0 }, { transform: 'rotate(' + angFrom + 'deg)', opacity: 1, offset: .1 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 1, offset: .9 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 0 }], { duration: outDur, easing: single ? 'ease-out' : 'ease-in-out', fill: 'forwards' });
         glowPulse(aEl, '#fff');
-        const total = targets.length * perTarget, dmgs = splitDmg(big ? 999 : 350, total); let di = 0;
+        const pcount = big ? 2 * lv : lv; const dmgs = splitDmg(big ? 999 : 350, targets.length);   // 數字每卡1個；粒子表現 pcount 次
         targets.forEach((f, i) => {
           const baseFrac = single ? 0.5 : (angA(pts[i]) - angFrom) / ((angTo - angFrom) || 1);
-          for (let t = 0; t < perTarget; t++) {
-            const idx = di++;
-            const tf = single ? (0.15 + (perTarget > 1 ? t / (perTarget - 1) : 0) * 0.7) : (baseFrac + (t - (perTarget - 1) / 2) * 0.05);
-            setTimeout(() => {
-              if (missOn()) { if (t === 0) { missDodge(f); dmg(f, 'MISS', 'miss'); } return; }
-              const p = cardRndPt(f);
-              flinch(f); burst(p.x, p.y, '#fff', big); particlesDir(p.x, p.y, dir, pcol, big ? 14 : 10); scorch(p.x, p.y, sh); dmgPt(p.x, p.y, '-' + dmgs[idx] + (big ? '!' : ''), big ? 'crit' : ''); shake();
-            }, Math.max(0, 0.1 * outDur + tf * 0.78 * outDur));
+          const c = cen(f); const dr = f.getBoundingClientRect(); const edge = { x: c.x - fwd * (dr.width / 2 - 8), y: c.y };   // 雷射接觸卡的位置(不隨機)
+          const at = (frac) => Math.max(0, 0.1 * outDur + frac * 0.78 * outDur);
+          if (missOn()) { setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, at(baseFrac)); return; }
+          for (let t = 0; t < pcount; t++) {   // 彈著粒子表現多次（都在接觸點）
+            const tf = single ? (0.12 + (pcount > 1 ? t / (pcount - 1) : 0) * 0.74) : (baseFrac + (t - (pcount - 1) / 2) * 0.04);
+            setTimeout(() => { flinch(f); burst(edge.x, edge.y, '#fff', big); particlesDir(edge.x, edge.y, dir, pcol, big ? 14 : 10); scorch(edge.x, edge.y, sh); shake(); }, at(tf));
           }
+          setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) critFlash(c.x, c.y, '#9fe8ff'); }, at(baseFrac) + 90);   // 1 個傷害數值(卡中心)
         });
-        if (!missOn() && big) { const mc = cen(targets[Math.floor(targets.length / 2)]); setTimeout(() => critFlash(mc.x, mc.y, '#9fe8ff'), outDur * 0.5); }
       };
-      if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), chargeT + outDur * 0.5); setTimeout(() => sweepBeam([defEl()], big ? (2 * lv - 1) : lv), chargeT); return; }   // 單：LV個(暴2LV-1)
+      if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), chargeT + outDur * 0.5); setTimeout(() => sweepBeam([defEl()]), chargeT); return; }
       // 全：LV2 掃 2 卡、LV3 掃 3 卡（方向隨機）
       const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
       const tg = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice();
       const sorted = tg.slice().sort((x, y) => cen(x).y - cen(y).y);
       const ordered = Math.random() < 0.5 ? sorted : sorted.slice().reverse();
-      setTimeout(() => sweepBeam(ordered, big ? lv : (lv - 1)), chargeT);   // 全：每卡 LV-1 個(暴 LV 個)
+      setTimeout(() => sweepBeam(ordered), chargeT);
     }
     function eHoming() {
       const big = critOn(); const a = frontEdge(atkEl()); const n = big ? 6 : 2; const back = atk === 'my' ? -1 : 1;
