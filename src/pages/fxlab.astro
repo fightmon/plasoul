@@ -659,7 +659,19 @@
       setTimeout(() => { if (!missOn()) { if (big) { burst(b.x, b.y, '#c9a3ff', true); setTimeout(() => burst(b.x, b.y, '#fff', true), 110); } else ring(b.x, b.y, '#9b6bff', true); } resolve(defEl()); }, CH + 540);
     }
     function eSnipe() {
-      const big = critOn(); maybeDodge(defEl(), 640);
+      const big = critOn();
+      if (lv === 1) {
+        // LV1：對準中卡正中心，1 發
+        const c = cen(defEl()); maybeDodge(defEl(), 480);
+        const cr = add('fl-cross', 560); cr.style.left = c.x + 'px'; cr.style.top = c.y + 'px';
+        setTimeout(() => {
+          const a = frontEdge(atkEl()); beam(a, missOn() ? missPoint(c) : c, false, missOn()); recoil(atkEl(), 6); muzzleAt(a.x, a.y, false);
+          if (missOn()) { dmg(defEl(), 'MISS', 'miss'); return; }
+          burst(c.x, c.y, '#fff', big); flinch(defEl()); dmgPt(c.x, c.y, '-' + (big ? '999!' : '350'), big ? 'crit' : ''); if (big) shake();
+        }, 360);
+        return;
+      }
+      maybeDodge(defEl(), 640);
       const shots = big ? 3 : 1; const parts = splitDmg(big ? 999 : 350, shots);
       for (let s = 0; s < shots; s++) {
         const p = cardRndPt(defEl()); const cx = p.x, cy = p.y;   // 每發各鎖對方卡上隨機點
