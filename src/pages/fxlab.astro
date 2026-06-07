@@ -311,16 +311,13 @@
       const startOff = (a, b) => { const dy = b.y - a.y; if (dy < -18) return { x: a.x + fwd * 15, y: a.y - (20 + Math.random() * 10) }; if (dy > 18) return { x: a.x + fwd * 15, y: a.y + (20 + Math.random() * 10) }; return { x: a.x + fwd * (20 + Math.random() * 10), y: a.y }; };
       // 射一發到 b：含起點偏移、槍口橢圓跟著角度轉、雷射
       const shoot = (b, miss) => { const a0 = frontEdge(aEl); const a = startOff(a0, b); muzzle(aEl); aperture(a.x, a.y, col, false, angOf(a, b)); beam(a, b, false, miss); return a; };
-      // 從下往上射（起點在場景下緣，X 帶隨機）
-      const shootBelow = (b, miss) => { const fr = field().getBoundingClientRect(); const a = { x: b.x + (Math.random() * 30 - 15), y: fr.height + 30 }; aperture(a.x, fr.height - 8, col, false, angOf(a, b)); beam(a, miss ? missPoint(b) : b, false, miss); return a; };
-      const shootVaried = (b, miss) => (Math.random() < 0.5 ? shootBelow(b, miss) : shoot(b, miss));   // 偶爾上往下、偶爾下往上
       const foes = () => [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
 
       if (!aoeOn()) {
         if (!big) {
           // 單體：射中間卡一發
           const b = cen(defEl()); maybeDodge(defEl(), 490);
-          setTimeout(() => { shootVaried(b, missOn()); }, 120);
+          setTimeout(() => { shoot(b, missOn()); }, 120);
           setTimeout(() => { if (!missOn()) particlesDir(b.x, b.y, dir, col, 14); resolve(defEl()); }, 460);
           return;
         }
@@ -346,7 +343,7 @@
         kf.push({ transform: 'rotate(0deg)', offset: 1 });
         aEl.animate(kf, { duration: swT, easing: 'ease-in-out' });
         fs.forEach((f, k) => setTimeout(() => {
-          const b = cen(f); if (missOn()) missDodge(f); shootVaried(b, missOn());
+          const b = cen(f); if (missOn()) missDodge(f); shoot(b, missOn());
           setTimeout(() => { if (!missOn()) { hitFx(f); flinch(f); dmg(f, '-117', ''); particlesDir(b.x, b.y, dir, col, 10); } else dmg(f, 'MISS', 'miss'); }, 130);
         }, k * shotGap + 120));
         return;
