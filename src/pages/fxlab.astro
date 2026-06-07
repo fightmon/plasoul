@@ -682,9 +682,8 @@
           const fr = field().getBoundingClientRect(); const down = pts[0].y <= pts[pts.length - 1].y;
           const flat = []; targets.forEach((f) => { for (let t = 0; t < pcount; t++) flat.push({ f, t }); }); const M = flat.length;
           flat.forEach((it, gi) => {
-            const gf = M > 1 ? gi / (M - 1) : 0.5; const dr = it.f.getBoundingClientRect();
-            const yf = pcount > 1 ? it.t / (pcount - 1) : 0.5; const py = (dr.top - fr.top) + dr.height * (0.2 + (down ? yf : 1 - yf) * 0.6); const px = (dr.left - fr.left) + dr.width * 0.5;
-            setTimeout(() => { if (!missOn()) burstAt(it.f, px, py); }, tAt(0.12 + gf * 0.74));
+            const gf = M > 1 ? gi / (M - 1) : 0.5; const c = cen(it.f);   // 彈著在卡中心，靠卡間順序產生掃射感
+            setTimeout(() => { if (!missOn()) burstAt(it.f, c.x, c.y); }, tAt(0.12 + gf * 0.74));
           });
           targets.forEach((f, i) => {
             const c = cen(f); const gMid = M > 1 ? (i * pcount + (pcount - 1) / 2) / (M - 1) : 0.5; const w = tAt(0.12 + gMid * 0.74);
