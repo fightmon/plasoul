@@ -583,7 +583,7 @@
           for (let k = 0; k < n; k++) {
             let tx, ty;
             if (missOn()) { const mp = missPoint({ y: cy }); tx = mp.x + (Math.random() * 40 - 20); ty = cy + (Math.random() * 26 - 13); }
-            else { tx = (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5); ty = cy; }   // 只變 X、Y 固定中心
+            else { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.2 + Math.random() * 0.6); }   // 散彈：X、Y 都散開
             const p = add('fl-bolt sm', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
             const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
             pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 4, 0.4); } };
