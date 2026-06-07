@@ -478,18 +478,41 @@
       };
     }
     function eShot() {
-      const a = frontEdge(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), Math.round((impact + 220) / 2) + 30);
-      const parts = splitDmg(critOn() ? 999 : 350, cnt);
-      vibrate(atkEl(), impact);
-      for (let k = 0; k < cnt; k++) setTimeout(() => {
-        muzzle(atkEl(), false, '#ffd24d');
-        const off = critOn() ? Math.sin(k * 0.85) * 36 : (k - (cnt - 1) / 2) * 10; const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = (mp ? mp.y : b.y) + off;
-        const bo = add('fl-bolt' + (critOn() ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
+      const big = critOn(); const aEl = atkEl();
+      if (!aoeOn()) {
+        // 單體（維持原樣）
+        const a = frontEdge(aEl), b = cen(defEl()); const cnt = big ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), Math.round((impact + 220) / 2) + 30);
+        const parts = splitDmg(big ? 999 : 350, cnt);
+        vibrate(aEl, impact);
+        for (let k = 0; k < cnt; k++) setTimeout(() => {
+          muzzle(aEl, false, '#ffd24d');
+          const off = big ? Math.sin(k * 0.85) * 36 : (k - (cnt - 1) / 2) * 10; const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = (mp ? mp.y : b.y) + off;
+          const bo = add('fl-bolt' + (big ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
+          const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
+          an.onfinish = () => { bo.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
+        }, k * 55);
+        if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 240);
+        else if (big) setTimeout(shake, impact);
+        return;
+      }
+      // 全：從攻擊卡連發掃過 3 卡；一般每卡4彈(掃一趟,方向隨機)、暴擊每卡8彈(上→下→上來回)
+      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
+      const per = 4, order = [];
+      if (!big) { (Math.random() < 0.5 ? fs.slice() : fs.slice().reverse()).forEach((f) => { for (let i = 0; i < per; i++) order.push(f); }); }
+      else { fs.forEach((f) => { for (let i = 0; i < per; i++) order.push(f); }); fs.slice().reverse().forEach((f) => { for (let i = 0; i < per; i++) order.push(f); }); }
+      const gap = 55, totalDur = order.length * gap + 240;
+      const parts = splitDmg(big ? 999 : 350, order.length);
+      vibrate(aEl, totalDur);
+      if (missOn()) fs.forEach((f) => missDodge(f));
+      order.forEach((f, k) => setTimeout(() => {
+        const a = frontEdge(aEl); muzzleAt(a.x, a.y, false, '#ffd24d');
+        const tp = missOn() ? missPoint(cen(f)) : cardRndPt(f); const tx = tp.x, ty = tp.y;
+        const bo = add('fl-bolt' + (big ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
         const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
-        an.onfinish = () => { bo.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (critOn() ? '!' : ''), critOn() ? 'crit' : ''); } };
-      }, k * 55);
-      if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 240);
-      else if (critOn()) setTimeout(shake, impact);
+        an.onfinish = () => { bo.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(f); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
+      }, k * gap));
+      if (missOn()) fs.forEach((f) => setTimeout(() => dmg(f, 'MISS', 'miss'), totalDur));
+      else if (big) setTimeout(shake, totalDur);
     }
     function chargeRings(x, y, color, dur, big) {
       const n = 4; const s0 = big ? 2.6 : 1.8;
@@ -655,7 +678,7 @@
     };
     const aoeOn = () => $('fl-aoe').classList.contains('on');
     const isEvade = (k) => k[0] === 'd';
-    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun']);   // 自己處理全體演出的招式（不用通用逐卡重播）
+    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun', 'shot']);   // 自己處理全體演出的招式（不用通用逐卡重播）
     // 單：打中間卡一次；全：依序對 3 張卡各施放一次（每次鎖定該卡，間隔夠長避免目標錯亂）
     function runMove(k) {
       const fn = FX[k]; if (!fn) return;
