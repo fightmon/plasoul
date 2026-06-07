@@ -469,7 +469,7 @@
             let tx, ty;
             if (missOn()) { const mp = missPoint(cen(f)); tx = mp.x + (Math.random() * 40 - 20); ty = cen(f).y + (Math.random() * 40 - 20); }
             else { const tp = cardRndPt(f); tx = tp.x; ty = tp.y; }
-            const p = add('fl-bolt' + (big ? ' big' : ''), 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
+            const p = add('fl-bolt', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
             const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 280, easing: 'linear' });
             pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(f); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 6, 0.5); } };
           }
