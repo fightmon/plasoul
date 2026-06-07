@@ -680,10 +680,11 @@
         } else {
           // 全：彈著沿「光束線」連續掃過（通過各卡中心）→ 與可見光束對齊、像連發的掃射
           const cardX = pts.reduce((s, p) => s + p.x, 0) / pts.length; const tanD = (deg) => Math.tan(deg * Math.PI / 180);
-          const M = targets.length * pcount;
+          const cardW = targets[0].getBoundingClientRect().width; const M = targets.length * pcount;
           for (let gi = 0; gi < M; gi++) {
             const gf = M > 1 ? gi / (M - 1) : 0.5; const th = angFrom + (angTo - angFrom) * gf;
-            const px = cardX, py = a0.y + (cardX - a0.x) * tanD(th);
+            const px = cardX + (Math.random() - 0.5) * cardW * 0.5;   // X 小幅隨機=每發命中略不同
+            const py = a0.y + (cardX - a0.x) * tanD(th) + (Math.random() - 0.5) * 16;   // Y 主掃 + 小抖
             let nf = targets[0], nd = 1e9; targets.forEach((f) => { const d = Math.abs(cen(f).y - py); if (d < nd) { nd = d; nf = f; } });
             setTimeout(() => { if (!missOn()) burstAt(nf, px, py); }, tAt(0.12 + gf * 0.74));
           }
