@@ -661,9 +661,13 @@
         const a0 = frontEdge(aEl); const pts = targets.map((f) => cen(f)); const single = targets.length === 1;
         const angA = (p) => Math.atan2(p.y - a0.y, p.x - a0.x) * 180 / Math.PI;
         const halfH = targets[0].getBoundingClientRect().height / 2; const down = pts[0].y < pts[pts.length - 1].y;
-        const e0 = { x: pts[0].x, y: pts[0].y + (down ? -halfH : halfH) };                            // 起點推到外緣(上卡最上/下卡最下)
-        const eL = { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y + (down ? halfH : -halfH) };  // 終點推到另一端外緣
-        const angFrom = single ? angA(pts[0]) : angA(e0), angTo = single ? angFrom : angA(eL);        // 全:大幅掃 上卡最上緣→下卡最下緣
+        const allY = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean).map((f) => cen(f).y); const topY = Math.min.apply(null, allY), botY = Math.max.apply(null, allY);
+        const isTop = (f) => Math.abs(cen(f).y - topY) < 2, isBot = (f) => Math.abs(cen(f).y - botY) < 2;
+        const ext0 = down ? isTop(targets[0]) : isBot(targets[0]);                                      // 端點是真正最上/最下卡才推外緣；中間卡用中心
+        const extL = down ? isBot(targets[targets.length - 1]) : isTop(targets[targets.length - 1]);
+        const e0 = { x: pts[0].x, y: pts[0].y + (ext0 ? (down ? -halfH : halfH) : 0) };
+        const eL = { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y + (extL ? (down ? halfH : -halfH) : 0) };
+        const angFrom = single ? angA(pts[0]) : angA(e0), angTo = single ? angFrom : angA(eL);          // 全:大幅掃，端點若為中間卡則用中心
         const farLen = Math.max.apply(null, pts.map((p) => Math.hypot(p.x - a0.x, p.y - a0.y))) + 200;
         const beam = add('', outDur + 280);
         beam.style.position = 'absolute'; beam.style.left = a0.x + 'px'; beam.style.top = a0.y + 'px';
