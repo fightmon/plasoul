@@ -670,17 +670,17 @@
         beam.style.boxShadow = '0 0 ' + (big ? 24 : 15) + 'px ' + sh;
         beam.animate([{ transform: 'rotate(' + angFrom + 'deg)', opacity: 0 }, { transform: 'rotate(' + angFrom + 'deg)', opacity: 1, offset: .1 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 1, offset: .9 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 0 }], { duration: outDur, easing: single ? 'ease-out' : 'ease-in-out', fill: 'forwards' });
         glowPulse(aEl, '#fff');
-        const pcount = big ? 2 * lv : lv; const dmgs = splitDmg(big ? 999 : 350, targets.length);   // 數字每卡1個；粒子表現 pcount 次
+        const pcount = single ? (2 * lv + 1) : (2 * lv - 1); const dmgs = splitDmg(big ? 999 : 350, targets.length);   // 單 2LV+1、全每卡 2LV-1；數字每卡1個
         targets.forEach((f, i) => {
           const baseFrac = single ? 0.5 : (angA(pts[i]) - angFrom) / ((angTo - angFrom) || 1);
-          const c = cen(f); const dr = f.getBoundingClientRect(); const edge = { x: c.x - fwd * (dr.width / 2 - 8), y: c.y };   // 雷射接觸卡的位置(不隨機)
+          const c = cen(f); const pdir = angA(c);   // 彈著/粒子皆在卡中心；粒子角度對應(攻方→該卡)
           const at = (frac) => Math.max(0, 0.1 * outDur + frac * 0.78 * outDur);
           if (missOn()) { setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, at(baseFrac)); return; }
-          for (let t = 0; t < pcount; t++) {   // 彈著粒子表現多次（都在接觸點）
+          for (let t = 0; t < pcount; t++) {
             const tf = single ? (0.12 + (pcount > 1 ? t / (pcount - 1) : 0) * 0.74) : (baseFrac + (t - (pcount - 1) / 2) * 0.04);
-            setTimeout(() => { flinch(f); particlesDir(edge.x, edge.y, dir, pcol, big ? 16 : 12); scorch(edge.x, edge.y, sh); if (big) shake(); }, at(tf));
+            setTimeout(() => { flinch(f); particlesDir(c.x, c.y, pdir, pcol, big ? 26 : 12); scorch(c.x, c.y, sh); if (big) critFlash(c.x, c.y, '#9fe8ff'); }, at(tf));   // 暴=誇張
           }
-          setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) critFlash(c.x, c.y, '#9fe8ff'); }, at(baseFrac) + 90);   // 1 個傷害數值(卡中心)
+          setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); }, at(baseFrac) + 90);
         });
       };
       if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), chargeT + outDur * 0.5); setTimeout(() => sweepBeam([defEl()]), chargeT); return; }
