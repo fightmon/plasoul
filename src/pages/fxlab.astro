@@ -711,25 +711,31 @@
       setTimeout(() => sweepBeam(ordered), chargeT);
     }
     function eHoming() {
-      const big = critOn(); const a = frontEdge(atkEl()); const n = big ? 6 : 2; const back = atk === 'my' ? -1 : 1;
-      const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
-      const parts = splitDmg(big ? 999 : 350, n);
+      const big = critOn(); const a = frontEdge(atkEl()); const back = atk === 'my' ? -1 : 1;
+      const fr = field().getBoundingClientRect();
+      const aoe = aoeOn() && lv >= 2;
+      // 目標卡 + 每卡命中數
+      let cards, perCard;
+      if (!aoe) { cards = [defEl()]; perCard = lv === 1 ? (big ? 6 : 2) : lv === 2 ? (big ? 8 : 4) : (big ? 9 : 6); }   // 單體 2/4/6，暴 6/8/9
+      else { const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean); cards = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice(); perCard = lv === 2 ? (big ? 4 : 2) : (big ? 3 : 2); }   // 全：每卡 2，LV2暴4/LV3暴3
       smoke(a.x, a.y, big);
-      maybeDodge(defEl(), 570);
-      let last = 0;
-      for (let k = 0; k < n; k++) {
-        let tx, ty;
-        if (missOn()) { const mp = missPoint({ y: (dr.top - fr.top) + dr.height / 2 }); tx = mp.x; ty = mp.y + (Math.random() * 30 - 15); }   // MISS：飛出視窗
-        else { tx = (dr.left - fr.left) + dr.width * (0.28 + Math.random() * 0.44); ty = (dr.top - fr.top) + dr.height * (0.22 + Math.random() * 0.56); }  // 命中對方卡隨機點
-        const c1x = a.x + back * 72, c1y = a.y - 50 - Math.random() * 24;          // 先往後上
-        const c2x = (a.x + tx) / 2, c2y = ty - 26;                                 // 再回頭衝向目標
-        const dur = 520 + k * 95;                                                  // 同時發射、飛行時間不同→錯開命中
-        const m = add('fl-missile', 0); try { m.style.offsetPath = "path('M " + a.x + " " + a.y + " C " + c1x + " " + c1y + " " + c2x + " " + c2y + " " + tx + " " + ty + "')"; m.style.offsetRotate = 'auto'; } catch (e) {}
-        const an = m.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: dur, easing: 'ease-in', fill: 'forwards' });
-        an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffb060', 6, 0.5); if (big) { critFlash(tx, ty, '#ff9a3d'); particles(tx, ty, '#ffb060', 8, 0.7); shake(); } } };
-        last = Math.max(last, dur);
-      }
-      if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300);
+      cards.forEach((d) => maybeDodge(d, 640));
+      cards.forEach((d) => {
+        const dr = d.getBoundingClientRect(); const parts = splitDmg(big ? 999 : 350, perCard);
+        for (let k = 0; k < perCard; k++) {
+          let tx, ty;
+          if (missOn()) { const mp = missPoint({ y: (dr.top - fr.top) + dr.height / 2 }); tx = mp.x; ty = mp.y + (Math.random() * 30 - 15); }   // MISS：飛出視窗
+          else { tx = (dr.left - fr.left) + dr.width * (0.28 + Math.random() * 0.44); ty = (dr.top - fr.top) + dr.height * (0.22 + Math.random() * 0.56); }  // 命中對方卡隨機點
+          const c1x = a.x + back * 110, c1y = a.y - 80 - Math.random() * 40;        // 弧度大：先大幅往後上
+          const c2x = (a.x + tx) / 2 + back * 40, c2y = ty - 70 - Math.random() * 30;  // 再從高處俯衝目標
+          const dur = 520 + k * 80 + Math.random() * 60;                            // 同時發射、飛行時間不同→錯開命中
+          const m = add('fl-missile', 0); try { m.style.offsetPath = "path('M " + a.x + " " + a.y + " C " + c1x + " " + c1y + " " + c2x + " " + c2y + " " + tx + " " + ty + "')"; m.style.offsetRotate = 'auto'; } catch (e) {}
+          const an = m.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: dur, easing: 'ease-in', fill: 'forwards' });
+          const dstr = '-' + parts[k] + (big ? '!' : '');
+          an.onfinish = () => { m.remove(); if (!missOn()) { ring(tx, ty, '#ff9a3d', false); flinch(d); dmgPt(tx, ty, dstr, big ? 'crit' : ''); particles(tx, ty, '#ffb060', 6, 0.5); if (big) { critFlash(tx, ty, '#ff9a3d'); particles(tx, ty, '#ffb060', 8, 0.7); shake(); } } };
+        }
+        if (missOn()) setTimeout(() => dmg(d, 'MISS', 'miss'), 320);
+      });
     }
     function eWave() {
       const big = critOn(); const a = frontEdge(atkEl()), b = cen(defEl()); const side = atk === 'my' ? 'r' : 'l'; const n = big ? 5 : 3;
