@@ -341,6 +341,7 @@
           { transform: P(e1), offset: (flyIn + sweep) / total, easing: 'ease-out' },
           { transform: 'translate(0,0) rotate(0deg)', offset: 1 },
         ], { duration: total, easing: 'linear' });
+        const parts = splitDmg(999, 9);
         if (missOn()) setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, flyIn + 200);
         for (let k = 0; k < 9; k++) setTimeout(() => {
           const a = frontEdge(aEl); const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect();
@@ -349,9 +350,9 @@
           const sx = a.x + fwd * Math.random() * 20; const ap = { x: sx, y: a.y }, bp = { x: tx, y: ty };
           muzzleAt(sx, a.y, false, col); aperture(sx, a.y, col, false, angOf(ap, bp));
           beam(ap, missOn() ? missPoint(bp) : bp, false, missOn());
-          if (!missOn()) { ring(tx, ty, col, false); flinch(f); particlesDir(tx, ty, angOf(ap, bp), col, 5); }
+          if (!missOn()) { ring(tx, ty, col, false); flinch(f); dmgPt(tx, ty, '-' + parts[k] + '!', 'crit'); particlesDir(tx, ty, angOf(ap, bp), col, 5); }
         }, flyIn + 80 + k * 70);
-        if (!missOn()) setTimeout(() => { hitFx(f); dmg(f, '-999!', 'crit'); shake(); }, flyIn + 80 + 9 * 70 + 60);
+        if (!missOn()) setTimeout(() => { hitFx(f); shake(); }, flyIn + 80 + 9 * 70 + 60);
         setTimeout(() => { aEl.style.zIndex = ''; }, total);
         return;
       }
@@ -388,8 +389,9 @@
       stops.forEach((s, i) => {
         const base = i * (flyT + holdT) + flyT + 70;   // 確定停穩後才射
         if (missOn()) { setTimeout(() => { missDodge(s.f); dmg(s.f, 'MISS', 'miss'); }, base + 120); return; }
-        for (let k = 0; k < 3; k++) setTimeout(() => { const a = frontEdge(aEl); const c = cen(s.f); const sx = a.x + fwd * Math.random() * 30; const sy = a.y + (k - 1) * 12; muzzleAt(sx, sy, false, col); aperture(sx, sy, col, false, 0); beam({ x: sx, y: sy }, { x: c.x, y: sy }, false, false); ring(c.x, sy, col, false); particlesDir(c.x, sy, dir, col, 5); }, base + k * 110);
-        setTimeout(() => { hitFx(s.f); flinch(s.f); dmg(s.f, '-' + cardDmg[i] + '!', 'crit'); shake(); }, base + 2 * 110 + 80);
+        const p3 = splitDmg(cardDmg[i], 3);
+        for (let k = 0; k < 3; k++) setTimeout(() => { const a = frontEdge(aEl); const c = cen(s.f); const sx = a.x + fwd * Math.random() * 30; const sy = a.y + (k - 1) * 12; muzzleAt(sx, sy, false, col); aperture(sx, sy, col, false, 0); beam({ x: sx, y: sy }, { x: c.x, y: sy }, false, false); ring(c.x, sy, col, false); flinch(s.f); dmgPt(c.x, sy, '-' + p3[k] + '!', 'crit'); particlesDir(c.x, sy, dir, col, 5); }, base + k * 110);
+        setTimeout(() => { hitFx(s.f); shake(); }, base + 2 * 110 + 80);
       });
       setTimeout(() => { aEl.style.zIndex = ''; }, total);
     }
