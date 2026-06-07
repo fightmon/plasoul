@@ -660,7 +660,10 @@
         const fwd = atk === 'my' ? 1 : -1;
         const a0 = frontEdge(aEl); const pts = targets.map((f) => cen(f)); const single = targets.length === 1;
         const angA = (p) => Math.atan2(p.y - a0.y, p.x - a0.x) * 180 / Math.PI;
-        const angFrom = angA(pts[0]), angTo = single ? angFrom : angA(pts[pts.length - 1]);
+        const halfH = targets[0].getBoundingClientRect().height / 2; const down = pts[0].y < pts[pts.length - 1].y;
+        const e0 = { x: pts[0].x, y: pts[0].y + (down ? -halfH : halfH) };                            // 起點推到外緣(上卡最上/下卡最下)
+        const eL = { x: pts[pts.length - 1].x, y: pts[pts.length - 1].y + (down ? halfH : -halfH) };  // 終點推到另一端外緣
+        const angFrom = single ? angA(pts[0]) : angA(e0), angTo = single ? angFrom : angA(eL);        // 全:大幅掃 上卡最上緣→下卡最下緣
         const farLen = Math.max.apply(null, pts.map((p) => Math.hypot(p.x - a0.x, p.y - a0.y))) + 200;
         const beam = add('', outDur + 280);
         beam.style.position = 'absolute'; beam.style.left = a0.x + 'px'; beam.style.top = a0.y + 'px';
