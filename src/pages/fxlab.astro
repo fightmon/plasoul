@@ -671,17 +671,27 @@
         beam.animate([{ transform: 'rotate(' + angFrom + 'deg)', opacity: 0 }, { transform: 'rotate(' + angFrom + 'deg)', opacity: 1, offset: .1 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 1, offset: .9 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 0 }], { duration: outDur, easing: single ? 'ease-out' : 'ease-in-out', fill: 'forwards' });
         glowPulse(aEl, '#fff');
         const pcount = single ? (2 * lv + 1) : (2 * lv - 1); const dmgs = splitDmg(big ? 999 : 350, targets.length);   // 單 2LV+1、全每卡 2LV-1；數字每卡1個
-        targets.forEach((f, i) => {
-          const baseFrac = single ? 0.5 : (angA(pts[i]) - angFrom) / ((angTo - angFrom) || 1);
-          const c = cen(f); const pdir = angA(c);   // 彈著/粒子皆在卡中心；粒子角度對應(攻方→該卡)
-          const at = (frac) => Math.max(0, 0.1 * outDur + frac * 0.78 * outDur);
-          if (missOn()) { setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, at(baseFrac)); return; }
-          for (let t = 0; t < pcount; t++) {
-            const tf = single ? (0.12 + (pcount > 1 ? t / (pcount - 1) : 0) * 0.74) : (baseFrac + (t - (pcount - 1) / 2) * 0.04);
-            setTimeout(() => { flinch(f); particlesDir(c.x, c.y, pdir, pcol, big ? 26 : 12); scorch(c.x, c.y, sh); if (big) critFlash(c.x, c.y, '#9fe8ff'); }, at(tf));   // 暴=誇張
-          }
-          setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); }, at(baseFrac) + 90);
-        });
+        const tAt = (frac) => Math.max(0, frac * outDur);
+        const burstAt = (f, px, py) => { flinch(f); particlesDir(px, py, angA({ x: px, y: py }), pcol, big ? 26 : 12); scorch(px, py, sh); if (big) critFlash(px, py, '#9fe8ff'); };   // 暴=誇張
+        if (single) {
+          const f = targets[0], c = cen(f);
+          if (missOn()) { setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, tAt(0.5)); }
+          else { for (let t = 0; t < pcount; t++) { const frac = 0.12 + (pcount > 1 ? t / (pcount - 1) : 0) * 0.74; setTimeout(() => burstAt(f, c.x, c.y), tAt(frac)); } setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[0] + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); }, tAt(0.5) + 90); }
+        } else {
+          // 全：連續掃射感（彈著點隨光束由一端掃到另一端）
+          const fr = field().getBoundingClientRect(); const down = pts[0].y <= pts[pts.length - 1].y;
+          const flat = []; targets.forEach((f) => { for (let t = 0; t < pcount; t++) flat.push({ f, t }); }); const M = flat.length;
+          flat.forEach((it, gi) => {
+            const gf = M > 1 ? gi / (M - 1) : 0.5; const dr = it.f.getBoundingClientRect();
+            const yf = pcount > 1 ? it.t / (pcount - 1) : 0.5; const py = (dr.top - fr.top) + dr.height * (0.2 + (down ? yf : 1 - yf) * 0.6); const px = (dr.left - fr.left) + dr.width * 0.5;
+            setTimeout(() => { if (!missOn()) burstAt(it.f, px, py); }, tAt(0.12 + gf * 0.74));
+          });
+          targets.forEach((f, i) => {
+            const c = cen(f); const gMid = M > 1 ? (i * pcount + (pcount - 1) / 2) / (M - 1) : 0.5; const w = tAt(0.12 + gMid * 0.74);
+            if (missOn()) setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, w);
+            else setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); }, w + 90);
+          });
+        }
       };
       if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), chargeT + outDur * 0.5); setTimeout(() => sweepBeam([defEl()]), chargeT); return; }
       // 全：LV2 掃 2 卡、LV3 掃 3 卡（方向隨機）
