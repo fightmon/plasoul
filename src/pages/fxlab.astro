@@ -505,18 +505,17 @@
       setTimeout(() => { if (!missOn()) { if (big) { burst(b.x, b.y, '#c9a3ff', true); setTimeout(() => burst(b.x, b.y, '#fff', true), 110); } else ring(b.x, b.y, '#9b6bff', true); } resolve(defEl()); }, CH + 540);
     }
     function eSnipe() {
-      const big = critOn(); const b = cen(defEl()); maybeDodge(defEl(), 640);
-      const shots = big ? 3 : 1; const parts = big ? splitDmg(999, 3) : null;
+      const big = critOn(); maybeDodge(defEl(), 640);
+      const shots = big ? 3 : 1; const parts = splitDmg(big ? 999 : 350, shots);
       for (let s = 0; s < shots; s++) {
-        const cx = b.x + (s - (shots - 1) / 2) * 16, cy = b.y + (s - (shots - 1) / 2) * 18;
+        const p = cardRndPt(defEl()); const cx = p.x, cy = p.y;   // 每發各鎖對方卡上隨機點
         const cr = add('fl-cross', 560); cr.style.left = cx + 'px'; cr.style.top = cy + 'px';
         setTimeout(() => {
-          const a = frontEdge(atkEl()); beam(a, { x: cx, y: cy }, false, missOn()); recoil(atkEl(), 6); muzzle(atkEl());
-          if (!missOn()) { burst(cx, cy, '#fff', big); if (big) { shake(); flinch(defEl()); dmgPt(cx, cy, '-' + parts[s] + '!', 'crit'); } }
+          const a = frontEdge(atkEl()); beam(a, missOn() ? missPoint(p) : p, false, missOn()); recoil(atkEl(), 6); muzzle(atkEl());
+          if (missOn()) { if (s === shots - 1) dmg(defEl(), 'MISS', 'miss'); return; }
+          burst(cx, cy, '#fff', big); flinch(defEl()); dmgPt(cx, cy, '-' + parts[s] + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
         }, 360 + s * 170);
       }
-      if (big) { if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 660); }
-      else setTimeout(() => resolve(defEl()), 600);
     }
 
     // ---- 斬擊／近身類 ----
