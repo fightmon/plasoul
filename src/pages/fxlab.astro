@@ -290,7 +290,7 @@
     // 蓄力光束
     function chargeBeam(a, b, big, miss) {
       let bb = b; if (miss) bb = missPoint(b);
-      const dx = bb.x - a.x, dy = bb.y - a.y; let len = Math.hypot(dx, dy); if (big && !miss) len += 130;
+      const dx = bb.x - a.x, dy = bb.y - a.y; let len = Math.hypot(dx, dy); if (!miss) len += big ? 140 : 100;   // 貫穿（暴擊更長）
       const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 30 : 16; const n = add('fl-laser ' + cc() + (big ? ' huge' : ' big'), 600);
       n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = '<i></i>';
     }
