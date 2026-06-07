@@ -426,26 +426,56 @@
       seq.forEach((f, k) => setTimeout(() => shot(f, dmgs[k]), k * shotGap + 150));
     }
     function eShotgun() {
-      const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const pellets = big ? 5 : 3;
-      const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
-      const splitX = a.x + (b.x - a.x) * 0.5, splitY = a.y + (b.y - a.y) * 0.5;   // 中途就爆開
-      recoil(atkEl(), 14); muzzle(atkEl(), big, '#ffd24d'); smoke(a.x, a.y, big); maybeDodge(defEl(), 480);
-      const ball = add('fl-ball ' + cc(), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
-      const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - a.y) + 'px)) scale(1)' }], { duration: 220, easing: 'linear' });
+      const big = critOn(); const aEl = atkEl();
+      if (!aoeOn()) {
+        // 單體：球飛中途爆開 → 子彈打中卡（維持原樣）
+        const a = frontEdge(aEl), b = cen(defEl()); const pellets = big ? 5 : 3;
+        const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
+        const splitX = a.x + (b.x - a.x) * 0.5, splitY = a.y + (b.y - a.y) * 0.5;
+        recoil(aEl, 14); muzzle(aEl, big, '#ffd24d'); smoke(a.x, a.y, big); maybeDodge(defEl(), 480);
+        const ball = add('fl-ball ' + cc(), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
+        const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - a.y) + 'px)) scale(1)' }], { duration: 220, easing: 'linear' });
+        an.onfinish = () => {
+          ball.remove(); ring(splitX, splitY, '#ffd24d', false);
+          const parts = splitDmg(big ? 999 : 350, pellets);
+          for (let k = 0; k < pellets; k++) {
+            let tx, ty;
+            if (missOn()) { const mp = missPoint(b); tx = mp.x + (Math.random() * 50 - 25); ty = mp.y + (Math.random() * 50 - 25); }
+            else { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.18 + Math.random() * 0.64); }
+            const p = add('fl-bolt', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
+            const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
+            pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 6, 0.5); } };
+          }
+          if (!missOn() && big) setTimeout(() => { critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', 22, 1); shake(); }, 230);
+        };
+        if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 380);
+        return;
+      }
+      // 全：散彈彈道(球飛中途爆開) → 子彈分飛上中下卡；一般每卡1、暴擊大顆球每卡3
+      const a = frontEdge(aEl);
+      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
+      const cmid = cen(card(oth(), 1));
+      const splitX = a.x + (cmid.x - a.x) * 0.5, splitY = a.y + (cmid.y - a.y) * 0.5;
+      recoil(aEl, 14); muzzleAt(a.x, a.y, big, '#ffd24d'); smoke(a.x, a.y, big);
+      const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
+      const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - a.y) + 'px)) scale(' + (big ? 1.4 : 1) + ')' }], { duration: 220, easing: 'linear' });
       an.onfinish = () => {
-        ball.remove(); ring(splitX, splitY, '#ffd24d', false);   // 爆開
-        const parts = splitDmg(big ? 999 : 350, pellets);
-        for (let k = 0; k < pellets; k++) {
-          let tx, ty;
-          if (missOn()) { const mp = missPoint(b); tx = mp.x + (Math.random() * 50 - 25); ty = mp.y + (Math.random() * 50 - 25); }
-          else { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.18 + Math.random() * 0.64); }
-          const p = add('fl-bolt', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
-          const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
-          pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 6, 0.5); } };
-        }
-        if (!missOn() && big) setTimeout(() => { critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', 22, 1); shake(); }, 230);
+        ball.remove(); ring(splitX, splitY, '#ffd24d', big);
+        const per = big ? 3 : 1;
+        fs.forEach((f) => {
+          if (missOn()) missDodge(f);
+          const parts = splitDmg(big ? 333 : 117, per);
+          for (let k = 0; k < per; k++) {
+            let tx, ty;
+            if (missOn()) { const mp = missPoint(cen(f)); tx = mp.x + (Math.random() * 40 - 20); ty = cen(f).y + (Math.random() * 40 - 20); }
+            else { const tp = cardRndPt(f); tx = tp.x; ty = tp.y; }
+            const p = add('fl-bolt' + (big ? ' big' : ''), 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
+            const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 280, easing: 'linear' });
+            pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(f); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 6, 0.5); } };
+          }
+          if (missOn()) setTimeout(() => dmg(f, 'MISS', 'miss'), 300);
+        });
       };
-      if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 380);
     }
     function eShot() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const cnt = critOn() ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), Math.round((impact + 220) / 2) + 30);
@@ -625,7 +655,7 @@
     };
     const aoeOn = () => $('fl-aoe').classList.contains('on');
     const isEvade = (k) => k[0] === 'd';
-    const SELF_AOE = new Set(['laser', 'cannon']);   // 自己處理全體演出的招式（不用通用逐卡重播）
+    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun']);   // 自己處理全體演出的招式（不用通用逐卡重播）
     // 單：打中間卡一次；全：依序對 3 張卡各施放一次（每次鎖定該卡，間隔夠長避免目標錯亂）
     function runMove(k) {
       const fn = FX[k]; if (!fn) return;
