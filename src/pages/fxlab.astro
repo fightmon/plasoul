@@ -342,6 +342,81 @@
         return;
       }
 
+      // ===== 共用：依等級組裝（LV2 用；LV3 仍走下方 inline）=====
+      const multiSingle = (n) => {
+        const a = frontEdge(aEl); const parts = splitDmg(350, n); maybeDodge(defEl(), 460);
+        const dr = defEl().getBoundingClientRect(), fr = field().getBoundingClientRect();
+        for (let s = 0; s < n; s++) {
+          const a2 = { x: a.x + fwd * Math.random() * 30, y: a.y + (s - (n - 1) / 2) * 14 };
+          const band = n === 1 ? 0.3 : (s / (n - 1)) * 0.6;
+          const b2 = { x: (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5), y: (dr.top - fr.top) + dr.height * (0.2 + band + Math.random() * 0.08) };
+          setTimeout(() => { aperture(a2.x, a2.y, col, false, angOf(a2, b2)); setTimeout(() => { beam(a2, b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b2.x, b2.y, '-' + parts[s], ''); particlesDir(b2.x, b2.y, angOf(a2, b2), col, 10); } }, 150); }, s * 130);
+        }
+        if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300);
+      };
+      const diveStrafe = (f, N, amp) => {
+        const c = cen(f); aEl.style.zIndex = '9';
+        const a0 = cen(aEl); const inX = a0.x + (c.x - a0.x) * 0.30;
+        const hi = { x: inX, y: c.y - amp }, lo = { x: inX, y: c.y + amp }, mid = { x: inX - fwd * (amp * 0.4), y: c.y };
+        const downFirst = Math.random() < 0.5; const e0 = downFirst ? hi : lo, e1 = downFirst ? lo : hi;
+        const flyIn = 300, sweep = N * 80 + 140, total = flyIn + sweep + 340;
+        const rotAt = (p) => Math.max(-35, Math.min(35, Math.atan2(c.y - p.y, Math.max(40, Math.abs(c.x - p.x))) * 180 / Math.PI)) * fwd;
+        const P = (p) => 'translate(' + (p.x - a0.x) + 'px,' + (p.y - a0.y) + 'px) rotate(' + rotAt(p) + 'deg)';
+        aEl.animate([{ transform: 'translate(0,0) rotate(0deg)', offset: 0, easing: 'ease-out' }, { transform: P(e0), offset: flyIn / total, easing: 'ease-in-out' }, { transform: P(mid), offset: (flyIn + sweep * 0.5) / total, easing: 'linear' }, { transform: P(e1), offset: (flyIn + sweep) / total, easing: 'ease-out' }, { transform: 'translate(0,0) rotate(0deg)', offset: 1 }], { duration: total, easing: 'linear' });
+        const parts = splitDmg(999, N);
+        if (missOn()) setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, flyIn + 200);
+        for (let k = 0; k < N; k++) setTimeout(() => {
+          const a = frontEdge(aEl); const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect();
+          const tx = (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5), ty = (dr.top - fr.top) + dr.height * (0.2 + Math.random() * 0.6);
+          const sx = a.x + fwd * Math.random() * 20; const ap = { x: sx, y: a.y }, bp = { x: tx, y: ty };
+          muzzleAt(sx, a.y, false, col); aperture(sx, a.y, col, false, angOf(ap, bp)); beam(ap, missOn() ? missPoint(bp) : bp, false, missOn());
+          if (!missOn()) { ring(tx, ty, col, false); flinch(f); dmgPt(tx, ty, '-' + parts[k] + '!', 'crit'); particlesDir(tx, ty, angOf(ap, bp), col, 5); }
+        }, flyIn + 80 + k * 80);
+        if (!missOn()) setTimeout(() => { hitFx(f); shake(); }, flyIn + 80 + N * 80 + 60);
+        setTimeout(() => { aEl.style.zIndex = ''; }, total);
+      };
+      const swivelFire = (targets) => {
+        const shotGap = 200, swT = (targets.length - 1) * shotGap + 120 + 320;
+        const angAt = (f) => { const a = frontEdge(aEl), b = cen(f); return Math.max(-22, Math.min(22, Math.atan2(b.y - a.y, Math.max(40, Math.abs(b.x - a.x))) * 180 / Math.PI)) * fwd; };
+        const kf = [{ transform: 'rotate(0deg)', offset: 0 }];
+        targets.forEach((f, i) => kf.push({ transform: 'rotate(' + angAt(f) + 'deg)', offset: (i * shotGap + 120) / swT }));
+        kf.push({ transform: 'rotate(0deg)', offset: 1 });
+        aEl.animate(kf, { duration: swT, easing: 'ease-in-out' });
+        const parts = splitDmg(350, targets.length);
+        targets.forEach((f, k) => setTimeout(() => {
+          const b = randPt(f); if (missOn()) missDodge(f); const a = shoot(b, missOn());
+          setTimeout(() => { if (!missOn()) { hitFx(f); flinch(f); dmgPt(b.x, b.y, '-' + parts[k], ''); particlesDir(b.x, b.y, angOf(a, b), col, 10); } else dmg(f, 'MISS', 'miss'); }, 130);
+        }, k * shotGap + 120));
+      };
+      const flyBarrage = (targets, per) => {
+        aEl.style.zIndex = '9';
+        const a0c = cen(aEl); const frF = field().getBoundingClientRect();
+        const stopX = atk === 'my' ? frF.width * 0.40 : frF.width * 0.60;
+        const stops = targets.map((f) => { const c = cen(f); return { f, dx: (stopX - a0c.x) * 0.5, dy: c.y - a0c.y }; });
+        const flyT = 300, holdT = per * 110 + 240, total = stops.length * (flyT + holdT) + 360;
+        const kf2 = [{ transform: 'translate(0,0)', offset: 0, easing: 'ease-out' }];
+        stops.forEach((s, i) => { const arrive = (i * (flyT + holdT) + flyT) / total, leave = (i * (flyT + holdT) + flyT + holdT) / total; kf2.push({ transform: 'translate(' + s.dx + 'px,' + s.dy + 'px)', offset: arrive, easing: 'linear' }); kf2.push({ transform: 'translate(' + s.dx + 'px,' + s.dy + 'px)', offset: Math.min(.999, leave), easing: 'ease-out' }); });
+        kf2.push({ transform: 'translate(0,0)', offset: 1 });
+        aEl.animate(kf2, { duration: total, easing: 'linear' });
+        const cardDmg = splitDmg(999, stops.length);
+        stops.forEach((s, i) => {
+          const base = i * (flyT + holdT) + flyT + 70;
+          if (missOn()) { setTimeout(() => { missDodge(s.f); dmg(s.f, 'MISS', 'miss'); }, base + 120); return; }
+          const p3 = splitDmg(cardDmg[i], per);
+          for (let k = 0; k < per; k++) setTimeout(() => { const a = frontEdge(aEl); const tp = randPt(s.f); const sx = a.x + fwd * Math.random() * 30; const sy = a.y + (k - 1) * 12; const ap = { x: sx, y: sy }; muzzleAt(sx, sy, false, col); aperture(sx, sy, col, false, angOf(ap, tp)); beam(ap, tp, false, false); ring(tp.x, tp.y, col, false); flinch(s.f); dmgPt(tp.x, tp.y, '-' + p3[k] + '!', 'crit'); particlesDir(tp.x, tp.y, dir, col, 5); }, base + k * 110);
+          setTimeout(() => { hitFx(s.f); shake(); }, base + per * 110 + 80);
+        });
+        setTimeout(() => { aEl.style.zIndex = ''; }, total);
+      };
+
+      if (lv === 2) {
+        const fs2 = foes(); const second = Math.random() < 0.5 ? fs2[0] : fs2[2];   // 隨機上或下
+        if (!aoeOn()) { if (!big) multiSingle(2); else diveStrafe(card(oth(), 1), 4, 70); return; }   // 單2發 / 單暴4發(幅度小)
+        const targets = [fs2[1], second];   // 全：中間 + 隨機上/下
+        if (!big) swivelFire(targets); else flyBarrage(targets, 3);   // 全2發 / 全暴 2卡各3發=6
+        return;
+      }
+
       if (!aoeOn()) {
         if (!big) {
           // 單體：對中卡上→中→下射 3 發（起點 X 軸隨機）
