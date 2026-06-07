@@ -308,7 +308,7 @@
       const aEl = atkEl();
       const angOf = (a, b) => Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
       // 起點偏移：射上→Y下移、射下→Y上移、射中→前移（讓彈道有變化）
-      const startOff = (a, b) => { const dy = b.y - a.y; if (dy < -18) return { x: a.x, y: a.y + (20 + Math.random() * 10) }; if (dy > 18) return { x: a.x, y: a.y - (20 + Math.random() * 10) }; return { x: a.x + fwd * (20 + Math.random() * 10), y: a.y }; };
+      const startOff = (a, b) => { const dy = b.y - a.y; if (dy < -18) return { x: a.x, y: a.y - (20 + Math.random() * 10) }; if (dy > 18) return { x: a.x, y: a.y + (20 + Math.random() * 10) }; return { x: a.x + fwd * (20 + Math.random() * 10), y: a.y }; };
       // 射一發到 b：含起點偏移、槍口橢圓跟著角度轉、雷射
       const shoot = (b, miss) => { const a0 = frontEdge(aEl); const a = startOff(a0, b); muzzle(aEl); aperture(a.x, a.y, col, false, angOf(a, b)); beam(a, b, false, miss); return a; };
       const foes = () => [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
@@ -324,7 +324,7 @@
         // 單暴擊：飛到每張卡前面各射 3 直發，再回位
         const fs = foes(); aEl.style.zIndex = '9';
         const a0 = cen(aEl);
-        const stops = fs.map((f) => { const c = cen(f); const w = f.getBoundingClientRect().width; return { f, x: c.x - fwd * (w * 0.62), y: c.y }; });
+        const stops = fs.map((f) => { const c = cen(f); const w = f.getBoundingClientRect().width; return { f, x: c.x - fwd * (w * 0.95), y: c.y }; });
         const flyT = 240, holdT = 3 * 120 + 150, total = fs.length * (flyT + holdT) + 320;
         const kf = [{ transform: 'translate(0,0)', offset: 0 }];
         stops.forEach((s, i) => { const dx = s.x - a0.x, dy = s.y - a0.y; const arrive = (i * (flyT + holdT) + flyT) / total, leave = (i * (flyT + holdT) + flyT + holdT) / total; kf.push({ transform: 'translate(' + dx + 'px,' + dy + 'px)', offset: arrive }); kf.push({ transform: 'translate(' + dx + 'px,' + dy + 'px)', offset: Math.min(.999, leave) }); });
@@ -334,7 +334,7 @@
         stops.forEach((s, i) => {
           const base = i * (flyT + holdT) + flyT + 30;
           if (missOn()) { setTimeout(() => { missDodge(s.f); dmg(s.f, 'MISS', 'miss'); }, base + 120); return; }
-          for (let k = 0; k < 3; k++) setTimeout(() => { const a = frontEdge(aEl); const c = cen(s.f); const b = { x: c.x, y: c.y + (k - 1) * 12 }; muzzle(aEl); aperture(a.x, a.y, col, false, 0); beam(a, b, false, false); ring(b.x, b.y, col, false); }, base + k * 120);
+          for (let k = 0; k < 3; k++) setTimeout(() => { const a = frontEdge(aEl); const c = cen(s.f); const sy = a.y + (k - 1) * 12; muzzle(aEl); aperture(a.x, sy, col, false, 0); beam({ x: a.x, y: sy }, { x: c.x, y: sy }, false, false); ring(c.x, sy, col, false); }, base + k * 120);
           setTimeout(() => { hitFx(s.f); flinch(s.f); dmg(s.f, '-' + parts[i] + '!', 'crit'); shake(); }, base + 2 * 120 + 70);
         });
         setTimeout(() => { aEl.style.zIndex = ''; }, total);
