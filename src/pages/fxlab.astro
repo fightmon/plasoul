@@ -35,6 +35,13 @@
     </div>
 
     <div class="fl-panel">
+      <div class="fl-lv" id="fl-lv">
+        <button class="fl-lvb on" data-lv="1">1</button>
+        <button class="fl-lvb" data-lv="2">2</button>
+        <button class="fl-lvb" data-lv="3">3</button>
+        <button class="fl-lvb" data-lv="4">4</button>
+        <button class="fl-lvb" data-lv="5">5</button>
+      </div>
       <div class="fl-ctrl">
         <div class="fl-tabs">
           <button class="fl-tab on" data-cat="ranged">射</button>
@@ -189,6 +196,9 @@
 
     /* 底部控制面板（固定，不出框）*/
     .fl-panel { flex-shrink: 0; background: #0b0f1c; border-top: 1px solid #1c2748; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); }
+    .fl-lv { display: flex; gap: 6px; justify-content: flex-end; margin-bottom: 8px; }
+    .fl-lvb { width: 34px; height: 30px; border-radius: 9px; background: #141c34; border: 1px solid #2c3a5e; color: #8294b8; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .fl-lvb.on { background: linear-gradient(135deg, #3b82f6, #1e50e5); border-color: #5b86ff; color: #fff; }
     .fl-ctrl { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
     .fl-tabs { display: flex; gap: 6px; }
     .fl-tab { width: 40px; height: 34px; border-radius: 9px; background: #141c34; border: 1px solid #2c3a5e; color: #cdd7ee; font-size: 16px; font-weight: 800; cursor: pointer; }
@@ -208,6 +218,7 @@
     const field = () => $('fl-field');
     const fxL = () => $('fl-fx');
     let atk = 'my';
+    let lv = 1;   // 招式等級（1~3 先做，4/5 預留）
 
     const oth = () => atk === 'my' ? 'foe' : 'my';
     const card = (s, i) => $('fl-' + s + '-' + i);
@@ -729,6 +740,11 @@
     }));
     renderMoves('ranged');
 
+    // 等級鈕：單選（亮藍=目前等級）
+    $('fl-lv').querySelectorAll('.fl-lvb').forEach((b) => b.addEventListener('click', () => {
+      $('fl-lv').querySelectorAll('.fl-lvb').forEach((x) => x.classList.remove('on'));
+      b.classList.add('on'); lv = Number(b.dataset.lv);
+    }));
     // 狀態鈕：0/1 切換（亮起=1）
     $('fl-aoe').addEventListener('click', () => { const on = $('fl-aoe').classList.toggle('on'); $('fl-aoe').textContent = on ? '全' : '單'; });
     $('fl-crit').addEventListener('click', () => $('fl-crit').classList.toggle('on'));
