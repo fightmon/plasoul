@@ -595,7 +595,7 @@
         };
       };
       const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
-      if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), 470); burstShot([defEl()], lv + 2); return; }   // 單：LV+2 顆打中卡
+      if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), 470); burstShot([defEl()], lv === 1 ? (big ? 5 : 3) : lv + 2); return; }   // 單：LV1暴5/LV1一般3、其餘LV+2
       if (lv === 2) { const second = Math.random() < 0.5 ? fs[0] : fs[2]; burstShot([fs[1], second], 2); return; }   // 全：2 卡各 2
       burstShot(fs, 3);   // LV3 全：3 卡各 3
     }
