@@ -666,10 +666,11 @@
         const cr = add('fl-cross', 560); cr.style.left = c.x + 'px'; cr.style.top = c.y + 'px';
         setTimeout(() => {
           const a = frontEdge(atkEl()); recoil(atkEl(), 6); muzzleAt(a.x, a.y, false, '#ffd24d');
+          const dir = atk === 'my' ? 0 : 180;
           const tgt = missOn() ? missPoint(c) : c; const ang = Math.atan2(tgt.y - a.y, tgt.x - a.x) * 180 / Math.PI;
           const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
-          const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 300, easing: 'linear' });
-          an.onfinish = () => { m.remove(); if (missOn()) { dmg(defEl(), 'MISS', 'miss'); return; } burst(c.x, c.y, '#ff9a3d', big); if (big) critFlash(c.x, c.y, '#ff9a3d'); flinch(defEl()); particles(c.x, c.y, '#ffb060', big ? 10 : 6, 0.5); dmgPt(c.x, c.y, '-' + (big ? '999!' : '350'), big ? 'crit' : ''); if (big) shake(); };
+          const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 170, easing: 'linear' });
+          an.onfinish = () => { m.remove(); if (missOn()) { dmg(defEl(), 'MISS', 'miss'); return; } burst(c.x, c.y, '#ff9a3d', big); if (big) critFlash(c.x, c.y, '#ff9a3d'); flinch(defEl()); particlesDir(c.x, c.y, dir, '#ffb060', big ? 16 : 12); dmgPt(c.x, c.y, '-' + (big ? '999!' : '350'), big ? 'crit' : ''); if (big) shake(); };
         }, 360);
         return;
       }
