@@ -427,8 +427,8 @@
     function eCannon() {
       const big = critOn(); const fwd = atk === 'my' ? 1 : -1; const aEl = atkEl();
       // 發一顆炮彈到 el 的隨機點
-      const shot = (el, dmgVal) => {
-        const a = frontEdge(aEl), b = cardRndPt(el);
+      const shot = (el, dmgVal, fb) => {
+        const b = fb || cardRndPt(el); const a = { x: frontEdge(aEl).x, y: fb ? fb.y : frontEdge(aEl).y };   // fb=固定彈著(直線)
         recoil(aEl, 16); muzzleAt(a.x, a.y, true, '#ffd24d'); smoke(a.x, a.y, big);
         if (missOn()) missDodge(el);
         const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = mp ? mp.y : b.y;
@@ -436,6 +436,12 @@
         const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px)) scale(1)' }], { duration: 300, easing: 'ease-in' });
         an.onfinish = () => { ball.remove(); if (missOn()) { dmg(el, 'MISS', 'miss'); return; } burst(b.x, b.y, '#ffd24d', big); if (big) critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', big ? 24 : 12, big ? 1 : 0.55); hitFx(el); dmgPt(b.x, b.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };
       };
+      if (lv === 1) {
+        // LV1：1 顆直線炮彈（彈著只變 X、Y 固定中心）
+        const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
+        const cy = (dr.top - fr.top) + dr.height * 0.5, tx = (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5);
+        maybeDodge(defEl(), 350); shot(defEl(), big ? 999 : 350, { x: tx, y: cy }); return;
+      }
       if (!aoeOn()) { maybeDodge(defEl(), 350); shot(defEl(), big ? 999 : 350); return; }
       // 全：卡連續轉角，依序發 3 顆炮彈到上中下卡（上下順序隨機）
       const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
