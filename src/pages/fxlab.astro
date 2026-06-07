@@ -621,12 +621,10 @@
       const yAt = (f, frac) => { const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect(); return (dr.top - fr.top) + dr.height * (0.18 + frac * 0.64); };
 
       if (lv === 1 || !aoeOn()) {
-        // 單：LV×4 發打中卡，從攻方掃射；方向隨機(上→下 或 下→上)；LV3 兩趟掃
+        // 單：LV×4 發打中卡，從攻方單趟掃射；方向隨機(上→下 或 下→上)
         const f = defEl(); const N = lv * 4; const pts = []; const updown = Math.random() < 0.5;
         for (let k = 0; k < N; k++) {
-          let frac;
-          if (lv <= 2) frac = N > 1 ? k / (N - 1) : 0.5;   // 一趟掃
-          else { const half = N / 2; frac = k < half ? k / (half - 1) : 1 - (k - half) / (half - 1); }   // 兩趟掃
+          let frac = N > 1 ? k / (N - 1) : 0.5;
           if (!updown) frac = 1 - frac;
           pts.push({ x: rx(f), y: yAt(f, frac), el: f });
         }
