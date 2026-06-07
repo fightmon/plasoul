@@ -683,10 +683,10 @@
           const cardW = targets[0].getBoundingClientRect().width; const M = targets.length * pcount;
           for (let gi = 0; gi < M; gi++) {
             const gf = M > 1 ? gi / (M - 1) : 0.5; const th = angFrom + (angTo - angFrom) * gf;
-            const px = cardX + (Math.random() - 0.5) * cardW * 0.5;   // X 小幅隨機=每發命中略不同
             const py = a0.y + (cardX - a0.x) * tanD(th) + (Math.random() - 0.5) * 16;   // Y 主掃 + 小抖
             let nf = targets[0], nd = 1e9; targets.forEach((f) => { const d = Math.abs(cen(f).y - py); if (d < nd) { nd = d; nf = f; } });
-            setTimeout(() => { if (!missOn()) burstAt(nf, px, py); }, tAt(0.12 + gf * 0.74));
+            const fx = cen(nf).x + (Math.random() - 0.5) * cardW * 0.5;   // 用該卡實際X(中卡較前→彈著相對前移) + 小幅隨機
+            setTimeout(() => { if (!missOn()) burstAt(nf, fx, py); }, tAt(0.12 + gf * 0.74));
           }
           targets.forEach((f, i) => {
             const c = cen(f); const gMid = Math.max(0, Math.min(1, (angA(c) - angFrom) / ((angTo - angFrom) || 1))); const w = tAt(0.12 + gMid * 0.74);
