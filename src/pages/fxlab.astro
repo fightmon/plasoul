@@ -784,18 +784,24 @@
       }
     }
     function eBit() {
-      // 子機(三角形)：飛到對方卡正前方隨機位置(上/中/下)，朝彈著點旋轉、射小光束；暴=同一機原地換位置再射一發；演示完飛回卡身
+      // 子機(三角形)：弧線從本體後方飛出→卡前方上/中/下定位，朝彈著點旋轉、射小光束(起點有光點)；暴=原地換位置再射一發；演示完弧線飛回出發點
       const big = critOn(); const aoe = aoeOn() && lv >= 2;
       const a = frontEdge(atkEl()); const fr = field().getBoundingClientRect(); const fwd = atk === 'my' ? 1 : -1;
-      const col = atk === 'my' ? '#bfefff' : '#ffc2c2'; const bitCls = 'fl-bit' + (atk === 'my' ? '' : ' foe');
+      const col = atk === 'my' ? '#bfefff' : '#ffc2c2'; const mcol = atk === 'my' ? '#9fe8ff' : '#ff8a8a'; const bitCls = 'fl-bit' + (atk === 'my' ? '' : ' foe');
       let cards, podsPerCard, volleys;   // volleys=每機射幾發(暴=2，換位置)
       if (!aoe) { cards = [defEl()]; podsPerCard = lv === 1 ? 2 : lv === 2 ? 2 : 3; volleys = big ? 2 : 1; }   // 單體機數2/2/3；普通各1發、暴各2發→共2/2/3、暴4/4/6
       else { const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean); cards = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice(); podsPerCard = big ? 1 : 2; volleys = big ? 2 : 1; }   // 全：普通每卡2機各1發、暴每卡1機射2發→每卡都2發
-      cards.forEach((d) => maybeDodge(d, 1200));
+      cards.forEach((d) => maybeDodge(d, 1300));
+      const tf = (p, r) => 'translate(calc(-50% + ' + (p.x - a.x) + 'px),calc(-50% + ' + (p.y - a.y) + 'px)) rotate(' + r + 'deg)';
+      const ang = (p, q) => Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+      const arcKf = (from, to, bend, r0, r1) => {   // 二次貝茲取樣→弧線軌跡，旋轉 r0→r1
+        const mx = (from.x + to.x) / 2, my = (from.y + to.y) / 2, dx = to.x - from.x, dy = to.y - from.y, len = Math.hypot(dx, dy) || 1, nx = -dy / len, ny = dx / len, cx = mx + nx * bend, cy = my + ny * bend, N = 10, kf = [];
+        for (let i = 0; i <= N; i++) { const t = i / N, it = 1 - t, x = it * it * from.x + 2 * it * t * cx + t * t * to.x, y = it * it * from.y + 2 * it * t * cy + t * t * to.y, r = r0 + (r1 - r0) * t; kf.push({ transform: tf({ x, y }, r) }); }
+        return kf;
+      };
       cards.forEach((d) => {
         const dr = d.getBoundingClientRect(); const beamsThisCard = podsPerCard * volleys; const parts = splitDmg(big ? 999 : 350, beamsThisCard);
-        const tf0 = 'translate(-50%,-50%) rotate(0deg)';   // 在攻方
-        const frontPos = (slot) => {   // 卡正前方隨機點；slot: 'up'/'down'/null(隨機上中下)
+        const frontPos = (slot) => {
           const nearX = (atk === 'my' ? (dr.left - fr.left) : (dr.right - fr.left)) - fwd * (22 + Math.random() * 16);
           const px = nearX + (Math.random() - 0.5) * dr.width * 0.3;
           const s = slot || (Math.random() < .38 ? 'up' : Math.random() < .62 ? 'down' : 'mid');
@@ -803,27 +809,30 @@
           return { x: px, y: py };
         };
         const tgtPt = () => ({ x: (dr.left - fr.left) + dr.width * (0.3 + Math.random() * 0.4), y: (dr.top - fr.top) + dr.height * (0.3 + Math.random() * 0.4) });
-        const tf = (p, r) => 'translate(calc(-50% + ' + (p.x - a.x) + 'px),calc(-50% + ' + (p.y - a.y) + 'px)) rotate(' + r + 'deg)';
         let bi = 0;
         for (let pIdx = 0; pIdx < podsPerCard; pIdx++) {
           const pod = add(bitCls, 0); pod.style.left = a.x + 'px'; pod.style.top = a.y + 'px';
+          const bp = { x: a.x - fwd * (40 + Math.random() * 22), y: a.y + (Math.random() * 40 - 20) };   // 本體後方出發/返回點
+          const bend = (Math.random() < .5 ? 1 : -1) * (34 + Math.random() * 30);
           const slot = aoe ? (pIdx % 2 === 0 ? 'up' : 'down') : null;   // 全=上下夾
-          const flyDur = 320 + Math.random() * 120 + pIdx * 40;
-          let prev = tf0, t = 0;
-          let pos = frontPos(slot), tp = tgtPt(); let ang = Math.atan2(tp.y - pos.y, tp.x - pos.x) * 180 / Math.PI;
-          const to0 = tf(pos, ang); pod.animate([{ transform: tf0 }, { transform: to0 }], { duration: flyDur, easing: 'ease-out', fill: 'both' }); prev = to0; t = flyDur;
+          const flyDur = 360 + Math.random() * 120 + pIdx * 40;
+          let pos = frontPos(slot), tp = tgtPt(), aim = ang(pos, tp); let prevEnd = pos, prevRot = aim, t = 0;
+          pod.style.transform = tf(bp, ang(bp, pos));
+          pod.animate(arcKf(bp, pos, bend, ang(bp, pos), aim), { duration: flyDur, delay: 0, easing: 'ease-out', fill: 'both' });   // 弧線飛入
+          t = flyDur;
           for (let v = 0; v < volleys; v++) {
-            if (v > 0) { pos = frontPos(slot === 'up' ? 'down' : slot === 'down' ? 'up' : null); tp = tgtPt(); ang = Math.atan2(tp.y - pos.y, tp.x - pos.x) * 180 / Math.PI; const to = tf(pos, ang); pod.animate([{ transform: prev }, { transform: to }], { duration: 200, delay: t, easing: 'ease-in-out', fill: 'both' }); prev = to; t += 220; }
-            const fp = pos, ftp = tp, fang = ang, dval = parts[bi++], last = (pIdx === podsPerCard - 1 && v === volleys - 1);
+            if (v > 0) { const np = frontPos(slot === 'up' ? 'down' : slot === 'down' ? 'up' : null), ntp = tgtPt(), naim = ang(np, ntp); pod.animate(arcKf(prevEnd, np, (Math.random() < .5 ? 1 : -1) * 24, prevRot, naim), { duration: 210, delay: t, easing: 'ease-in-out', fill: 'both' }); prevEnd = np; prevRot = naim; pos = np; tp = ntp; aim = naim; t += 230; }
+            const fp = pos, ftp = tp, fang = aim, dval = parts[bi++], last = (pIdx === podsPerCard - 1 && v === volleys - 1);
             setTimeout(() => {
+              muzzleAt(fp.x, fp.y, big, mcol);   // 雷射起點光點
               beam({ x: fp.x, y: fp.y }, ftp, big, missOn());   // 子機向卡內射束（beam 內部處理 MISS）
               if (missOn()) { if (last) dmg(d, 'MISS', 'miss'); }
               else { flinch(d); particlesDir(ftp.x, ftp.y, fang, col, big ? 16 : 10); dmgPt(ftp.x, ftp.y, '-' + dval + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(ftp.x, ftp.y, col); shake(); } }
             }, t + 130);
             t += 280;
           }
-          pod.animate([{ transform: prev }, { transform: tf0 }], { duration: 300, delay: t + 60, easing: 'ease-in', fill: 'both' });   // 飛回卡身
-          setTimeout(() => pod.remove(), t + 60 + 320);
+          pod.animate(arcKf(prevEnd, bp, bend, prevRot, ang(prevEnd, bp)), { duration: 340, delay: t + 80, easing: 'ease-in', fill: 'both' });   // 弧線飛回出發點
+          setTimeout(() => pod.remove(), t + 80 + 360);
         }
       });
     }
