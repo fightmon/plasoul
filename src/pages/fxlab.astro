@@ -166,8 +166,8 @@
     @keyframes fl-ap { 0%{opacity:.3; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(.25);} 42%{opacity:1; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(1);} }
 
     .fl-missile { position: absolute; left: 0; top: 0; width: 16px; height: 7px; border-radius: 4px; background: linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow: 0 0 10px #ff9a3d; offset-rotate: auto; }
-    .fl-bit { position: absolute; width: 14px; height: 14px; border-radius: 4px; transform: translate(-50%,-50%); background: linear-gradient(180deg,#dff6ff,#5bc8ff); box-shadow: 0 0 10px #6fd3ff; border: 1px solid rgba(255,255,255,.6); }
-    .fl-bit.foe { background: linear-gradient(180deg,#ffe0e0,#ff7a7a); box-shadow: 0 0 10px #ff7a7a; }
+    .fl-bit { position: absolute; width: 18px; height: 14px; transform: translate(-50%,-50%); background: linear-gradient(90deg,#5bc8ff,#dff6ff); box-shadow: 0 0 9px #6fd3ff; clip-path: polygon(100% 50%, 0 0, 0 100%); }
+    .fl-bit.foe { background: linear-gradient(90deg,#ff7a7a,#ffe0e0); box-shadow: 0 0 9px #ff7a7a; }
 
     .fl-sonic { position: absolute; width: 50px; height: 76px; border: 5px solid transparent; border-radius: 50%; transform: translate(-50%,-50%); filter: drop-shadow(0 0 5px #fff); }
     .fl-sonic.r.c-my { border-right-color: #7fd0ff; } .fl-sonic.r.c-foe { border-right-color: #ff8a8a; }
@@ -784,35 +784,46 @@
       }
     }
     function eBit() {
-      // 子機：飛到對方卡正前方、隨機位置、上下交替夾擊，各自向卡內斜射光束
+      // 子機(三角形)：飛到對方卡正前方隨機位置(上/中/下)，朝彈著點旋轉、射小光束；暴=同一機原地換位置再射一發；演示完飛回卡身
       const big = critOn(); const aoe = aoeOn() && lv >= 2;
       const a = frontEdge(atkEl()); const fr = field().getBoundingClientRect(); const fwd = atk === 'my' ? 1 : -1;
       const col = atk === 'my' ? '#bfefff' : '#ffc2c2'; const bitCls = 'fl-bit' + (atk === 'my' ? '' : ' foe');
-      let cards, perCard;
-      if (!aoe) { cards = [defEl()]; perCard = lv === 1 ? (big ? 6 : 2) : lv === 2 ? (big ? 6 : 3) : (big ? 8 : 6); }   // 單體 2/3/6，暴 6/6/8
-      else { const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean); cards = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice(); perCard = lv === 2 ? (big ? 4 : 2) : (big ? 3 : 2); }   // 全：每卡2，LV2暴4/LV3暴3
-      smoke(a.x, a.y, big);
-      cards.forEach((d) => maybeDodge(d, 1000));
+      let cards, podsPerCard, volleys;   // volleys=每機射幾發(暴=2，換位置)
+      if (!aoe) { cards = [defEl()]; podsPerCard = lv === 1 ? 2 : lv === 2 ? 2 : 3; volleys = big ? 2 : 1; }   // 單體機數2/2/3；普通各1發、暴各2發→共2/2/3、暴4/4/6
+      else { const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean); cards = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice(); podsPerCard = big ? 1 : 2; volleys = big ? 2 : 1; }   // 全：普通每卡2機各1發、暴每卡1機射2發→每卡都2發
+      cards.forEach((d) => maybeDodge(d, 1200));
       cards.forEach((d) => {
-        const dr = d.getBoundingClientRect(); const parts = splitDmg(big ? 999 : 350, perCard);
-        const nearX = (atk === 'my' ? (dr.left - fr.left) : (dr.right - fr.left)) - fwd * (24 + Math.random() * 18);   // 卡正前方
-        for (let k = 0; k < perCard; k++) {
-          const up = k % 2 === 0;   // 上下交替夾擊
-          const podX = nearX + (Math.random() - 0.5) * dr.width * 0.35;
-          const podY = up ? (dr.top - fr.top) - (10 + Math.random() * 34) : (dr.top - fr.top) + dr.height + (10 + Math.random() * 34);
-          const tp = { x: (dr.left - fr.left) + dr.width * (0.3 + Math.random() * 0.4), y: (dr.top - fr.top) + dr.height * (0.3 + Math.random() * 0.4) };   // 卡內隨機命中點
+        const dr = d.getBoundingClientRect(); const beamsThisCard = podsPerCard * volleys; const parts = splitDmg(big ? 999 : 350, beamsThisCard);
+        const tf0 = 'translate(-50%,-50%) rotate(0deg)';   // 在攻方
+        const frontPos = (slot) => {   // 卡正前方隨機點；slot: 'up'/'down'/null(隨機上中下)
+          const nearX = (atk === 'my' ? (dr.left - fr.left) : (dr.right - fr.left)) - fwd * (22 + Math.random() * 16);
+          const px = nearX + (Math.random() - 0.5) * dr.width * 0.3;
+          const s = slot || (Math.random() < .38 ? 'up' : Math.random() < .62 ? 'down' : 'mid');
+          const py = s === 'up' ? (dr.top - fr.top) - (8 + Math.random() * 30) : s === 'down' ? (dr.top - fr.top) + dr.height + (8 + Math.random() * 30) : (dr.top - fr.top) + dr.height * (0.32 + Math.random() * 0.36);
+          return { x: px, y: py };
+        };
+        const tgtPt = () => ({ x: (dr.left - fr.left) + dr.width * (0.3 + Math.random() * 0.4), y: (dr.top - fr.top) + dr.height * (0.3 + Math.random() * 0.4) });
+        const tf = (p, r) => 'translate(calc(-50% + ' + (p.x - a.x) + 'px),calc(-50% + ' + (p.y - a.y) + 'px)) rotate(' + r + 'deg)';
+        let bi = 0;
+        for (let pIdx = 0; pIdx < podsPerCard; pIdx++) {
           const pod = add(bitCls, 0); pod.style.left = a.x + 'px'; pod.style.top = a.y + 'px';
-          const flyDur = 340 + Math.random() * 140;
-          pod.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (podX - a.x) + 'px),calc(-50% + ' + (podY - a.y) + 'px))' }], { duration: flyDur, easing: 'ease-out', fill: 'forwards' });
-          const fireAt = flyDur + 150 + k * 60;
-          setTimeout(() => {
-            const ang = Math.atan2(tp.y - podY, tp.x - podX) * 180 / Math.PI;
-            beam({ x: podX, y: podY }, missOn() ? missPoint(tp) : tp, big, missOn());   // 子機向內射束
-            pod.animate([{}, { transform: 'translate(calc(-50% + ' + (podX - a.x) + 'px),calc(-50% + ' + (podY - a.y) + 'px)) scale(1.25)' }], { duration: 90, direction: 'alternate', iterations: 2 });
-            if (missOn()) { if (k === perCard - 1) dmg(d, 'MISS', 'miss'); }
-            else { flinch(d); particlesDir(tp.x, tp.y, ang, col, big ? 16 : 10); dmgPt(tp.x, tp.y, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(tp.x, tp.y, col); shake(); } }
-          }, fireAt);
-          setTimeout(() => { pod.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 240, fill: 'forwards' }); setTimeout(() => pod.remove(), 250); }, fireAt + 200);
+          const slot = aoe ? (pIdx % 2 === 0 ? 'up' : 'down') : null;   // 全=上下夾
+          const flyDur = 320 + Math.random() * 120 + pIdx * 40;
+          let prev = tf0, t = 0;
+          let pos = frontPos(slot), tp = tgtPt(); let ang = Math.atan2(tp.y - pos.y, tp.x - pos.x) * 180 / Math.PI;
+          const to0 = tf(pos, ang); pod.animate([{ transform: tf0 }, { transform: to0 }], { duration: flyDur, easing: 'ease-out', fill: 'both' }); prev = to0; t = flyDur;
+          for (let v = 0; v < volleys; v++) {
+            if (v > 0) { pos = frontPos(slot === 'up' ? 'down' : slot === 'down' ? 'up' : null); tp = tgtPt(); ang = Math.atan2(tp.y - pos.y, tp.x - pos.x) * 180 / Math.PI; const to = tf(pos, ang); pod.animate([{ transform: prev }, { transform: to }], { duration: 200, delay: t, easing: 'ease-in-out', fill: 'both' }); prev = to; t += 220; }
+            const fp = pos, ftp = tp, fang = ang, dval = parts[bi++], last = (pIdx === podsPerCard - 1 && v === volleys - 1);
+            setTimeout(() => {
+              beam({ x: fp.x, y: fp.y }, ftp, big, missOn());   // 子機向卡內射束（beam 內部處理 MISS）
+              if (missOn()) { if (last) dmg(d, 'MISS', 'miss'); }
+              else { flinch(d); particlesDir(ftp.x, ftp.y, fang, col, big ? 16 : 10); dmgPt(ftp.x, ftp.y, '-' + dval + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(ftp.x, ftp.y, col); shake(); } }
+            }, t + 130);
+            t += 280;
+          }
+          pod.animate([{ transform: prev }, { transform: tf0 }], { duration: 300, delay: t + 60, easing: 'ease-in', fill: 'both' });   // 飛回卡身
+          setTimeout(() => pod.remove(), t + 60 + 320);
         }
       });
     }
