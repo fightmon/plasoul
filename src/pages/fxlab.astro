@@ -559,18 +559,12 @@
         [fs[1], second].forEach((f, k) => setTimeout(() => shot(f, parts[k]), k * 220));   // 全/暴：中卡 + 隨機上/下 各 1
         return;
       }
-      if (!aoeOn()) { maybeDodge(defEl(), 350); shot(defEl(), big ? 999 : 350); return; }
-      // 全：卡連續轉角，依序發 3 顆炮彈到上中下卡（上下順序隨機）
+      // LV3+：同 LV2 但 +1 顆（共 3）
+      const parts = splitDmg(big ? 999 : 350, 3);
+      if (!aoeOn()) { maybeDodge(defEl(), 350); for (let k = 0; k < 3; k++) setTimeout(() => shot(defEl(), parts[k]), k * 160); return; }   // 單/暴：3 顆打中卡
       const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
       const seq = Math.random() < 0.5 ? fs.slice() : fs.slice().reverse();
-      const dmgs = splitDmg(big ? 999 : 350, seq.length);
-      const shotGap = 240, swT = (seq.length - 1) * shotGap + 300 + 320;
-      const angAt = (f) => { const a = frontEdge(aEl), b = cen(f); return Math.max(-22, Math.min(22, Math.atan2(b.y - a.y, Math.max(40, Math.abs(b.x - a.x))) * 180 / Math.PI)) * fwd; };
-      const kf = [{ transform: 'rotate(0deg)', offset: 0 }];
-      seq.forEach((f, i) => kf.push({ transform: 'rotate(' + angAt(f) + 'deg)', offset: (i * shotGap + 150) / swT }));
-      kf.push({ transform: 'rotate(0deg)', offset: 1 });
-      aEl.animate(kf, { duration: swT, easing: 'ease-in-out' });
-      seq.forEach((f, k) => setTimeout(() => shot(f, dmgs[k]), k * shotGap + 150));
+      seq.forEach((f, k) => setTimeout(() => shot(f, parts[k]), k * 220));   // 全/暴：3 卡各 1 顆
     }
     function eShotgun() {
       const big = critOn(); const aEl = atkEl();
