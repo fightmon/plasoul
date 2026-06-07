@@ -330,15 +330,26 @@
       const randPt = (el) => { const fr = field().getBoundingClientRect(), dr = el.getBoundingClientRect(); return { x: (dr.left - fr.left) + dr.width * (0.22 + Math.random() * 0.56), y: (dr.top - fr.top) + dr.height * (0.18 + Math.random() * 0.64) }; };
 
       if (lv === 1) {
-        // LV1：1 發直線（彈著只變 X、Y 固定中心 → 看起來就是直線雷射）
-        const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
+        const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect(); const fe = frontEdge(aEl);
+        if (big) {
+          // LV1 暴：3 發水平直線（上/中/下，起點 X 有變化）
+          const parts = splitDmg(999, 3); maybeDodge(defEl(), 560);
+          for (let s = 0; s < 3; s++) {
+            const ry = (dr.top - fr.top) + dr.height * (0.28 + s * 0.22);
+            const a2 = { x: fe.x + fwd * Math.random() * 30, y: ry }, b2 = { x: (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5), y: ry };
+            setTimeout(() => { muzzleAt(a2.x, a2.y, false, col); aperture(a2.x, a2.y, col, false, 0); setTimeout(() => { beam(a2, missOn() ? missPoint(b2) : b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b2.x, b2.y, '-' + parts[s] + '!', 'crit'); particlesDir(b2.x, b2.y, dir, col, 12); } else if (s === 0) dmg(defEl(), 'MISS', 'miss'); }, 130); }, s * 120);
+          }
+          if (!missOn()) setTimeout(shake, 520);
+          return;
+        }
+        // LV1 一般：1 發直線（彈著只變 X、Y 固定中心）
         const cy = (dr.top - fr.top) + dr.height * 0.5;
         const tx = (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5);
-        const a = { x: frontEdge(aEl).x, y: cy }, b = { x: tx, y: cy };
+        const a = { x: fe.x, y: cy }, b = { x: tx, y: cy };
         maybeDodge(defEl(), 360);
         muzzleAt(a.x, a.y, false, col); aperture(a.x, a.y, col, false, 0);
         setTimeout(() => { beam(a, missOn() ? missPoint(b) : b, false, missOn()); }, 120);
-        setTimeout(() => { if (!missOn()) { hitFx(defEl()); flinch(defEl()); dmgPt(b.x, b.y, '-' + (big ? '999!' : '350'), big ? 'crit' : ''); particlesDir(b.x, b.y, dir, col, big ? 16 : 12); if (big) shake(); } else dmg(defEl(), 'MISS', 'miss'); }, 460);
+        setTimeout(() => { if (!missOn()) { hitFx(defEl()); flinch(defEl()); dmgPt(b.x, b.y, '-350', ''); particlesDir(b.x, b.y, dir, col, 12); } else dmg(defEl(), 'MISS', 'miss'); }, 460);
         return;
       }
 
