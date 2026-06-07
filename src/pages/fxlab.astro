@@ -678,7 +678,7 @@
           if (missOn()) { setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, at(baseFrac)); return; }
           for (let t = 0; t < pcount; t++) {   // 彈著粒子表現多次（都在接觸點）
             const tf = single ? (0.12 + (pcount > 1 ? t / (pcount - 1) : 0) * 0.74) : (baseFrac + (t - (pcount - 1) / 2) * 0.04);
-            setTimeout(() => { flinch(f); burst(edge.x, edge.y, '#fff', big); particlesDir(edge.x, edge.y, dir, pcol, big ? 14 : 10); scorch(edge.x, edge.y, sh); shake(); }, at(tf));
+            setTimeout(() => { flinch(f); particlesDir(edge.x, edge.y, dir, pcol, big ? 16 : 12); scorch(edge.x, edge.y, sh); if (big) shake(); }, at(tf));
           }
           setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) critFlash(c.x, c.y, '#9fe8ff'); }, at(baseFrac) + 90);   // 1 個傷害數值(卡中心)
         });
