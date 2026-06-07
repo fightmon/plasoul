@@ -221,6 +221,7 @@
     function cen(el) { const fr = field().getBoundingClientRect(), r = el.getBoundingClientRect(); return { x: r.left + r.width / 2 - fr.left, y: r.top + r.height / 2 - fr.top }; }
     const cardCen = (s, i) => cen(card(s, i));
     function missPoint(b) { const fr = field().getBoundingClientRect(); return { x: atk === 'my' ? fr.width + 90 : -90, y: b.y - 14 }; }  // MISS：終點拉到視窗外（穿過去）
+    function cardRndPt(el) { const fr = field().getBoundingClientRect(), dr = el.getBoundingClientRect(); return { x: (dr.left - fr.left) + dr.width * (0.22 + Math.random() * 0.56), y: (dr.top - fr.top) + dr.height * (0.18 + Math.random() * 0.64) }; }  // 對方卡上隨機彈著點
     function add(cls, life) { const n = document.createElement('div'); n.className = cls; fxL().appendChild(n); if (life) setTimeout(() => n.remove(), life); return n; }
     function shake() { const f = field(); f.classList.add('fl-shake'); setTimeout(() => f.classList.remove('fl-shake'), 320); }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
@@ -400,12 +401,12 @@
       setTimeout(() => { aEl.style.zIndex = ''; }, total);
     }
     function eCannon() {
-      const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); maybeDodge(defEl(), 350);
+      const a = frontEdge(atkEl()), b = cardRndPt(defEl()); const big = critOn(); maybeDodge(defEl(), 350);
       recoil(atkEl(), 16); muzzle(atkEl(), true, '#ffd24d'); smoke(a.x, a.y, big);
       const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = mp ? mp.y : b.y;
       const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
       const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px)) scale(1)' }], { duration: 300, easing: 'ease-in' });
-      an.onfinish = () => { ball.remove(); if (!missOn()) { burst(b.x, b.y, '#ffd24d', big); if (big) critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', big ? 24 : 12, big ? 1 : 0.55); } resolve(defEl()); };
+      an.onfinish = () => { ball.remove(); if (missOn()) { dmg(defEl(), 'MISS', 'miss'); return; } burst(b.x, b.y, '#ffd24d', big); if (big) critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', big ? 24 : 12, big ? 1 : 0.55); hitFx(defEl()); dmgPt(b.x, b.y, '-' + (big ? '999!' : '350'), big ? 'crit' : ''); if (big) shake(); };
     }
     function eShotgun() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const pellets = big ? 5 : 3;
