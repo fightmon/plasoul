@@ -418,7 +418,7 @@
             const cy = (dr.top - fr.top) + dr.height * 0.5; const fe = frontEdge(aEl); const parts = splitDmg(350, 2);
             maybeDodge(defEl(), 460);
             for (let s = 0; s < 2; s++) {
-              const a = { x: fe.x + (Math.random() * 20 - 10), y: cy + (Math.random() * 24 - 12) };
+              const a = { x: fe.x + (Math.random() * 16 - 8), y: cy + (s - 0.5) * 38 + (Math.random() * 10 - 5) };   // 兩發起點上下分開、不重疊
               const b = { x: (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5), y: cy };
               setTimeout(() => { muzzleAt(a.x, a.y, false, col); aperture(a.x, a.y, col, false, angOf(a, b)); setTimeout(() => { beam(a, missOn() ? missPoint(b) : b, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b.x, b.y, '-' + parts[s], ''); particlesDir(b.x, b.y, dir, col, 10); } else if (s === 0) dmg(defEl(), 'MISS', 'miss'); }, 120); }, s * 150);
             }
