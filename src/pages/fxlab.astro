@@ -621,21 +621,25 @@
       const yAt = (f, frac) => { const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect(); return (dr.top - fr.top) + dr.height * (0.18 + frac * 0.64); };
 
       if (lv === 1 || !aoeOn()) {
-        // 單：LV×4 發打中卡，從攻方單趟掃射；方向隨機(上→下 或 下→上)
+        // 單：LV×4 發打中卡，從攻方掃射；方向隨機(上→下 或 下→上)；LV3 掃 2 趟
         const f = defEl(); const N = lv * 4; const pts = []; const updown = Math.random() < 0.5;
         for (let k = 0; k < N; k++) {
-          let frac = N > 1 ? k / (N - 1) : 0.5;
+          let frac;
+          if (lv >= 3) { const half = N / 2; frac = k < half ? k / (half - 1) : 1 - (k - half) / (half - 1); }   // 2 趟
+          else frac = N > 1 ? k / (N - 1) : 0.5;   // 1 趟
           if (!updown) frac = 1 - frac;
           pts.push({ x: rx(f), y: yAt(f, frac), el: f });
         }
         fireStream(pts);
         return;
       }
-      // 全：LV 張卡各 4 發（順序上→下或下→上隨機）
+      // 全：LV 張卡各 4 發，連續單趟掃射（上→下 或 下→上隨機）
       const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
-      const targets = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : (Math.random() < 0.5 ? fs.slice() : fs.slice().reverse());
+      const tg = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice();
+      const updown = Math.random() < 0.5;
+      const sorted = tg.slice().sort((a, b) => cen(a).y - cen(b).y); const ordered = updown ? sorted : sorted.slice().reverse();
       const pts = [];
-      targets.forEach((f) => { for (let i = 0; i < 4; i++) pts.push({ x: rx(f), y: yAt(f, 0.2 + Math.random() * 0.6), el: f }); });
+      ordered.forEach((f) => { for (let i = 0; i < 4; i++) { const frac = updown ? i / 3 : 1 - i / 3; pts.push({ x: rx(f), y: yAt(f, 0.15 + frac * 0.7), el: f }); } });
       fireStream(pts);
     }
     function chargeRings(x, y, color, dur, big) {
