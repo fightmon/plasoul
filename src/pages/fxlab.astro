@@ -621,21 +621,21 @@
       const yAt = (f, frac) => { const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect(); return (dr.top - fr.top) + dr.height * (0.18 + frac * 0.64); };
 
       if (lv === 1 || !aoeOn()) {
-        // 單：LV×4 發打中卡（LV1 隨機；LV2 上→下；LV3 上→下→上）
-        const f = defEl(); const N = lv * 4; const pts = [];
+        // 單：LV×4 發打中卡，從攻方掃射；方向隨機(上→下 或 下→上)；LV3 兩趟掃
+        const f = defEl(); const N = lv * 4; const pts = []; const updown = Math.random() < 0.5;
         for (let k = 0; k < N; k++) {
           let frac;
-          if (lv === 1) frac = Math.random();
-          else if (lv === 2) frac = N > 1 ? k / (N - 1) : 0.5;
-          else { const half = N / 2; frac = k < half ? k / (half - 1) : 1 - (k - half) / (half - 1); }
+          if (lv <= 2) frac = N > 1 ? k / (N - 1) : 0.5;   // 一趟掃
+          else { const half = N / 2; frac = k < half ? k / (half - 1) : 1 - (k - half) / (half - 1); }   // 兩趟掃
+          if (!updown) frac = 1 - frac;
           pts.push({ x: rx(f), y: yAt(f, frac), el: f });
         }
         fireStream(pts);
         return;
       }
-      // 全：LV 張卡各 4 發
+      // 全：LV 張卡各 4 發（順序上→下或下→上隨機）
       const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
-      const targets = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs;
+      const targets = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : (Math.random() < 0.5 ? fs.slice() : fs.slice().reverse());
       const pts = [];
       targets.forEach((f) => { for (let i = 0; i < 4; i++) pts.push({ x: rx(f), y: yAt(f, 0.2 + Math.random() * 0.6), el: f }); });
       fireStream(pts);
