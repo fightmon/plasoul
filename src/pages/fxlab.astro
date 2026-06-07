@@ -678,15 +678,17 @@
           if (missOn()) { setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, tAt(0.5)); }
           else { for (let t = 0; t < pcount; t++) { const frac = 0.12 + (pcount > 1 ? t / (pcount - 1) : 0) * 0.74; setTimeout(() => burstAt(f, c.x, c.y), tAt(frac)); } setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[0] + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); }, tAt(0.5) + 90); }
         } else {
-          // 全：連續掃射感（彈著點隨光束由一端掃到另一端）
-          const fr = field().getBoundingClientRect(); const down = pts[0].y <= pts[pts.length - 1].y;
-          const flat = []; targets.forEach((f) => { for (let t = 0; t < pcount; t++) flat.push({ f, t }); }); const M = flat.length;
-          flat.forEach((it, gi) => {
-            const gf = M > 1 ? gi / (M - 1) : 0.5; const c = cen(it.f);   // 彈著在卡中心，靠卡間順序產生掃射感
-            setTimeout(() => { if (!missOn()) burstAt(it.f, c.x, c.y); }, tAt(0.12 + gf * 0.74));
-          });
+          // 全：彈著沿「光束線」連續掃過（通過各卡中心）→ 與可見光束對齊、像連發的掃射
+          const cardX = pts.reduce((s, p) => s + p.x, 0) / pts.length; const tanD = (deg) => Math.tan(deg * Math.PI / 180);
+          const M = targets.length * pcount;
+          for (let gi = 0; gi < M; gi++) {
+            const gf = M > 1 ? gi / (M - 1) : 0.5; const th = angFrom + (angTo - angFrom) * gf;
+            const px = cardX, py = a0.y + (cardX - a0.x) * tanD(th);
+            let nf = targets[0], nd = 1e9; targets.forEach((f) => { const d = Math.abs(cen(f).y - py); if (d < nd) { nd = d; nf = f; } });
+            setTimeout(() => { if (!missOn()) burstAt(nf, px, py); }, tAt(0.12 + gf * 0.74));
+          }
           targets.forEach((f, i) => {
-            const c = cen(f); const gMid = M > 1 ? (i * pcount + (pcount - 1) / 2) / (M - 1) : 0.5; const w = tAt(0.12 + gMid * 0.74);
+            const c = cen(f); const gMid = Math.max(0, Math.min(1, (angA(c) - angFrom) / ((angTo - angFrom) || 1))); const w = tAt(0.12 + gMid * 0.74);
             if (missOn()) setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, w);
             else setTimeout(() => { dmgPt(c.x, c.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); }, w + 90);
           });
