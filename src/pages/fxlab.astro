@@ -654,44 +654,38 @@
       const dir = atk === 'my' ? 0 : 180; const pcol = atk === 'my' ? '#9fe8ff' : '#ffd0d0'; const sh = atk === 'my' ? '#2f9bff' : '#ff4d4d';
       chargeRings(a.x, a.y, atk === 'my' ? '#9fe8ff' : '#ffd0d0', chargeT, big);
       glowPulse(aEl, '#fff');
-      if (!aoeOn()) {
-        maybeDodge(defEl(), chargeT + 280);
-        setTimeout(() => {
-          const b = cen(defEl()); chargeBeam(a, b, big, missOn());
-          setTimeout(() => {
-            if (!missOn()) { burst(b.x, b.y, '#fff', big); particlesDir(b.x, b.y, dir, pcol, big ? 30 : 16); if (big) { critFlash(b.x, b.y, '#9fe8ff'); shake(); setTimeout(shake, 90); } }
-            resolve(defEl());
-          }, 200);
-        }, chargeT);
-        return;
-      }
-      // 全：蓄力後一條粗光束從上往下橫掃、貫穿 3 卡（全暴=像蓄力單暴那樣超粗）
-      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
-      const pts = fs.map((f) => cen(f));
-      const angA = (p) => Math.atan2(p.y - a.y, p.x - a.x) * 180 / Math.PI;
-      const angTop = angA(pts[0]), angBot = angA(pts[pts.length - 1]);
-      const farLen = Math.max.apply(null, pts.map((p) => Math.hypot(p.x - a.x, p.y - a.y))) + 200;   // 貫穿
-      const h = big ? 30 : 16; const sweepDur = 760;
-      const dmgs = splitDmg(big ? 999 : 350, fs.length);
-      if (missOn()) fs.forEach((f) => missDodge(f));
-      setTimeout(() => {
-        const beam = add('', sweepDur + 260);
-        beam.style.position = 'absolute'; beam.style.left = a.x + 'px'; beam.style.top = a.y + 'px';
+      const h = big ? 30 : 16; const outDur = 400 + lv * 200 + (big ? 300 : 0);   // 輸出時間隨等級↑、暴更久(轉得更慢)
+      // 持續光束：1 張=定點久射；多張=光束掃射貫穿
+      const sweepBeam = (targets) => {
+        const a0 = frontEdge(aEl); const pts = targets.map((f) => cen(f)); const single = targets.length === 1;
+        const angA = (p) => Math.atan2(p.y - a0.y, p.x - a0.x) * 180 / Math.PI;
+        const angFrom = angA(pts[0]), angTo = single ? angFrom : angA(pts[pts.length - 1]);
+        const farLen = Math.max.apply(null, pts.map((p) => Math.hypot(p.x - a0.x, p.y - a0.y))) + 200;
+        const beam = add('', outDur + 280);
+        beam.style.position = 'absolute'; beam.style.left = a0.x + 'px'; beam.style.top = a0.y + 'px';
         beam.style.height = h + 'px'; beam.style.marginTop = (-h / 2) + 'px'; beam.style.width = farLen + 'px';
         beam.style.transformOrigin = 'left center'; beam.style.borderRadius = h + 'px';
         beam.style.background = atk === 'my' ? 'linear-gradient(90deg,#9fe8ff,#2f9bff)' : 'linear-gradient(90deg,#ffd0d0,#ff4d4d)';
         beam.style.boxShadow = '0 0 ' + (big ? 24 : 15) + 'px ' + sh;
-        beam.animate([{ transform: 'rotate(' + angTop + 'deg)', opacity: 0 }, { transform: 'rotate(' + angTop + 'deg)', opacity: 1, offset: .12 }, { transform: 'rotate(' + angBot + 'deg)', opacity: 1, offset: .9 }, { transform: 'rotate(' + angBot + 'deg)', opacity: 0 }], { duration: sweepDur, easing: 'ease-in-out', fill: 'forwards' });
+        beam.animate([{ transform: 'rotate(' + angFrom + 'deg)', opacity: 0 }, { transform: 'rotate(' + angFrom + 'deg)', opacity: 1, offset: .1 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 1, offset: .9 }, { transform: 'rotate(' + angTo + 'deg)', opacity: 0 }], { duration: outDur, easing: single ? 'ease-out' : 'ease-in-out', fill: 'forwards' });
         glowPulse(aEl, '#fff');
-        fs.forEach((f, i) => {
-          const frac = (angA(pts[i]) - angTop) / ((angBot - angTop) || 1);
+        const dmgs = splitDmg(big ? 999 : 350, targets.length);
+        targets.forEach((f, i) => {
+          const frac = single ? 0.5 : (angA(pts[i]) - angFrom) / ((angTo - angFrom) || 1);
           setTimeout(() => {
-            if (missOn()) { dmg(f, 'MISS', 'miss'); return; }
+            if (missOn()) { missDodge(f); dmg(f, 'MISS', 'miss'); return; }
             const p = cardRndPt(f);
-            flinch(f); burst(p.x, p.y, '#fff', big); particlesDir(p.x, p.y, dir, pcol, big ? 18 : 10); scorch(p.x, p.y, sh); dmgPt(p.x, p.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); shake();
-          }, 0.12 * sweepDur + frac * 0.78 * sweepDur);
+            flinch(f); burst(p.x, p.y, '#fff', big); particlesDir(p.x, p.y, dir, pcol, big ? 18 : 12); scorch(p.x, p.y, sh); dmgPt(p.x, p.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); if (big) critFlash(p.x, p.y, '#9fe8ff'); shake();
+          }, 0.1 * outDur + frac * 0.78 * outDur);
         });
-      }, chargeT);
+      };
+      if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), chargeT + outDur * 0.5); setTimeout(() => sweepBeam([defEl()]), chargeT); return; }
+      // 全：LV2 掃 2 卡、LV3 掃 3 卡（方向隨機）
+      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
+      const tg = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice();
+      const sorted = tg.slice().sort((x, y) => cen(x).y - cen(y).y);
+      const ordered = Math.random() < 0.5 ? sorted : sorted.slice().reverse();
+      setTimeout(() => sweepBeam(ordered), chargeT);
     }
     function eHoming() {
       const big = critOn(); const a = frontEdge(atkEl()); const n = big ? 6 : 2; const back = atk === 'my' ? -1 : 1;
