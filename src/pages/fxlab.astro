@@ -588,6 +588,7 @@
             const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
             pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 4, 0.4); } };
           }
+          if (!missOn() && big) setTimeout(() => { critFlash((dr.left - fr.left) + dr.width * 0.5, cy, '#ffd24d'); shake(); }, 240);
         };
         return;
       }
