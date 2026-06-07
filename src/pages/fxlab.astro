@@ -42,6 +42,7 @@
           <button class="fl-tab" data-cat="evade">閃</button>
         </div>
         <div class="fl-states">
+          <button class="fl-st" id="fl-aoe" title="單體 / 全體">單</button>
           <button class="fl-st" id="fl-crit" title="暴擊">暴</button>
           <button class="fl-st" id="fl-miss" title="MISS">M</button>
           <button class="fl-st" id="fl-dir" title="守=對方攻擊">守</button>
@@ -194,6 +195,7 @@
     .fl-states { display: flex; gap: 6px; margin-left: auto; }
     .fl-st { width: 34px; height: 34px; border-radius: 9px; background: #141c34; border: 1px solid #2c3a5e; color: #8294b8; font-size: 15px; font-weight: 800; cursor: pointer; }
     .fl-st.on { background: #e0a93b; border-color: #ffd27a; color: #1a1205; }
+    #fl-aoe.on { background: #2e9e6b; border-color: #6fe0a8; color: #06210f; }
     #fl-dir.on { background: #c0453b; border-color: #ff8a7a; color: #fff; }
     .fl-moves { display: flex; flex-wrap: wrap; gap: 6px; }
     .fl-mv { flex: 1 1 calc(20% - 6px); min-width: 52px; height: 42px; border-radius: 9px; background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; font-size: 14px; font-weight: 700; cursor: pointer; }
@@ -209,7 +211,8 @@
     const oth = () => atk === 'my' ? 'foe' : 'my';
     const card = (s, i) => $('fl-' + s + '-' + i);
     const atkEl = () => card(atk, 1);
-    const defEl = () => card(oth(), 1);
+    let AOE_TGT = null;                                   // 全體模式：本次施放鎖定的目標卡
+    const defEl = () => AOE_TGT || card(oth(), 1);
     const cc = () => atk === 'my' ? 'c-my' : 'c-foe';
     const critOn = () => $('fl-crit').classList.contains('on');
     const missOn = () => $('fl-miss').classList.contains('on');
@@ -517,10 +520,21 @@
       melee: [['slash', '直斬'], ['arc', '弧斬'], ['iai', '居合'], ['thrust', '突刺'], ['cross', '十字'], ['spin', '迴旋'], ['impact', '重擊']],
       evade: [['dduck', '下蹲'], ['dback', '後撤'], ['dside', '側移'], ['dafter', '殘影'], ['dblink', '瞬移'], ['dspin', '旋身'], ['droll', '翻滾']],
     };
+    const aoeOn = () => $('fl-aoe').classList.contains('on');
+    const isEvade = (k) => k[0] === 'd';
+    // 單：打中間卡一次；全：依序對 3 張卡各施放一次（每次鎖定該卡，間隔夠長避免目標錯亂）
+    function runMove(k) {
+      const fn = FX[k]; if (!fn) return;
+      if (!aoeOn() || isEvade(k)) { AOE_TGT = null; fn(); return; }
+      [0, 1, 2].forEach((i, idx) => setTimeout(() => {
+        AOE_TGT = card(oth(), i); fn();
+        if (idx === 2) setTimeout(() => { AOE_TGT = null; }, 900);
+      }, idx * 900));
+    }
     function renderMoves(cat) {
       const m = $('fl-moves');
       m.innerHTML = MOVES[cat].map(([k, lab]) => '<button class="fl-mv" data-fx="' + k + '">' + lab + '</button>').join('');
-      m.querySelectorAll('.fl-mv').forEach((b) => b.addEventListener('click', () => { const f = FX[b.dataset.fx]; if (f) f(); }));
+      m.querySelectorAll('.fl-mv').forEach((b) => b.addEventListener('click', () => runMove(b.dataset.fx)));
     }
     document.querySelectorAll('.fl-tab').forEach((t) => t.addEventListener('click', () => {
       document.querySelectorAll('.fl-tab').forEach((x) => x.classList.remove('on'));
@@ -529,6 +543,7 @@
     renderMoves('ranged');
 
     // 狀態鈕：0/1 切換（亮起=1）
+    $('fl-aoe').addEventListener('click', () => { const on = $('fl-aoe').classList.toggle('on'); $('fl-aoe').textContent = on ? '全' : '單'; });
     $('fl-crit').addEventListener('click', () => $('fl-crit').classList.toggle('on'));
     $('fl-miss').addEventListener('click', () => $('fl-miss').classList.toggle('on'));
     $('fl-dir').addEventListener('click', () => { const on = $('fl-dir').classList.toggle('on'); atk = on ? 'foe' : 'my'; });   // 守=1 → 對方攻擊
