@@ -148,6 +148,7 @@
     .fl-ball.c-foe { background: radial-gradient(circle,#ffe0e0,#ff4d4d); box-shadow: 0 0 16px #ff4d4d; }
     .fl-bolt { position: absolute; width: 12px; height: 12px; border-radius: 50%; transform: translate(-50%,-50%); background: radial-gradient(circle,#fff,#ffd24d); box-shadow: 0 0 8px #ffd24d; }
     .fl-bolt.big { width: 18px; height: 18px; box-shadow: 0 0 12px #ffd24d; }
+    .fl-bolt.sm { width: 8px; height: 8px; box-shadow: 0 0 6px #ffd24d; }
     .fl-muzzle { position: absolute; width: 26px; height: 26px; border-radius: 50%; transform: translate(-50%,-50%) scale(.5); background: radial-gradient(circle,#fff,#ffd24d 50%,transparent 72%); opacity: .9; animation: fl-muz .25s ease-out forwards; }
     .fl-muzzle.big { width: 42px; height: 42px; }
     @keyframes fl-muz { to { transform: translate(-50%,-50%) scale(1.4); opacity: 0; } }
@@ -457,6 +458,29 @@
     }
     function eShotgun() {
       const big = critOn(); const aEl = atkEl();
+      if (lv === 1) {
+        // LV1：球飛中途爆開 → 3 顆小子彈打中卡（直線、彈著只變 X、Y 固定中心）
+        const a = frontEdge(aEl), fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
+        const cy = (dr.top - fr.top) + dr.height * 0.5; const cx = (dr.left - fr.left) + dr.width * 0.5;
+        const splitX = a.x + (cx - a.x) * 0.5, splitY = cy;
+        recoil(aEl, 14); muzzleAt(a.x, cy, false, '#ffd24d'); smoke(a.x, cy, big); maybeDodge(defEl(), 460);
+        const ball = add('fl-ball ' + cc(), 0); ball.style.left = a.x + 'px'; ball.style.top = cy + 'px';
+        const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - cy) + 'px)) scale(.9)' }], { duration: 220, easing: 'linear' });
+        an.onfinish = () => {
+          ball.remove(); ring(splitX, splitY, '#ffd24d', false);
+          if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 220);
+          const n = 3, parts = splitDmg(big ? 999 : 350, n);
+          for (let k = 0; k < n; k++) {
+            let tx, ty;
+            if (missOn()) { const mp = missPoint({ y: cy }); tx = mp.x + (Math.random() * 40 - 20); ty = cy + (Math.random() * 26 - 13); }
+            else { tx = (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5); ty = cy; }   // 只變 X、Y 固定中心
+            const p = add('fl-bolt sm', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
+            const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
+            pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 4, 0.4); } };
+          }
+        };
+        return;
+      }
       if (!aoeOn()) {
         // 單體：球飛中途爆開 → 子彈打中卡（維持原樣）
         const a = frontEdge(aEl), b = cen(defEl()); const pellets = big ? 5 : 3;
