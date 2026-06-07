@@ -401,12 +401,29 @@
       setTimeout(() => { aEl.style.zIndex = ''; }, total);
     }
     function eCannon() {
-      const a = frontEdge(atkEl()), b = cardRndPt(defEl()); const big = critOn(); maybeDodge(defEl(), 350);
-      recoil(atkEl(), 16); muzzle(atkEl(), true, '#ffd24d'); smoke(a.x, a.y, big);
-      const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = mp ? mp.y : b.y;
-      const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
-      const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px)) scale(1)' }], { duration: 300, easing: 'ease-in' });
-      an.onfinish = () => { ball.remove(); if (missOn()) { dmg(defEl(), 'MISS', 'miss'); return; } burst(b.x, b.y, '#ffd24d', big); if (big) critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', big ? 24 : 12, big ? 1 : 0.55); hitFx(defEl()); dmgPt(b.x, b.y, '-' + (big ? '999!' : '350'), big ? 'crit' : ''); if (big) shake(); };
+      const big = critOn(); const fwd = atk === 'my' ? 1 : -1; const aEl = atkEl();
+      // 發一顆炮彈到 el 的隨機點
+      const shot = (el, dmgVal) => {
+        const a = frontEdge(aEl), b = cardRndPt(el);
+        recoil(aEl, 16); muzzleAt(a.x, a.y, true, '#ffd24d'); smoke(a.x, a.y, big);
+        if (missOn()) missDodge(el);
+        const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = mp ? mp.y : b.y;
+        const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
+        const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px)) scale(1)' }], { duration: 300, easing: 'ease-in' });
+        an.onfinish = () => { ball.remove(); if (missOn()) { dmg(el, 'MISS', 'miss'); return; } burst(b.x, b.y, '#ffd24d', big); if (big) critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', big ? 24 : 12, big ? 1 : 0.55); hitFx(el); dmgPt(b.x, b.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };
+      };
+      if (!aoeOn()) { maybeDodge(defEl(), 350); shot(defEl(), big ? 999 : 350); return; }
+      // 全：卡連續轉角，依序發 3 顆炮彈到上中下卡（上下順序隨機）
+      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
+      const seq = Math.random() < 0.5 ? fs.slice() : fs.slice().reverse();
+      const dmgs = splitDmg(big ? 999 : 350, seq.length);
+      const shotGap = 240, swT = (seq.length - 1) * shotGap + 300 + 320;
+      const angAt = (f) => { const a = frontEdge(aEl), b = cen(f); return Math.max(-22, Math.min(22, Math.atan2(b.y - a.y, Math.max(40, Math.abs(b.x - a.x))) * 180 / Math.PI)) * fwd; };
+      const kf = [{ transform: 'rotate(0deg)', offset: 0 }];
+      seq.forEach((f, i) => kf.push({ transform: 'rotate(' + angAt(f) + 'deg)', offset: (i * shotGap + 150) / swT }));
+      kf.push({ transform: 'rotate(0deg)', offset: 1 });
+      aEl.animate(kf, { duration: swT, easing: 'ease-in-out' });
+      seq.forEach((f, k) => setTimeout(() => shot(f, dmgs[k]), k * shotGap + 150));
     }
     function eShotgun() {
       const a = frontEdge(atkEl()), b = cen(defEl()); const big = critOn(); const pellets = big ? 5 : 3;
@@ -608,7 +625,7 @@
     };
     const aoeOn = () => $('fl-aoe').classList.contains('on');
     const isEvade = (k) => k[0] === 'd';
-    const SELF_AOE = new Set(['laser']);   // 自己處理全體演出的招式（不用通用逐卡重播）
+    const SELF_AOE = new Set(['laser', 'cannon']);   // 自己處理全體演出的招式（不用通用逐卡重播）
     // 單：打中間卡一次；全：依序對 3 張卡各施放一次（每次鎖定該卡，間隔夠長避免目標錯亂）
     function runMove(k) {
       const fn = FX[k]; if (!fn) return;
