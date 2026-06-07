@@ -568,79 +568,36 @@
     }
     function eShotgun() {
       const big = critOn(); const aEl = atkEl();
-      if (lv === 1) {
-        // LV1：球飛中途爆開 → 3 顆小子彈打中卡（直線、彈著只變 X、Y 固定中心）
-        const a = frontEdge(aEl), fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
-        const cy = (dr.top - fr.top) + dr.height * 0.5; const cx = (dr.left - fr.left) + dr.width * 0.5;
-        const splitX = a.x + (cx - a.x) * 0.5, splitY = cy;
-        recoil(aEl, 14); muzzleAt(a.x, cy, false, '#ffd24d'); smoke(a.x, cy, big); maybeDodge(defEl(), 460);
-        const ball = add('fl-ball ' + cc(), 0); ball.style.left = a.x + 'px'; ball.style.top = cy + 'px';
-        const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.6)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - cy) + 'px)) scale(.9)' }], { duration: 220, easing: 'linear' });
-        an.onfinish = () => {
-          ball.remove(); ring(splitX, splitY, '#ffd24d', false);
-          if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 220);
-          const n = 3, parts = splitDmg(big ? 999 : 350, n);
-          for (let k = 0; k < n; k++) {
-            let tx, ty;
-            if (missOn()) { const mp = missPoint({ y: cy }); tx = mp.x + (Math.random() * 40 - 20); ty = cy + (Math.random() * 26 - 13); }
-            else { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.2 + Math.random() * 0.6); }   // 散彈：X、Y 都散開
-            const p = add('fl-bolt sm', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
-            const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
-            pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 4, 0.4); } };
-          }
-          if (!missOn() && big) setTimeout(() => { critFlash((dr.left - fr.left) + dr.width * 0.5, cy, '#ffd24d'); shake(); }, 240);
+      const sizeCls = (big && lv >= 2) ? '' : ' sm';   // 非暴小顆；LV2/3 暴=中顆；LV1 一律小顆
+      // 球飛中途爆開 → 子彈分到 targets，每卡 perCard 顆
+      const burstShot = (targets, perCard) => {
+        const a = frontEdge(aEl);
+        const midC = cen(targets.length === 1 ? targets[0] : card(oth(), 1));
+        const splitX = a.x + (midC.x - a.x) * 0.5, splitY = a.y + (midC.y - a.y) * 0.5;
+        recoil(aEl, 14); muzzleAt(a.x, a.y, big, '#ffd24d'); smoke(a.x, a.y, big);
+        const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
+        ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - a.y) + 'px)) scale(' + (big ? 1.3 : 1) + ')' }], { duration: 220, easing: 'linear' }).onfinish = () => {
+          ball.remove(); ring(splitX, splitY, '#ffd24d', big);
+          const total = targets.length * perCard, parts = splitDmg(big ? 999 : 350, total); let pi = 0;
+          targets.forEach((f) => {
+            if (missOn()) missDodge(f);
+            const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect();
+            for (let k = 0; k < perCard; k++) {
+              const idx = pi++; let tx, ty;
+              if (missOn()) { const mp = missPoint(cen(f)); tx = mp.x + (Math.random() * 40 - 20); ty = cen(f).y + (Math.random() * 36 - 18); }
+              else { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.2 + Math.random() * 0.6); }
+              const p = add('fl-bolt' + sizeCls, 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
+              p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 260, easing: 'linear' }).onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(f); dmgPt(tx, ty, '-' + parts[idx] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 4, 0.4); } };
+            }
+            if (missOn()) setTimeout(() => dmg(f, 'MISS', 'miss'), 320);
+          });
+          if (!missOn() && big) setTimeout(() => { critFlash(midC.x, midC.y, '#ffd24d'); shake(); }, 250);
         };
-        return;
-      }
-      if (!aoeOn()) {
-        // 單體：球飛中途爆開 → 子彈打中卡（維持原樣）
-        const a = frontEdge(aEl), b = cen(defEl()); const pellets = big ? 5 : 3;
-        const fr = field().getBoundingClientRect(), dr = defEl().getBoundingClientRect();
-        const splitX = a.x + (b.x - a.x) * 0.5, splitY = a.y + (b.y - a.y) * 0.5;
-        recoil(aEl, 14); muzzle(aEl, big, '#ffd24d'); smoke(a.x, a.y, big); maybeDodge(defEl(), 480);
-        const ball = add('fl-ball ' + cc(), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
-        const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - a.y) + 'px)) scale(1)' }], { duration: 220, easing: 'linear' });
-        an.onfinish = () => {
-          ball.remove(); ring(splitX, splitY, '#ffd24d', false);
-          const parts = splitDmg(big ? 999 : 350, pellets);
-          for (let k = 0; k < pellets; k++) {
-            let tx, ty;
-            if (missOn()) { const mp = missPoint(b); tx = mp.x + (Math.random() * 50 - 25); ty = mp.y + (Math.random() * 50 - 25); }
-            else { tx = (dr.left - fr.left) + dr.width * (0.2 + Math.random() * 0.6); ty = (dr.top - fr.top) + dr.height * (0.18 + Math.random() * 0.64); }
-            const p = add('fl-bolt', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
-            const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 240, easing: 'linear' });
-            pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 6, 0.5); } };
-          }
-          if (!missOn() && big) setTimeout(() => { critFlash(b.x, b.y, '#ffd24d'); particles(b.x, b.y, '#ffd24d', 22, 1); shake(); }, 230);
-        };
-        if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 380);
-        return;
-      }
-      // 全：散彈彈道(球飛中途爆開) → 子彈分飛上中下卡；一般每卡1、暴擊大顆球每卡3
-      const a = frontEdge(aEl);
-      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
-      const cmid = cen(card(oth(), 1));
-      const splitX = a.x + (cmid.x - a.x) * 0.5, splitY = a.y + (cmid.y - a.y) * 0.5;
-      recoil(aEl, 14); muzzleAt(a.x, a.y, big, '#ffd24d'); smoke(a.x, a.y, big);
-      const ball = add('fl-ball ' + cc() + (big ? ' big' : ''), 0); ball.style.left = a.x + 'px'; ball.style.top = a.y + 'px';
-      const an = ball.animate([{ transform: 'translate(-50%,-50%) scale(.7)' }, { transform: 'translate(calc(-50% + ' + (splitX - a.x) + 'px), calc(-50% + ' + (splitY - a.y) + 'px)) scale(' + (big ? 1.4 : 1) + ')' }], { duration: 220, easing: 'linear' });
-      an.onfinish = () => {
-        ball.remove(); ring(splitX, splitY, '#ffd24d', big);
-        const per = big ? 3 : 1;
-        fs.forEach((f) => {
-          if (missOn()) missDodge(f);
-          const parts = splitDmg(big ? 333 : 117, per);
-          for (let k = 0; k < per; k++) {
-            let tx, ty;
-            if (missOn()) { const mp = missPoint(cen(f)); tx = mp.x + (Math.random() * 40 - 20); ty = cen(f).y + (Math.random() * 40 - 20); }
-            else { const tp = cardRndPt(f); tx = tp.x; ty = tp.y; }
-            const p = add('fl-bolt', 0); p.style.left = splitX + 'px'; p.style.top = splitY + 'px';
-            const pa = p.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - splitX) + 'px), calc(-50% + ' + (ty - splitY) + 'px))' }], { duration: 280, easing: 'linear' });
-            pa.onfinish = () => { p.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(f); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); particles(tx, ty, '#ffd24d', 6, 0.5); } };
-          }
-          if (missOn()) setTimeout(() => dmg(f, 'MISS', 'miss'), 300);
-        });
       };
+      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
+      if (lv === 1 || !aoeOn()) { maybeDodge(defEl(), 470); burstShot([defEl()], lv + 2); return; }   // 單：LV+2 顆打中卡
+      if (lv === 2) { const second = Math.random() < 0.5 ? fs[0] : fs[2]; burstShot([fs[1], second], 2); return; }   // 全：2 卡各 2
+      burstShot(fs, 3);   // LV3 全：3 卡各 3
     }
     function eShot() {
       const big = critOn(); const aEl = atkEl();
