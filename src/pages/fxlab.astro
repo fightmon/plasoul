@@ -335,14 +335,15 @@
       // ===== 全體 =====
       const fs = foes();
       if (!big) {
-        // 卡連續轉角掃射 3 發（中間不停頓），槍口橢圓+起點跟著角度變（順序 上→中→下）
-        const shotGap = 200, swT = (fs.length - 1) * shotGap + 120 + 320;
+        // 卡連續轉角掃射 3 發（中間不停頓）；順序隨機：上→中→下 或 下→中→上
+        const seq = Math.random() < 0.5 ? fs.slice() : fs.slice().reverse();
+        const shotGap = 200, swT = (seq.length - 1) * shotGap + 120 + 320;
         const angAt = (f) => { const a = frontEdge(aEl), b = cen(f); return Math.max(-22, Math.min(22, Math.atan2(b.y - a.y, Math.max(40, Math.abs(b.x - a.x))) * 180 / Math.PI)) * (atk === 'my' ? 1 : -1); };
         const kf = [{ transform: 'rotate(0deg)', offset: 0 }];
-        fs.forEach((f, i) => kf.push({ transform: 'rotate(' + angAt(f) + 'deg)', offset: (i * shotGap + 120) / swT }));
+        seq.forEach((f, i) => kf.push({ transform: 'rotate(' + angAt(f) + 'deg)', offset: (i * shotGap + 120) / swT }));
         kf.push({ transform: 'rotate(0deg)', offset: 1 });
         aEl.animate(kf, { duration: swT, easing: 'ease-in-out' });
-        fs.forEach((f, k) => setTimeout(() => {
+        seq.forEach((f, k) => setTimeout(() => {
           const b = cen(f); if (missOn()) missDodge(f); shoot(b, missOn());
           setTimeout(() => { if (!missOn()) { hitFx(f); flinch(f); dmg(f, '-117', ''); particlesDir(b.x, b.y, dir, col, 10); } else dmg(f, 'MISS', 'miss'); }, 130);
         }, k * shotGap + 120));
