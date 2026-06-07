@@ -166,8 +166,8 @@
     @keyframes fl-ap { 0%{opacity:.3; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(.25);} 42%{opacity:1; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(1);} }
 
     .fl-missile { position: absolute; left: 0; top: 0; width: 16px; height: 7px; border-radius: 4px; background: linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow: 0 0 10px #ff9a3d; offset-rotate: auto; }
-    .fl-bit { position: absolute; width: 18px; height: 14px; transform: translate(-50%,-50%); background: linear-gradient(90deg,#5bc8ff,#dff6ff); box-shadow: 0 0 9px #6fd3ff; clip-path: polygon(100% 50%, 0 0, 0 100%); }
-    .fl-bit.foe { background: linear-gradient(90deg,#ff7a7a,#ffe0e0); box-shadow: 0 0 9px #ff7a7a; }
+    .fl-bit { position: absolute; width: 22px; height: 16px; transform: translate(-50%,-50%); background: linear-gradient(90deg,#5bc8ff,#eafaff); box-shadow: 0 0 14px #6fd3ff; clip-path: polygon(100% 50%, 0 0, 0 100%); }
+    .fl-bit.foe { background: linear-gradient(90deg,#ff7a7a,#ffeaea); box-shadow: 0 0 14px #ff7a7a; }
 
     .fl-sonic { position: absolute; width: 50px; height: 76px; border: 5px solid transparent; border-radius: 50%; transform: translate(-50%,-50%); filter: drop-shadow(0 0 5px #fff); }
     .fl-sonic.r.c-my { border-right-color: #7fd0ff; } .fl-sonic.r.c-foe { border-right-color: #ff8a8a; }
@@ -260,7 +260,7 @@
       if (big) shake();
     }
 
-    function beam(a, b, big, miss, plasma) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = big ? 16 : 6; const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
+    function beam(a, b, big, miss, plasma, hOv) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = hOv || (big ? 16 : 6); const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.height = h + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
     // 電漿火花沿光束散布
     function sparksAlong(a, b, color) { for (let k = 0; k < 5; k++) { const t = 0.12 + Math.random() * 0.76; const x = a.x + (b.x - a.x) * t + (Math.random() * 12 - 6), y = a.y + (b.y - a.y) * t + (Math.random() * 16 - 8); const s = add('fl-spark', 240); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = color; s.style.boxShadow = '0 0 9px ' + color; } }
     // 命中爆閃（鏡頭光斑）
@@ -818,14 +818,15 @@
           const flyDur = 360 + Math.random() * 120 + pIdx * 40;
           let pos = frontPos(slot), tp = tgtPt(), aim = ang(pos, tp); let prevEnd = pos, prevRot = aim, t = 0;
           pod.style.transform = tf(bp, ang(bp, pos));
+          muzzleAt(bp.x, bp.y, false, mcol);   // 出發處小閃光（看得到子機飛出）
           pod.animate(arcKf(bp, pos, bend, ang(bp, pos), aim), { duration: flyDur, delay: 0, easing: 'ease-out', fill: 'both' });   // 弧線飛入
           t = flyDur;
           for (let v = 0; v < volleys; v++) {
             if (v > 0) { const np = frontPos(slot === 'up' ? 'down' : slot === 'down' ? 'up' : null), ntp = tgtPt(), naim = ang(np, ntp); pod.animate(arcKf(prevEnd, np, (Math.random() < .5 ? 1 : -1) * 24, prevRot, naim), { duration: 210, delay: t, easing: 'ease-in-out', fill: 'both' }); prevEnd = np; prevRot = naim; pos = np; tp = ntp; aim = naim; t += 230; }
             const fp = pos, ftp = tp, fang = aim, dval = parts[bi++], last = (pIdx === podsPerCard - 1 && v === volleys - 1);
             setTimeout(() => {
-              muzzleAt(fp.x, fp.y, big, mcol);   // 雷射起點光點
-              beam({ x: fp.x, y: fp.y }, ftp, big, missOn());   // 子機向卡內射束（beam 內部處理 MISS）
+              muzzleAt(fp.x, fp.y, false, '#ffffff');   // 雷射起點白色小光點（像雷射招式）
+              beam({ x: fp.x, y: fp.y }, ftp, big, missOn(), false, big ? 6 : 4);   // 子機向卡內射細束（beam 內部處理 MISS）
               if (missOn()) { if (last) dmg(d, 'MISS', 'miss'); }
               else { flinch(d); particlesDir(ftp.x, ftp.y, fang, col, big ? 16 : 10); dmgPt(ftp.x, ftp.y, '-' + dval + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(ftp.x, ftp.y, col); shake(); } }
             }, t + 130);
