@@ -322,7 +322,7 @@
           const a = frontEdge(aEl), b = cen(defEl()); maybeDodge(defEl(), 490);
           const parts = splitDmg(350, 3);
           for (let s = 0; s < 3; s++) {
-            const a2 = { x: a.x + (Math.random() * 30 - 15), y: a.y + (Math.random() * 30 - 15) }, b2 = randPt(defEl());
+            const a2 = { x: a.x + fwd * Math.random() * 30, y: a.y + (s - 1) * 12 }, b2 = randPt(defEl());
             setTimeout(() => { aperture(a2.x, a2.y, col, false, angOf(a2, b2)); setTimeout(() => { beam(a2, b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b2.x, b2.y, '-' + parts[s], ''); particlesDir(b2.x, b2.y, angOf(a2, b2), col, 10); } }, 150); }, s * 130);
           }
           if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300);
