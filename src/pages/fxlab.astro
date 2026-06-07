@@ -323,14 +323,31 @@
           setTimeout(() => { if (!missOn()) particlesDir(b.x, b.y, angOf(a, b), col, 14); resolve(defEl()); }, 460);
           return;
         }
-        // 單暴擊：對中間卡上中下射 3 發（維持原樣）
-        const a = frontEdge(atkEl()), b = cen(defEl());
-        const parts = splitDmg(999, 3); maybeDodge(defEl(), 560);
-        for (let s = 0; s < 3; s++) {
-          const oy = (s - 1) * 34; const sx = a.x + fwd * Math.random() * 30; const a2 = { x: sx, y: a.y + oy }, b2 = { x: b.x, y: a.y + oy };
-          setTimeout(() => { aperture(a2.x, a2.y, col, false, 0); setTimeout(() => { beam(a2, b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b.x, a.y + oy, '-' + parts[s] + '!', 'crit'); particlesDir(b.x, a.y + oy, dir, col, 10); } }, 150); }, s * 130);
-        }
-        if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300); else setTimeout(shake, 700);
+        // 單暴擊：飛到上方定點(對準中卡) → 由上往下弧形俯衝掃 → 邊飛邊射 9 發進中卡隨機處
+        const f = card(oth(), 1); const c = cen(f); aEl.style.zIndex = '9';
+        const a0 = cen(aEl); const inX = a0.x + (c.x - a0.x) * 0.30;
+        const topPt = { x: inX, y: c.y - 110 }, midPt = { x: inX + fwd * 40, y: c.y }, botPt = { x: inX, y: c.y + 110 };
+        const flyIn = 320, sweep = 9 * 70 + 160, total = flyIn + sweep + 360;
+        const P = (p) => 'translate(' + (p.x - a0.x) + 'px,' + (p.y - a0.y) + 'px)';
+        aEl.animate([
+          { transform: 'translate(0,0)', offset: 0, easing: 'ease-out' },
+          { transform: P(topPt), offset: flyIn / total, easing: 'ease-in-out' },
+          { transform: P(midPt), offset: (flyIn + sweep * 0.5) / total, easing: 'linear' },
+          { transform: P(botPt), offset: (flyIn + sweep) / total, easing: 'ease-out' },
+          { transform: 'translate(0,0)', offset: 1 },
+        ], { duration: total, easing: 'linear' });
+        if (missOn()) setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, flyIn + 200);
+        for (let k = 0; k < 9; k++) setTimeout(() => {
+          const a = frontEdge(aEl); const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect();
+          const tx = (dr.left - fr.left) + dr.width * (0.25 + Math.random() * 0.5);
+          const ty = (dr.top - fr.top) + dr.height * (0.2 + Math.random() * 0.6);
+          const sx = a.x + fwd * Math.random() * 20; const ap = { x: sx, y: a.y }, bp = { x: tx, y: ty };
+          muzzleAt(sx, a.y, false, col); aperture(sx, a.y, col, false, angOf(ap, bp));
+          beam(ap, missOn() ? missPoint(bp) : bp, false, missOn());
+          if (!missOn()) { ring(tx, ty, col, false); particlesDir(tx, ty, angOf(ap, bp), col, 5); }
+        }, flyIn + 80 + k * 70);
+        if (!missOn()) setTimeout(() => { hitFx(f); flinch(f); dmg(f, '-999!', 'crit'); shake(); }, flyIn + 80 + 9 * 70 + 60);
+        setTimeout(() => { aEl.style.zIndex = ''; }, total);
         return;
       }
 
@@ -355,7 +372,8 @@
       aEl.style.zIndex = '9';
       const a0c = cen(aEl); const frF = field().getBoundingClientRect();
       const stopX = atk === 'my' ? frF.width * 0.40 : frF.width * 0.60;   // 停在我方半邊
-      const stops = fs.map((f) => { const c = cen(f); return { f, dx: (stopX - a0c.x) * 0.5, dy: c.y - a0c.y }; });   // 前進距離再砍半
+      const seq = Math.random() < 0.5 ? fs.slice() : fs.slice().reverse();   // 上→中→下 或 下→中→上 隨機
+      const stops = seq.map((f) => { const c = cen(f); return { f, dx: (stopX - a0c.x) * 0.5, dy: c.y - a0c.y }; });   // 前進距離再砍半
       const flyT = 300, holdT = 3 * 110 + 240, total = fs.length * (flyT + holdT) + 360;
       const kf2 = [{ transform: 'translate(0,0)', offset: 0, easing: 'ease-out' }];   // 先快再慢
       stops.forEach((s, i) => { const arrive = (i * (flyT + holdT) + flyT) / total, leave = (i * (flyT + holdT) + flyT + holdT) / total; kf2.push({ transform: 'translate(' + s.dx + 'px,' + s.dy + 'px)', offset: arrive, easing: 'linear' }); kf2.push({ transform: 'translate(' + s.dx + 'px,' + s.dy + 'px)', offset: Math.min(.999, leave), easing: 'ease-out' }); });
