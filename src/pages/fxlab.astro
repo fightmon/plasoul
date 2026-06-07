@@ -601,40 +601,44 @@
     }
     function eShot() {
       const big = critOn(); const aEl = atkEl();
-      if (!aoeOn()) {
-        // 單體（維持原樣）
-        const a = frontEdge(aEl), b = cen(defEl()); const cnt = big ? 9 : 5; const impact = (cnt - 1) * 55 + 250; maybeDodge(defEl(), Math.round((impact + 220) / 2) + 30);
-        const parts = splitDmg(big ? 999 : 350, cnt);
-        vibrate(aEl, impact);
-        for (let k = 0; k < cnt; k++) setTimeout(() => {
-          muzzle(aEl, false, '#ffd24d');
-          const off = big ? Math.sin(k * 0.85) * 36 : (k - (cnt - 1) / 2) * 10; const mp = missOn() ? missPoint(b) : null; const tx = mp ? mp.x : b.x, ty = (mp ? mp.y : b.y) + off;
-          const bo = add('fl-bolt' + (big ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
-          const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
-          an.onfinish = () => { bo.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(defEl()); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
-        }, k * 55);
-        if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 240);
-        else if (big) setTimeout(shake, impact);
+      const sizeCls = big ? '' : ' sm';   // 非暴小顆、暴中顆
+      // 連發一串子彈到 pts（每個 {x,y,el}）
+      const fireStream = (pts) => {
+        const gap = 55, dur = pts.length * gap + 240, parts = splitDmg(big ? 999 : 350, pts.length);
+        vibrate(aEl, dur);
+        const cards = []; pts.forEach((p) => { if (cards.indexOf(p.el) < 0) cards.push(p.el); });
+        if (missOn()) cards.forEach((el) => missDodge(el));
+        pts.forEach((pt, k) => setTimeout(() => {
+          const a = frontEdge(aEl); muzzleAt(a.x, a.y, false, '#ffd24d');
+          const tt = missOn() ? missPoint(pt) : pt;
+          const bo = add('fl-bolt' + sizeCls, 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
+          bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tt.x - a.x) + 'px), calc(-50% + ' + (tt.y - a.y) + 'px))' }], { duration: 220, easing: 'linear' }).onfinish = () => { bo.remove(); if (!missOn()) { ring(pt.x, pt.y, '#ffd24d', false); flinch(pt.el); dmgPt(pt.x, pt.y, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
+        }, k * gap));
+        if (missOn()) cards.forEach((el) => setTimeout(() => dmg(el, 'MISS', 'miss'), dur));
+        else if (big) setTimeout(shake, dur);
+      };
+      const rx = (f) => { const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect(); return (dr.left - fr.left) + dr.width * (0.22 + Math.random() * 0.56); };
+      const yAt = (f, frac) => { const fr = field().getBoundingClientRect(), dr = f.getBoundingClientRect(); return (dr.top - fr.top) + dr.height * (0.18 + frac * 0.64); };
+
+      if (lv === 1 || !aoeOn()) {
+        // 單：LV×4 發打中卡（LV1 隨機；LV2 上→下；LV3 上→下→上）
+        const f = defEl(); const N = lv * 4; const pts = [];
+        for (let k = 0; k < N; k++) {
+          let frac;
+          if (lv === 1) frac = Math.random();
+          else if (lv === 2) frac = N > 1 ? k / (N - 1) : 0.5;
+          else { const half = N / 2; frac = k < half ? k / (half - 1) : 1 - (k - half) / (half - 1); }
+          pts.push({ x: rx(f), y: yAt(f, frac), el: f });
+        }
+        fireStream(pts);
         return;
       }
-      // 全：從攻擊卡連發掃過 3 卡；一般每卡4彈(掃一趟,方向隨機)、暴擊每卡8彈(上→下→上來回)
+      // 全：LV 張卡各 4 發
       const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
-      const per = 4, order = [];
-      if (!big) { (Math.random() < 0.5 ? fs.slice() : fs.slice().reverse()).forEach((f) => { for (let i = 0; i < per; i++) order.push(f); }); }
-      else { fs.forEach((f) => { for (let i = 0; i < per; i++) order.push(f); }); fs.slice().reverse().forEach((f) => { for (let i = 0; i < per; i++) order.push(f); }); }
-      const gap = 55, totalDur = order.length * gap + 240;
-      const parts = splitDmg(big ? 999 : 350, order.length);
-      vibrate(aEl, totalDur);
-      if (missOn()) fs.forEach((f) => missDodge(f));
-      order.forEach((f, k) => setTimeout(() => {
-        const a = frontEdge(aEl); muzzleAt(a.x, a.y, false, '#ffd24d');
-        const tp = missOn() ? missPoint(cen(f)) : cardRndPt(f); const tx = tp.x, ty = tp.y;
-        const bo = add('fl-bolt' + (big ? ' big' : ''), 0); bo.style.left = a.x + 'px'; bo.style.top = a.y + 'px';
-        const an = bo.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px), calc(-50% + ' + (ty - a.y) + 'px))' }], { duration: 220, easing: 'linear' });
-        an.onfinish = () => { bo.remove(); if (!missOn()) { ring(tx, ty, '#ffd24d', false); flinch(f); dmgPt(tx, ty, '-' + parts[k] + (big ? '!' : ''), big ? 'crit' : ''); } };
-      }, k * gap));
-      if (missOn()) fs.forEach((f) => setTimeout(() => dmg(f, 'MISS', 'miss'), totalDur));
-      else if (big) setTimeout(shake, totalDur);
+      const targets = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs;
+      const pts = [];
+      targets.forEach((f) => { for (let i = 0; i < 4; i++) pts.push({ x: rx(f), y: yAt(f, 0.2 + Math.random() * 0.6), el: f }); });
+      fireStream(pts);
     }
     function chargeRings(x, y, color, dur, big) {
       const n = 4; const s0 = big ? 2.6 : 1.8;
