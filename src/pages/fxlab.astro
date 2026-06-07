@@ -316,11 +316,14 @@
 
       if (!aoeOn()) {
         if (!big) {
-          // 單體：射中間卡一發（起點=卡前緣，不前移；槍口與雷射同點）
+          // 單體：對中卡上→中→下射 3 發（起點 X 軸隨機）
           const a = frontEdge(aEl), b = cen(defEl()); maybeDodge(defEl(), 490);
-          muzzleAt(a.x, a.y, false, col); aperture(a.x, a.y, col, false, angOf(a, b));
-          setTimeout(() => { beam(a, b, false, missOn()); }, 120);
-          setTimeout(() => { if (!missOn()) particlesDir(b.x, b.y, angOf(a, b), col, 14); resolve(defEl()); }, 460);
+          const parts = splitDmg(350, 3);
+          for (let s = 0; s < 3; s++) {
+            const oy = (s - 1) * 34; const sx = a.x + fwd * Math.random() * 30; const a2 = { x: sx, y: a.y + oy }, b2 = { x: b.x, y: a.y + oy };
+            setTimeout(() => { aperture(a2.x, a2.y, col, false, 0); setTimeout(() => { beam(a2, b2, false, missOn()); if (!missOn()) { flinch(defEl()); dmgPt(b.x, a.y + oy, '-' + parts[s], ''); particlesDir(b.x, a.y + oy, dir, col, 10); } }, 150); }, s * 130);
+          }
+          if (missOn()) setTimeout(() => dmg(defEl(), 'MISS', 'miss'), 300);
           return;
         }
         // 單暴擊：飛到定點(對準中卡) → 凹形俯衝掃(方向隨機) → 卡身面向中卡、邊飛邊射 9 發進中卡隨機處
