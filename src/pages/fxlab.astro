@@ -266,6 +266,7 @@
     function expandRing(x, y, color) { const n = add('fl-ering', 360); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.animate([{ transform: 'translate(-50%,-50%) scale(.2)', opacity: .2 }, { transform: 'translate(-50%,-50%) scale(1.3)', opacity: .9, offset: .6 }, { transform: 'translate(-50%,-50%) scale(1.7)', opacity: 0 }], { duration: 340, easing: 'ease-out' }); }
     function aperture(x, y, color, big, ang) { const n = add('fl-ap' + (big ? ' big' : ''), 540); n.style.left = x + 'px'; n.style.top = y + 'px'; if (ang) n.style.setProperty('--apang', ang + 'deg'); if (color) { n.style.borderColor = color; n.style.color = color; } }
     function muzzle(el, big, color) { const p = frontEdge(el); const col = color || (atk === 'my' ? '#3aa0ff' : '#ff5a5a'); const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; m.style.background = 'radial-gradient(circle,#fff,' + col + ' 55%,transparent 74%)'; }
+    function muzzleAt(x, y, big, color) { const col = color || (atk === 'my' ? '#3aa0ff' : '#ff5a5a'); const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = x + 'px'; m.style.top = y + 'px'; m.style.background = 'radial-gradient(circle,#fff,' + col + ' 55%,transparent 74%)'; }
 
     // 近身衝刺（單招用中央卡；ult 用指定卡）
     function lunge(cb, ratio) {
@@ -310,15 +311,16 @@
       // 起點偏移：射上→Y下移、射下→Y上移、射中→前移（讓彈道有變化）
       const startOff = (a, b) => { const dy = b.y - a.y; if (dy < -18) return { x: a.x + fwd * 15, y: a.y - (20 + Math.random() * 10) }; if (dy > 18) return { x: a.x + fwd * 15, y: a.y + (20 + Math.random() * 10) }; return { x: a.x + fwd * (20 + Math.random() * 10), y: a.y }; };
       // 射一發到 b：含起點偏移、槍口橢圓跟著角度轉、雷射
-      const shoot = (b, miss) => { const a0 = frontEdge(aEl); const a = startOff(a0, b); muzzle(aEl); aperture(a.x, a.y, col, false, angOf(a, b)); beam(a, b, false, miss); return a; };
+      const shoot = (b, miss) => { const a0 = frontEdge(aEl); const a = startOff(a0, b); muzzleAt(a.x, a.y, false, col); aperture(a.x, a.y, col, false, angOf(a, b)); beam(a, b, false, miss); return a; };
       const foes = () => [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
 
       if (!aoeOn()) {
         if (!big) {
-          // 單體：射中間卡一發
-          const b = cen(defEl()); maybeDodge(defEl(), 490);
-          setTimeout(() => { shoot(b, missOn()); }, 120);
-          setTimeout(() => { if (!missOn()) particlesDir(b.x, b.y, dir, col, 14); resolve(defEl()); }, 460);
+          // 單體：射中間卡一發（起點=卡前緣，不前移；槍口與雷射同點）
+          const a = frontEdge(aEl), b = cen(defEl()); maybeDodge(defEl(), 490);
+          muzzleAt(a.x, a.y, false, col); aperture(a.x, a.y, col, false, angOf(a, b));
+          setTimeout(() => { beam(a, b, false, missOn()); }, 120);
+          setTimeout(() => { if (!missOn()) particlesDir(b.x, b.y, angOf(a, b), col, 14); resolve(defEl()); }, 460);
           return;
         }
         // 單暴擊：對中間卡上中下射 3 發（維持原樣）
@@ -344,8 +346,8 @@
         kf.push({ transform: 'rotate(0deg)', offset: 1 });
         aEl.animate(kf, { duration: swT, easing: 'ease-in-out' });
         seq.forEach((f, k) => setTimeout(() => {
-          const b = cen(f); if (missOn()) missDodge(f); shoot(b, missOn());
-          setTimeout(() => { if (!missOn()) { hitFx(f); flinch(f); dmg(f, '-117', ''); particlesDir(b.x, b.y, dir, col, 10); } else dmg(f, 'MISS', 'miss'); }, 130);
+          const b = cen(f); if (missOn()) missDodge(f); const a = shoot(b, missOn());
+          setTimeout(() => { if (!missOn()) { hitFx(f); flinch(f); dmg(f, '-117', ''); particlesDir(b.x, b.y, angOf(a, b), col, 10); } else dmg(f, 'MISS', 'miss'); }, 130);
         }, k * shotGap + 120));
         return;
       }
@@ -353,7 +355,7 @@
       aEl.style.zIndex = '9';
       const a0c = cen(aEl); const frF = field().getBoundingClientRect();
       const stopX = atk === 'my' ? frF.width * 0.40 : frF.width * 0.60;   // 停在我方半邊
-      const stops = fs.map((f) => { const c = cen(f); return { f, dx: stopX - a0c.x, dy: c.y - a0c.y }; });
+      const stops = fs.map((f) => { const c = cen(f); return { f, dx: (stopX - a0c.x) * 0.5, dy: c.y - a0c.y }; });   // 前進距離再砍半
       const flyT = 300, holdT = 3 * 110 + 240, total = fs.length * (flyT + holdT) + 360;
       const kf2 = [{ transform: 'translate(0,0)', offset: 0, easing: 'ease-out' }];   // 先快再慢
       stops.forEach((s, i) => { const arrive = (i * (flyT + holdT) + flyT) / total, leave = (i * (flyT + holdT) + flyT + holdT) / total; kf2.push({ transform: 'translate(' + s.dx + 'px,' + s.dy + 'px)', offset: arrive, easing: 'linear' }); kf2.push({ transform: 'translate(' + s.dx + 'px,' + s.dy + 'px)', offset: Math.min(.999, leave), easing: 'ease-out' }); });
@@ -363,7 +365,7 @@
       stops.forEach((s, i) => {
         const base = i * (flyT + holdT) + flyT + 70;   // 確定停穩後才射
         if (missOn()) { setTimeout(() => { missDodge(s.f); dmg(s.f, 'MISS', 'miss'); }, base + 120); return; }
-        for (let k = 0; k < 3; k++) setTimeout(() => { const a = frontEdge(aEl); const c = cen(s.f); const sx = a.x + fwd * Math.random() * 30; const sy = a.y + (k - 1) * 12; muzzle(aEl); aperture(sx, sy, col, false, 0); beam({ x: sx, y: sy }, { x: c.x, y: sy }, false, false); ring(c.x, sy, col, false); particlesDir(c.x, sy, dir, col, 5); }, base + k * 110);
+        for (let k = 0; k < 3; k++) setTimeout(() => { const a = frontEdge(aEl); const c = cen(s.f); const sx = a.x + fwd * Math.random() * 30; const sy = a.y + (k - 1) * 12; muzzleAt(sx, sy, false, col); aperture(sx, sy, col, false, 0); beam({ x: sx, y: sy }, { x: c.x, y: sy }, false, false); ring(c.x, sy, col, false); particlesDir(c.x, sy, dir, col, 5); }, base + k * 110);
         setTimeout(() => { hitFx(s.f); flinch(s.f); dmg(s.f, '-' + cardDmg[i] + '!', 'crit'); shake(); }, base + 2 * 110 + 80);
       });
       setTimeout(() => { aEl.style.zIndex = ''; }, total);
