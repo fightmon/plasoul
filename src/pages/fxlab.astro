@@ -874,7 +874,7 @@
     };
     const aoeOn = () => $('fl-aoe').classList.contains('on');
     const isEvade = (k) => k[0] === 'd';
-    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun', 'shot', 'charge']);   // 自己處理全體演出的招式（不用通用逐卡重播）
+    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun', 'shot', 'charge', 'homing']);   // 自己處理全體演出的招式（不用通用逐卡重播）
     // 單：打中間卡一次；全：依序對 3 張卡各施放一次（每次鎖定該卡，間隔夠長避免目標錯亂）
     function runMove(k) {
       const fn = FX[k]; if (!fn) return;
