@@ -522,17 +522,47 @@
       }, k * (dur / (n + 1)));
     }
     function eCharge() {
-      const big = critOn(); const a = frontEdge(atkEl()); const chargeT = big ? 680 : 460;
+      const big = critOn(); const aEl = atkEl(); const a = frontEdge(aEl); const chargeT = big ? 680 : 460;
+      const dir = atk === 'my' ? 0 : 180; const pcol = atk === 'my' ? '#9fe8ff' : '#ffd0d0'; const sh = atk === 'my' ? '#2f9bff' : '#ff4d4d';
       chargeRings(a.x, a.y, atk === 'my' ? '#9fe8ff' : '#ffd0d0', chargeT, big);
-      glowPulse(atkEl(), '#fff');
-      maybeDodge(defEl(), chargeT + 280);
-      const dir = atk === 'my' ? 0 : 180; const pcol = atk === 'my' ? '#9fe8ff' : '#ffd0d0';
-      setTimeout(() => {
-        const b = cen(defEl()); chargeBeam(a, b, big, missOn());
+      glowPulse(aEl, '#fff');
+      if (!aoeOn()) {
+        maybeDodge(defEl(), chargeT + 280);
         setTimeout(() => {
-          if (!missOn()) { burst(b.x, b.y, '#fff', big); particlesDir(b.x, b.y, dir, pcol, big ? 30 : 16); if (big) { critFlash(b.x, b.y, '#9fe8ff'); shake(); setTimeout(shake, 90); } }
-          resolve(defEl());
-        }, 200);
+          const b = cen(defEl()); chargeBeam(a, b, big, missOn());
+          setTimeout(() => {
+            if (!missOn()) { burst(b.x, b.y, '#fff', big); particlesDir(b.x, b.y, dir, pcol, big ? 30 : 16); if (big) { critFlash(b.x, b.y, '#9fe8ff'); shake(); setTimeout(shake, 90); } }
+            resolve(defEl());
+          }, 200);
+        }, chargeT);
+        return;
+      }
+      // 全：蓄力後一條粗光束從上往下橫掃、貫穿 3 卡（全暴=像蓄力單暴那樣超粗）
+      const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
+      const pts = fs.map((f) => cen(f));
+      const angA = (p) => Math.atan2(p.y - a.y, p.x - a.x) * 180 / Math.PI;
+      const angTop = angA(pts[0]), angBot = angA(pts[pts.length - 1]);
+      const farLen = Math.max.apply(null, pts.map((p) => Math.hypot(p.x - a.x, p.y - a.y))) + 200;   // 貫穿
+      const h = big ? 30 : 16; const sweepDur = 760;
+      const dmgs = splitDmg(big ? 999 : 350, fs.length);
+      if (missOn()) fs.forEach((f) => missDodge(f));
+      setTimeout(() => {
+        const beam = add('', sweepDur + 260);
+        beam.style.position = 'absolute'; beam.style.left = a.x + 'px'; beam.style.top = a.y + 'px';
+        beam.style.height = h + 'px'; beam.style.marginTop = (-h / 2) + 'px'; beam.style.width = farLen + 'px';
+        beam.style.transformOrigin = 'left center'; beam.style.borderRadius = h + 'px';
+        beam.style.background = atk === 'my' ? 'linear-gradient(90deg,#9fe8ff,#2f9bff)' : 'linear-gradient(90deg,#ffd0d0,#ff4d4d)';
+        beam.style.boxShadow = '0 0 ' + (big ? 24 : 15) + 'px ' + sh;
+        beam.animate([{ transform: 'rotate(' + angTop + 'deg)', opacity: 0 }, { transform: 'rotate(' + angTop + 'deg)', opacity: 1, offset: .12 }, { transform: 'rotate(' + angBot + 'deg)', opacity: 1, offset: .9 }, { transform: 'rotate(' + angBot + 'deg)', opacity: 0 }], { duration: sweepDur, easing: 'ease-in-out', fill: 'forwards' });
+        glowPulse(aEl, '#fff');
+        fs.forEach((f, i) => {
+          const frac = (angA(pts[i]) - angTop) / ((angBot - angTop) || 1);
+          setTimeout(() => {
+            if (missOn()) { dmg(f, 'MISS', 'miss'); return; }
+            const p = cardRndPt(f);
+            flinch(f); burst(p.x, p.y, '#fff', big); particlesDir(p.x, p.y, dir, pcol, big ? 18 : 10); scorch(p.x, p.y, sh); dmgPt(p.x, p.y, '-' + dmgs[i] + (big ? '!' : ''), big ? 'crit' : ''); shake();
+          }, 0.12 * sweepDur + frac * 0.78 * sweepDur);
+        });
       }, chargeT);
     }
     function eHoming() {
@@ -678,7 +708,7 @@
     };
     const aoeOn = () => $('fl-aoe').classList.contains('on');
     const isEvade = (k) => k[0] === 'd';
-    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun', 'shot']);   // 自己處理全體演出的招式（不用通用逐卡重播）
+    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun', 'shot', 'charge']);   // 自己處理全體演出的招式（不用通用逐卡重播）
     // 單：打中間卡一次；全：依序對 3 張卡各施放一次（每次鎖定該卡，間隔夠長避免目標錯亂）
     function runMove(k) {
       const fn = FX[k]; if (!fn) return;
