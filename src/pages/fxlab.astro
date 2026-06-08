@@ -291,7 +291,7 @@
         if (st.anim) { try { st.anim.cancel(); } catch (e) {} }
         const back = d.animate([{ transform: fromT }, { transform: 'translate(0,0) rotate(0deg)' }], { duration: 520, easing: 'ease-in-out', fill: 'both', composite: 'add' });
         st.anim = back; back.onfinish = () => { try { back.cancel(); } catch (e) {} if (st.anim === back) st.anim = null; };
-      }, 480);
+      }, 700);   // 停頓時間 > 子彈間隔(470)，避免回正搶在下一發前觸發→瞬移
     }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
     function burst(x, y, color, big) { const r = add('fl-ring', 680); r.style.left = x + 'px'; r.style.top = y + 'px'; if (color) r.style.borderColor = color; r.style.setProperty('--rs', big ? '4.4' : '3.4'); const f = add('fl-flash' + (big ? ' big' : ''), 340); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; }
