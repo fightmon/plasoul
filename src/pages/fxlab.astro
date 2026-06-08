@@ -837,15 +837,18 @@
           muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, ac, big, ang);   // 楕圓改一般大小
           if (miss) { beam(a, tgt, big, true); if (showMiss) setTimeout(() => dmg(d, 'MISS', 'miss'), 130); return; }
           if (big) {
-            const rad2 = ang * Math.PI / 180, far = { x: a.x + Math.cos(rad2) * 1200, y: a.y + Math.sin(rad2) * 1200 };   // 貫穿到畫面外
-            d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 800);   // 命中卡暫抬高→雷射在卡後穿過(穿卡那段被卡擋住)
-            beam(a, far, true, false, false, null, fxB());   // 一整道雷射貫穿到畫面外(放卡後層,不是兩段)
+            const rad2 = ang * Math.PI / 180, fr2 = field().getBoundingClientRect(), dr2 = d.getBoundingClientRect();
+            const frontX = atk === 'my' ? (dr2.left - fr2.left) : (dr2.right - fr2.left);   // 卡前緣
+            const backX = atk === 'my' ? (dr2.right - fr2.left) : (dr2.left - fr2.left);    // 卡背緣
+            const lineY = (x) => a.y + (x - a.x) * Math.tan(rad2);
+            beam(a, { x: frontX, y: lineY(frontX) }, true, false);   // 入射雷射到卡前緣
             setTimeout(() => {   // 命中效果延到雷射抵達才出現
               burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
               hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
               dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
-              const ee = { x: p.x + Math.cos(rad2) * 60, y: p.y + Math.sin(rad2) * 60 };
-              sparkLines(ee.x, ee.y, ang, pc, 14, 1.0);   // 卡背冒出火花(前層)
+              const exitStart = { x: backX, y: lineY(backX) }, far = { x: a.x + Math.cos(rad2) * 1400, y: a.y + Math.sin(rad2) * 1400 };
+              beam(exitStart, far, true, false);   // 出射雷射:從卡背緣同一條線貫穿到畫面外(卡是中間缺口=穿過去)
+              sparkLines(exitStart.x, exitStart.y, ang, pc, 14, 1.0);   // 卡背出口火花
             }, 130);
           } else {
             beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
