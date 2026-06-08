@@ -36,9 +36,9 @@
   (function () {
     const SIZES = { none: [0, 0], small: [6, 0.6], med: [10, 0.95], large: [16, 1.35] };
     const VARIANTS = {
-      final: { style: 'line', exitP: 45, back: 'large', front: 'small', pierce: true, dir: 'in' },
+      final: { style: 'line', exitP: 55, back: 'large', front: 'small', pierce: true, dir: 'in' },
       graze: { style: 'dot', exitP: 0, back: 'none', front: 'med', pierce: false, dir: 'out' },
-      tuner: { style: 'line', exitP: 45, back: 'large', front: 'small', pierce: true, dir: 'in' },
+      tuner: { style: 'line', exitP: 55, back: 'large', front: 'small', pierce: true, dir: 'in' },
     };
     function el(parent, cls, css) { const d = document.createElement('div'); if (cls) d.className = cls; if (css) d.style.cssText = css; parent.appendChild(d); return d; }
     function spark(layer, x, y, dir, style, sizeKey, color) {
