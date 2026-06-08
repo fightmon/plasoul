@@ -275,16 +275,20 @@
         { transform: 'translate(0,0)', easing: 'ease-in-out' },
       ], { duration: 1300, composite: 'add' });
     }
-    function hitReact(d, p, big) {   // 反應式中彈：急退到位→停頓→慢慢回；依中彈高度後仰(頭中→頭仰/腳中→腳後)；疊加可累積(連發停頓中再被打會再退)
+    function hitReact(d, p, big) {   // 反應式中彈(單一累積器)：每次中彈往更後退+依中彈高度後仰→停頓→只有最後一發後才慢慢回
       const fwd = atk === 'my' ? 1 : -1; const fr = field().getBoundingClientRect(), dr = d.getBoundingClientRect();
       const cy = (dr.top - fr.top) + dr.height / 2, oy = Math.max(-1, Math.min(1, (p.y - cy) / (dr.height / 2 || 1)));   // -1上(頭)~1下(腳)
-      const dist = (big ? 22 : 12) * fwd, rot = -oy * (big ? 18 : 11) * fwd;   // 普通=小退、暴=中退（大退預留 LV4/5）
-      d.animate([
-        { transform: 'translate(0,0) rotate(0deg)' },
-        { transform: 'translate(' + dist + 'px,0) rotate(' + rot + 'deg)', offset: .14, easing: 'ease-out' },   // 急退到位
-        { transform: 'translate(' + dist + 'px,0) rotate(' + rot + 'deg)', offset: .5 },                         // 停頓
-        { transform: 'translate(0,0) rotate(0deg)', easing: 'ease-in-out' },                                     // 慢慢回
-      ], { duration: 900, composite: 'add' });
+      const st = d.__rc || (d.__rc = { dist: 0, rot: 0, ret: 0 });
+      st.dist = Math.max(-90, Math.min(90, st.dist + (big ? 22 : 12) * fwd));            // 累積後退（普通小/暴中；大退預留 LV4/5）
+      st.rot = Math.max(-46, Math.min(46, st.rot + (-oy * (big ? 18 : 11) * fwd)));      // 中彈部位後仰累積
+      clearTimeout(st.ret);
+      d.style.animation = 'none';   // 暫離浮動，讓中彈位移生效
+      d.style.transition = 'transform .14s ease-out';
+      d.style.transform = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';    // 急退到累積位置(連發=更後)
+      st.ret = setTimeout(() => {   // 最後一發後：停頓結束 → 慢慢回原位 → 還原浮動
+        d.style.transition = 'transform .5s ease-in-out'; d.style.transform = 'translate(0,0) rotate(0deg)'; st.dist = 0; st.rot = 0;
+        setTimeout(() => { d.style.transition = ''; d.style.transform = ''; d.style.animation = ''; }, 520);
+      }, 480);
     }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
     function burst(x, y, color, big) { const r = add('fl-ring', 680); r.style.left = x + 'px'; r.style.top = y + 'px'; if (color) r.style.borderColor = color; r.style.setProperty('--rs', big ? '4.4' : '3.4'); const f = add('fl-flash' + (big ? ' big' : ''), 340); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; }
