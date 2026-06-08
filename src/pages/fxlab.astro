@@ -878,11 +878,15 @@
           else { const t0 = 300 + k * 470; setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), t0 + 300); }   // 子彈狙擊：瞄準→發射→再瞄準(拉開間隔，像真狙擊不能連發)
         });
       } else {
-        // 全：每卡命中 perCard 發（LV2,3 各1；暴各2）
+        // 全：每卡各 1 發(中心)；暴=各發都有貫穿(同 LV1 暴)；發間隔像單暴一樣拉開
         const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
         const cards = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice();
-        const perCard = big ? 2 : 1; cards.forEach((d) => maybeDodge(d, 540)); let seq = 0;
-        cards.forEach((d) => { const parts = splitDmg(big ? 999 : 350, perCard); for (let k = 0; k < perCard; k++) { const p = perCard === 1 ? cen(d) : cardRndPt(d); scope(p); const last = k === perCard - 1; setTimeout(() => snipeShot(d, p, parts[k], last), 360 + (seq++) * 130); } });
+        const parts = splitDmg(big ? 999 : 350, cards.length);
+        cards.forEach((d, ci) => {
+          const p = cen(d); const last = ci === cards.length - 1;
+          if (useBeam) { maybeDodge(d, 360 + ci * 150); scope(p); setTimeout(() => snipeShot(d, p, parts[ci], last), 360 + ci * 150); }
+          else { const t0 = 300 + ci * 470; maybeDodge(d, t0 + 300); setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[ci], last), t0 + 300); }   // 子彈：瞄準→射→換卡再瞄準(像單暴拉開)
+        });
       }
     }
     function eBit() {
