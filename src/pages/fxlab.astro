@@ -837,15 +837,15 @@
           muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, ac, big, ang);   // 楕圓改一般大小
           if (miss) { beam(a, tgt, big, true); if (showMiss) setTimeout(() => dmg(d, 'MISS', 'miss'), 130); return; }
           if (big) {
-            beam(a, p, true, false);   // 主雷射打到彈著點(末點不超出)
-            setTimeout(() => {   // 命中效果延到雷射抵達目標才出現
+            const rad2 = ang * Math.PI / 180, far = { x: a.x + Math.cos(rad2) * 1200, y: a.y + Math.sin(rad2) * 1200 };   // 貫穿到畫面外
+            d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 800);   // 命中卡暫抬高→雷射在卡後穿過(穿卡那段被卡擋住)
+            beam(a, far, true, false, false, null, fxB());   // 一整道雷射貫穿到畫面外(放卡後層,不是兩段)
+            setTimeout(() => {   // 命中效果延到雷射抵達才出現
               burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
               hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
               dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
-              d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 700);   // 把這張卡暫抬到貫穿層(z4)之上→貫穿在卡後、又不被別張卡(z2)擋
-              const rad2 = ang * Math.PI / 180, ex = { x: p.x + Math.cos(rad2) * 95, y: p.y + Math.sin(rad2) * 95 };   // 沿角度貫穿(夠長才露出卡背外)
-              beam(p, ex, true, false, false, null, fxB());   // 貫穿段放卡後層(被抬高的卡擋住=在卡後，露出部分看得到)
-              setTimeout(() => sparkLines(ex.x, ex.y, ang, pc, 16, 1.0, fxB()), 40);   // 出口火花(卡後層,對應角度)
+              const ee = { x: p.x + Math.cos(rad2) * 60, y: p.y + Math.sin(rad2) * 60 };
+              sparkLines(ee.x, ee.y, ang, pc, 14, 1.0);   // 卡背冒出火花(前層)
             }, 130);
           } else {
             beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
