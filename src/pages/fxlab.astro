@@ -833,18 +833,23 @@
         const ang = Math.atan2(tgt.y - a.y, tgt.x - a.x) * 180 / Math.PI;
         if (useBeam) {   // 光束狙擊：同炮彈邏輯—一般=彈孔+前火花+小退；暴=貫穿(雷射穿過卡背)+退後+出口火花
           const ac = atk === 'my' ? '#2f9bff' : '#ff4d4d', pc = atk === 'my' ? '#bfefff' : '#ffc2c2';
-          muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, ac, big, ang, 'sm');
-          if (miss) { beam(a, tgt, big, true, false, big ? 4 : 2); if (showMiss) dmg(d, 'MISS', 'miss'); return; }
+          muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, ac, big, ang);   // 楕圓改一般大小
+          if (miss) { beam(a, tgt, big, true); if (showMiss) setTimeout(() => dmg(d, 'MISS', 'miss'), 130); return; }
           if (big) {
             const rad2 = ang * Math.PI / 180, ex = { x: p.x + Math.cos(rad2) * 55, y: p.y + Math.sin(rad2) * 55 };   // 貫穿到卡背
-            beam(a, ex, true, false, false, 4); burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
-            hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
-            dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
-            setTimeout(() => sparkLines(ex.x, ex.y, ang, pc, 16, 1.0, fxB()), 40);   // 出口火花(卡後層,對應角度)
+            beam(a, ex, true, false);   // 雷射粗細同雷射招式(16)
+            setTimeout(() => {   // 命中效果延到雷射抵達目標才出現
+              burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
+              hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
+              dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
+              setTimeout(() => sparkLines(ex.x, ex.y, ang, pc, 16, 1.0, fxB()), 40);   // 出口火花(卡後層,對應角度)
+            }, 130);
           } else {
-            beam(a, tgt, false, false, false, 3); bulletHole(d, p.x, p.y, false);   // 一般：細束+彈孔
-            sparkLines(p.x, p.y, ang + 180, pc, 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); hitReact(d, p, false);   // 前火花+小退
-            dmgPt(p.x, p.y, '-' + dmgVal, '');
+            beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
+            setTimeout(() => {   // 命中效果延到雷射抵達目標才出現
+              bulletHole(d, p.x, p.y, false); sparkLines(p.x, p.y, ang + 180, pc, 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); hitReact(d, p, false);   // 彈孔+前火花+小退
+              dmgPt(p.x, p.y, '-' + dmgVal, '');
+            }, 130);
           }
           return;
         }
