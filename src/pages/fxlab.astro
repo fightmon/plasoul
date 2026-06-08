@@ -879,13 +879,10 @@
       const scope = (p) => { const cr = add('fl-cross', 640); cr.style.left = p.x + 'px'; cr.style.top = p.y + 'px'; };
       if (!aoe) {
         // 單體：N 個瞄準鏡(其中一個必中正中心)＋N 發
-        const d = defEl(); const N = useBeam ? (lv === 1 ? (big ? 3 : 1) : lv === 2 ? (big ? 4 : 2) : (big ? 6 : 3)) : lv;   // 狙擊彈發數=LV(1/2/3)，暴=同發數但有貫穿；光束維持原本
+        const d = defEl(); const N = lv;   // 狙擊(子彈/光束)發數都=LV(1/2/3)；暴=同發數但有貫穿
         maybeDodge(d, 460 + N * 70); const c = cen(d); const parts = splitDmg(big ? 999 : 350, N);
         const tgts = []; for (let k = 0; k < N; k++) tgts.push(k === 0 ? { x: c.x, y: c.y } : cardRndPt(d));
-        tgts.forEach((p, k) => {
-          if (useBeam) { scope(p); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), 360 + k * 150); }
-          else { const t0 = 300 + k * 470; setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), t0 + 300); }   // 子彈狙擊：瞄準→發射→再瞄準(拉開間隔，像真狙擊不能連發)
-        });
+        tgts.forEach((p, k) => { const t0 = 300 + k * 470; setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), t0 + 300); });   // 瞄準→停頓→發射→再瞄準(子彈/光束都一樣，有狙擊感)
       } else {
         // 全：每卡各 1 發(中心)；暴=各發都有貫穿(同 LV1 暴)；發間隔像單暴一樣拉開
         const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
@@ -893,9 +890,8 @@
         if (Math.random() < 0.5) cards.reverse();   // 攻擊順序隨機(上中下 / 下中上)
         const parts = splitDmg(big ? 999 : 350, cards.length);
         cards.forEach((d, ci) => {
-          const p = cen(d); const last = ci === cards.length - 1;
-          if (useBeam) { maybeDodge(d, 360 + ci * 150); scope(p); setTimeout(() => snipeShot(d, p, parts[ci], last), 360 + ci * 150); }
-          else { const t0 = 300 + ci * 470; maybeDodge(d, t0 + 300); setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[ci], last), t0 + 300); }   // 子彈：瞄準→射→換卡再瞄準(像單暴拉開)
+          const p = cen(d); const last = ci === cards.length - 1; const t0 = 300 + ci * 470;
+          maybeDodge(d, t0 + 300); setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[ci], last), t0 + 300);   // 瞄準→射→換卡再瞄準(子彈/光束都一樣)
         });
       }
     }
