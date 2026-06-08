@@ -820,8 +820,8 @@
         muzzleAt(a.x, a.y, false, '#ffd24d');
         const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
         const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 150, easing: 'linear' });
-        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); if (big && lv === 1) sparkLines(p.x, p.y, dir + 180, '#ffb060', 6, 0.5); else sparkLines(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); bulletHole(d, p.x, p.y, big);   // 入口火光線條(反向)；LV1暴=小 dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
-          if (big && lv === 1) {   // LV1暴：貫穿—子彈從命中點(卡後層)滑出卡背緣、出口顆粒在卡背緣往後噴(卡後層z4=被卡擋住部分像從背後鑽出)
+        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); if (big) sparkLines(p.x, p.y, dir + 180, '#ffb060', 6, 0.5); else sparkLines(p.x, p.y, dir + 180, '#ffb060', 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); bulletHole(d, p.x, p.y, big);   // 入口火光線條(反向)；暴(貫穿)=入口小火花 dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
+          if (big) {   // 暴(各等級)：貫穿—子彈從命中點(卡後層)滑出卡背緣、出口顆粒在卡背緣往後噴(卡後層z4=被卡擋住部分像從背後鑽出)
             const dr3 = d.getBoundingClientRect(), fr3 = field().getBoundingClientRect(), rad2 = dir * Math.PI / 180;
             const ex = { x: p.x + Math.cos(rad2) * 55, y: p.y };   // 出口點 P+55
             const out = { x: ex.x + Math.cos(rad2) * 55, y: ex.y + Math.sin(rad2) * 55 };
@@ -836,7 +836,7 @@
       const scope = (p) => { const cr = add('fl-cross', 640); cr.style.left = p.x + 'px'; cr.style.top = p.y + 'px'; };
       if (!aoe) {
         // 單體：N 個瞄準鏡(其中一個必中正中心)＋N 發
-        const d = defEl(); const N = lv === 1 ? (useBeam ? (big ? 3 : 1) : 1) : lv === 2 ? (big ? 4 : 2) : (big ? 6 : 3);   // 狙擊彈LV1固定1發(暴有貫穿)；光束LV1暴維持3
+        const d = defEl(); const N = useBeam ? (lv === 1 ? (big ? 3 : 1) : lv === 2 ? (big ? 4 : 2) : (big ? 6 : 3)) : lv;   // 狙擊彈發數=LV(1/2/3)，暴=同發數但有貫穿；光束維持原本
         maybeDodge(d, 460 + N * 70); const c = cen(d); const parts = splitDmg(big ? 999 : 350, N);
         const tgts = []; for (let k = 0; k < N; k++) tgts.push(k === 0 ? { x: c.x, y: c.y } : cardRndPt(d));
         tgts.forEach((p, k) => { scope(p); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), 360 + k * 150); });
