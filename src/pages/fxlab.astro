@@ -811,13 +811,12 @@
         const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
         const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 150, easing: 'linear' });
         an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); bulletHole(d, p.x, p.y, big); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
-          if (big && lv === 1) {   // LV1暴：貫穿—子彈從卡背同點冒出繼續往後飛 + 卡後顆粒往後噴
-            const dr3 = d.getBoundingClientRect(), fr3 = field().getBoundingClientRect();
-            const ex = { x: (atk === 'my' ? (dr3.right - fr3.left) : (dr3.left - fr3.left)), y: p.y }, rad2 = dir * Math.PI / 180, out = { x: ex.x + Math.cos(rad2) * 90, y: ex.y + Math.sin(rad2) * 90 };
+          if (big && lv === 1) {   // LV1暴：貫穿—只留入口一個洞；出口顆粒離前洞約5px(薄厚度感) + 子彈往後續飛
+            const rad2 = dir * Math.PI / 180, ex = { x: p.x + Math.cos(rad2) * 5, y: p.y + Math.sin(rad2) * 5 }, out = { x: ex.x + Math.cos(rad2) * 90, y: ex.y + Math.sin(rad2) * 90 };
             setTimeout(() => {
-              const m2 = add('fl-missile', 0, fxB()); m2.style.left = ex.x + 'px'; m2.style.top = ex.y + 'px';   // 續飛子彈放卡後層
+              const m2 = add('fl-missile', 0, fxB()); m2.style.left = ex.x + 'px'; m2.style.top = ex.y + 'px';   // 續飛子彈放卡後層(往後飛出)
               m2.animate([{ transform: 'translate(-50%,-50%) rotate(' + dir + 'deg)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + (out.x - ex.x) + 'px),calc(-50% + ' + (out.y - ex.y) + 'px)) rotate(' + dir + 'deg)', opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { m2.remove(); };
-              particlesDir(ex.x, ex.y, dir, '#ffb060', 12, 0.8, fxB()); bulletHole(d, ex.x, ex.y, big);   // 出口顆粒放卡後層(被卡擋住=在卡後)
+              particlesDir(ex.x, ex.y, dir, '#ffb060', 10, 0.55);   // 出口顆粒(離前洞約5px，小幅)
             }, 45);
           }
         };   // 擊退 + 顆粒反向大幅濺 + 著彈洞(隨卡浮動)=打進卡的鑽入感；LV1暴另有貫穿
