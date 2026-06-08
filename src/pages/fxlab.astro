@@ -100,7 +100,7 @@
     .fl-banner.on { opacity: 1; transform: scale(1); }
 
     .fl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
-    .fl-fxb { position: absolute; inset: 0; pointer-events: none; z-index: 1; }   /* 卡片後方特效層(壓在所有卡 z2/z5 之下=在卡後，含上下非active卡) */
+    .fl-fxb { position: absolute; inset: 0; pointer-events: none; z-index: 4; }   /* 卡片後方特效層(子彈/子機用) */
     .fl-ghost { position: absolute; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; pointer-events: none; filter: brightness(.8) saturate(.6); z-index: 1; }
 
     .fl-dmg { position: absolute; font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 2px 6px #000; transform: translate(-50%,-50%); animation: fl-pop .85s ease-out forwards; white-space: nowrap; }
@@ -842,9 +842,12 @@
               burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
               hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
               dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
-              const rad2 = ang * Math.PI / 180, ex = { x: p.x + Math.cos(rad2) * 50, y: p.y + Math.sin(rad2) * 50 };   // 沿子彈角度貫穿(對上/下卡有對應角度)
-              beam(p, ex, true, false, false, null, fxB());   // 貫穿段放卡後層(被卡擋住=穿過去)
-              setTimeout(() => sparkLines(ex.x, ex.y, ang, pc, 16, 1.0, fxB()), 40);   // 出口火花(卡後層,對應角度)
+              const fr2 = field().getBoundingClientRect(), dr2 = d.getBoundingClientRect(), rad2 = ang * Math.PI / 180;   // 貫穿：從卡背緣往外冒出短雷射(前層,各卡都看得到,從背後穿出)
+              const backX = atk === 'my' ? (dr2.right - fr2.left) : (dr2.left - fr2.left);
+              const t2 = (backX - p.x) / (Math.cos(rad2) || (atk === 'my' ? 1 : -1));
+              const es = { x: backX, y: p.y + Math.sin(rad2) * t2 }, ee = { x: es.x + Math.cos(rad2) * 26, y: es.y + Math.sin(rad2) * 26 };
+              beam(es, ee, true, false);   // 卡背冒出的貫穿短束(對應角度)
+              setTimeout(() => sparkLines(ee.x, ee.y, ang, pc, 16, 1.0), 40);   // 出口火花(對應角度)
             }, 130);
           } else {
             beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
