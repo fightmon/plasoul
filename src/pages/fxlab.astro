@@ -831,8 +831,9 @@
             const fp = cur, ftp = tp, dval = parts[bi++], last = (pIdx === podsPerCard - 1 && v === volleys - 1);
             ((fp, ftp, dval, last) => setTimeout(() => {
               const aimAng = ang(fp, ftp);   // 子機已在飛行末段轉到此角度，不再瞬轉
-              muzzleAt(fp.x, fp.y, false, '#ffffff'); aperture(fp.x, fp.y, col, false, aimAng, 'sm');   // 小楕圓 + 白光點
-              beam(fp, ftp, big, missOn(), false, big ? 4 : 3);   // 更細束(比招式雷射弱)
+              const rad = aimAng * Math.PI / 180, mp = { x: fp.x + Math.cos(rad) * 16, y: fp.y + Math.sin(rad) * 16 };   // 發射點推到三角尖頭前方
+              muzzleAt(mp.x, mp.y, false, '#ffffff'); aperture(mp.x, mp.y, col, false, aimAng, 'sm');   // 小楕圓 + 白光點
+              beam(mp, ftp, big, missOn(), false, big ? 4 : 3);   // 更細束(比招式雷射弱)
               if (missOn()) { if (last) dmg(d, 'MISS', 'miss'); }
               else { flinch(d); particlesDir(ftp.x, ftp.y, aimAng, pcol, big ? 16 : 10); dmgPt(ftp.x, ftp.y, '-' + dval + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(ftp.x, ftp.y, col); shake(); } }
             }, t + 130))(fp, ftp, dval, last);
