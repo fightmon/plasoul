@@ -6,9 +6,11 @@ const devlog = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/devlog' }),
   schema: z.object({
     title: z.string(),
+    seoTitle: z.string().optional(),       // <title> 用（含關鍵字）；省略則用 title
     date: z.coerce.date(),
     summary: z.string(),
     tags: z.array(z.string()).default([]),
+    keywords: z.array(z.string()).default([]),   // meta keywords / JSON-LD
     cover: z.string().default('final'),   // snipe-demo variant 當封面
   }),
 });

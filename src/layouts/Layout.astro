@@ -16,6 +16,9 @@ interface Props {
   noIndex?: boolean;
   hideHeaderSearch?: boolean;
   bareLayout?: boolean;
+  ogType?: string;
+  canonical?: string;
+  keywords?: string;
 }
 
 const {
@@ -25,6 +28,9 @@ const {
   noIndex = false,
   hideHeaderSearch = false,
   bareLayout = false,
+  ogType = "website",
+  canonical,
+  keywords,
 } = Astro.props;
 ---
 
@@ -36,6 +42,8 @@ const {
   <meta name="theme-color" content="#0a0e1a" />
   <title>{title}</title>
   <meta name="description" content={description} />
+  {keywords && <meta name="keywords" content={keywords} />}
+  {canonical && <link rel="canonical" href={canonical} />}
 
   {noIndex && <meta name="robots" content="noindex,nofollow" />}
 
@@ -50,9 +58,13 @@ const {
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={ogImage} />
-  <meta property="og:type" content="website" />
+  <meta property="og:type" content={ogType} />
   <meta property="og:locale" content="zh_TW" />
+  {canonical && <meta property="og:url" content={canonical} />}
   <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- 頁面可注入額外 head（JSON-LD、article meta 等）-->
+  <slot name="head" />
 
   <!-- Theme detection (anti-FOUC, runs before paint) -->
   <script is:inline>
