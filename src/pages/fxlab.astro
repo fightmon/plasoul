@@ -142,6 +142,8 @@
     .fl-laser.c-foe i { background: linear-gradient(90deg,#ffd0d0,#ff4d4d); box-shadow: 0 0 12px #ff4d4d; }
     .fl-laser.weak { height: 3px; opacity: .4; } .fl-laser.weak i { box-shadow: none; }
     @keyframes fl-beam { 0%{transform:scaleX(0);opacity:.5;} 45%{transform:scaleX(1);opacity:1;} 100%{transform:scaleX(1);opacity:0;} }
+    @keyframes fl-beam-hold { 0%{transform:scaleX(0);opacity:.6;} 7%{transform:scaleX(1);opacity:1;} 72%{transform:scaleX(1);opacity:1;} 100%{transform:scaleX(1);opacity:0;} }   /* 快彈出+長停留 */
+    .fl-laser.hold i { animation: fl-beam-hold .9s ease-out forwards; }
 
     .fl-ball { position: absolute; width: 18px; height: 18px; border-radius: 50%; transform: translate(-50%,-50%); }
     .fl-ball.big { width: 28px; height: 28px; }
@@ -262,6 +264,13 @@
       d.appendChild(n); setTimeout(() => n.remove(), 1500);
       n.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .08 }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .55 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1)' }], { duration: 1450, easing: 'ease-out', fill: 'forwards' });
     }
+    function beamHole(d, x, y, big) {   // 灼熱貫穿孔(狙擊雷射)：白心→黃→橘→紅漸層+發光，掛在卡上隨卡浮動，浮現→停留→淡掉
+      const dr = d.getBoundingClientRect(), fr = field().getBoundingClientRect();
+      const lx = x - (dr.left - fr.left), ly = y - (dr.top - fr.top); const s = big ? 22 : 15;
+      const n = document.createElement('div'); n.style.cssText = 'position:absolute;left:' + lx + 'px;top:' + ly + 'px;width:' + s + 'px;height:' + s + 'px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff 15%,#ffe26a 33%,#ff8a1f 55%,#e6300f 76%,transparent 92%);box-shadow:0 0 13px #ff7a1f,0 0 5px #fff;pointer-events:none;z-index:5';
+      d.appendChild(n); setTimeout(() => n.remove(), 1400);
+      n.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .1 }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .5 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(.95)' }], { duration: 1350, easing: 'ease-out', fill: 'forwards' });
+    }
     function knockback(d, amt) {   // 中彈擊退：往後退一下(疊加在浮動上)
       const fwd = atk === 'my' ? 1 : -1; const k = (amt || 16) * fwd;
       d.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + k + 'px,0)', offset: .28 }, { transform: 'translate(0,0)' }], { duration: 360, easing: 'ease-out', composite: 'add' });
@@ -316,7 +325,7 @@
       if (big) shake();
     }
 
-    function beam(a, b, big, miss, plasma, hOv, layer) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = hOv || (big ? 16 : 6); const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550, layer); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.height = h + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
+    function beam(a, b, big, miss, plasma, hOv, layer, hold) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = hOv || (big ? 16 : 6); const n = add('fl-laser ' + cc() + (big ? ' big' : '') + (hold ? ' hold' : ''), hold ? 950 : 550, layer); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.height = h + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
     // 電漿火花沿光束散布
     function sparksAlong(a, b, color) { for (let k = 0; k < 5; k++) { const t = 0.12 + Math.random() * 0.76; const x = a.x + (b.x - a.x) * t + (Math.random() * 12 - 6), y = a.y + (b.y - a.y) * t + (Math.random() * 16 - 8); const s = add('fl-spark', 240); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = color; s.style.boxShadow = '0 0 9px ' + color; } }
     // 命中爆閃（鏡頭光斑）
@@ -366,7 +375,7 @@
     }
 
     // 定向顆粒：沿 dirDeg 方向呈扇形噴散（往對方卡後方）
-    function particlesDir(x, y, dirDeg, color, count, mag, layer) { const col = color || '#9fe8ff'; for (let k = 0; k < count; k++) { const ang = (dirDeg + (Math.random() * 70 - 35)) * Math.PI / 180; const dist = (42 + Math.random() * 72) * (mag || 1); const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist; const sz = 5 + Math.random() * 6; const p = add('fl-particle', 680, layer); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = col; p.style.boxShadow = '0 0 7px ' + col; p.animate([{ transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 520 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' }); } }
+    function particlesDir(x, y, dirDeg, color, count, mag, layer, ySpread) { const col = color || '#9fe8ff'; for (let k = 0; k < count; k++) { const ang = (dirDeg + (Math.random() * 70 - 35)) * Math.PI / 180; const dist = (42 + Math.random() * 72) * (mag || 1); const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist + (Math.random() * 2 - 1) * (ySpread || 0); const sz = 5 + Math.random() * 6; const p = add('fl-particle', 680, layer); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = col; p.style.boxShadow = '0 0 7px ' + col; p.animate([{ transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 520 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' }); } }
     function sparkLines(x, y, dirDeg, color, count, mag, layer) {   // 火光線條：沿飛行方向的漸層短線 + 拖尾收縮
       const col = color || '#ffd24d';
       for (let k = 0; k < count; k++) {
@@ -837,22 +846,21 @@
           muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, ac, big, ang);   // 楕圓改一般大小
           if (miss) { beam(a, tgt, big, true); if (showMiss) setTimeout(() => dmg(d, 'MISS', 'miss'), 130); return; }
           if (big) {
-            const rad2 = ang * Math.PI / 180, far = { x: a.x + Math.cos(rad2) * 1400, y: a.y + Math.sin(rad2) * 1400 };
-            beam(a, p, true, false);   // ①入射：砲口→彈著點
-            setTimeout(() => {   // ②命中(延到雷射抵達才出現)
-              burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
-              hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
-              dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
-              setTimeout(() => {   // ③貫穿出射：彈著點→畫面外(接續同一條線=從前穿到後再出去)
-                beam(p, far, true, false);
-                const ee = { x: p.x + Math.cos(rad2) * 60, y: p.y + Math.sin(rad2) * 60 };
-                sparkLines(ee.x, ee.y, ang, pc, 14, 1.0);   // 卡背冒出火花
-              }, 70);
-            }, 130);
+            const rad2 = ang * Math.PI / 180;
+            d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 1100);   // 命中卡抬高→出射在卡後
+            beam(a, p, true, false, false, null, null, true);          // 入射→彈著點(快彈出+長停留)
+            const ex = { x: p.x + Math.cos(rad2) * 95, y: p.y + Math.sin(rad2) * 95 };
+            const pe = { x: p.x + Math.cos(rad2) * 45, y: p.y + Math.sin(rad2) * 45 };   // 後顆粒位置 P+45(卡背緣)
+            beam(p, ex, true, false, false, null, fxB(), true);        // 出射貫穿(卡後層)──與入射同時建立、同時消失
+            burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
+            beamHole(d, p.x, p.y, true);   // 灼熱貫穿孔(白心黃紅漸層)；雷射貫穿不退後(避免卡推離靜止雷射末點)
+            dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
+            particlesDir(p.x, p.y, ang + 180, pc, 12, 1.0, null, 32);   // 前面顆粒(中Y, 朝砲口)
+            particlesDir(pe.x, pe.y, ang, pc, 16, 1.2, fxB(), 55);      // 背後顆粒(大Y, P+45)
           } else {
             beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
             setTimeout(() => {   // 命中效果延到雷射抵達目標才出現
-              bulletHole(d, p.x, p.y, false); sparkLines(p.x, p.y, ang + 180, pc, 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); hitReact(d, p, false);   // 彈孔+前火花+小退
+              beamHole(d, p.x, p.y, false); sparkLines(p.x, p.y, ang + 180, pc, 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7);   // 灼熱孔+前火花(一般不退後,避免脫節)
               dmgPt(p.x, p.y, '-' + dmgVal, '');
             }, 130);
           }
@@ -885,9 +893,15 @@
       if (!aoe) {
         // 單體：N 個瞄準鏡(其中一個必中正中心)＋N 發
         const d = defEl(); const N = lv;   // 狙擊(子彈/光束)發數都=LV(1/2/3)；暴=同發數但有貫穿
-        maybeDodge(d, 460 + N * 70); const c = cen(d); const parts = splitDmg(big ? 999 : 350, N);
-        const tgts = []; for (let k = 0; k < N; k++) tgts.push(k === 0 ? { x: c.x, y: c.y } : cardRndPt(d));
-        tgts.forEach((p, k) => { const t0 = 300 + k * 470; setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), t0 + 300); });   // 瞄準→停頓→發射→再瞄準(子彈/光束都一樣，有狙擊感)
+        maybeDodge(d, 460 + N * 70); const parts = splitDmg(big ? 999 : 350, N);
+        for (let k = 0; k < N; k++) {
+          const t0 = 300 + k * 470, first = k === 0, last = k === N - 1;
+          setTimeout(() => {
+            const cs = cen(d), p0 = first ? { x: cs.x, y: cs.y } : cardRndPt(d), offY = p0.y - cs.y;   // 瞄準時算位置(相對中心Y偏移)
+            scope(p0);
+            setTimeout(() => { const cn = cen(d); snipeShot(d, { x: p0.x, y: cn.y + offY }, parts[k], last); }, 300);   // 發射當下用當前中心+偏移→彈著跟上浮動
+          }, t0);
+        }
       } else {
         // 全：每卡各 1 發(中心)；暴=各發都有貫穿(同 LV1 暴)；發間隔像單暴一樣拉開
         const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
@@ -895,8 +909,8 @@
         if (Math.random() < 0.5) cards.reverse();   // 攻擊順序隨機(上中下 / 下中上)
         const parts = splitDmg(big ? 999 : 350, cards.length);
         cards.forEach((d, ci) => {
-          const p = cen(d); const last = ci === cards.length - 1; const t0 = 300 + ci * 470;
-          maybeDodge(d, t0 + 300); setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[ci], last), t0 + 300);   // 瞄準→射→換卡再瞄準(子彈/光束都一樣)
+          const last = ci === cards.length - 1; const t0 = 300 + ci * 470; maybeDodge(d, t0 + 430);
+          setTimeout(() => { scope(cen(d)); setTimeout(() => snipeShot(d, cen(d), parts[ci], last), 300); }, t0);   // 瞄準/發射當下才算卡中心(跟上浮動,彈著才接到卡)
         });
       }
     }
