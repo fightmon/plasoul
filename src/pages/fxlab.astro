@@ -275,6 +275,16 @@
         { transform: 'translate(0,0)', easing: 'ease-in-out' },
       ], { duration: 1300, composite: 'add' });
     }
+    function hitReact(d, p, big) {   // 反應式中彈：被打中瞬間後退+依中彈高度後仰(頭中→頭仰/腳中→腳後)，先快後慢，疊加可累積
+      const fwd = atk === 'my' ? 1 : -1; const fr = field().getBoundingClientRect(), dr = d.getBoundingClientRect();
+      const cy = (dr.top - fr.top) + dr.height / 2, oy = Math.max(-1, Math.min(1, (p.y - cy) / (dr.height / 2 || 1)));   // -1上(頭)~1下(腳)
+      const dist = (big ? 17 : 13) * fwd, rot = -oy * (big ? 16 : 13) * fwd;
+      d.animate([
+        { transform: 'translate(0,0) rotate(0deg)' },
+        { transform: 'translate(' + dist + 'px,0) rotate(' + rot + 'deg)', offset: .2, easing: 'ease-out' },   // 先快：被打中瞬間退+仰
+        { transform: 'translate(0,0) rotate(0deg)', easing: 'ease-in-out' },                                    // 後慢：回正
+      ], { duration: 640, composite: 'add' });
+    }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
     function burst(x, y, color, big) { const r = add('fl-ring', 680); r.style.left = x + 'px'; r.style.top = y + 'px'; if (color) r.style.borderColor = color; r.style.setProperty('--rs', big ? '4.4' : '3.4'); const f = add('fl-flash' + (big ? ' big' : ''), 340); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; }
     function critFlash(x, y, color) { const c = color || '#ffd24d'; const f = add('fl-flash huge', 380); f.style.left = x + 'px'; f.style.top = y + 'px'; f.style.background = 'radial-gradient(circle,#fff 12%,' + c + ' 46%,transparent 72%)'; ring(x, y, '#fff', true); setTimeout(() => ring(x, y, c, true), 90); setTimeout(() => ring(x, y, c, true), 180); }
@@ -832,6 +842,7 @@
         an.onfinish = () => {
           m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; }
           burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d');
+          hitReact(d, p, big);   // 被打中那刻才後退+依中彈高度後仰(反應式)
           if (big) sparkLines(p.x, p.y, ang + 180, '#ffb060', 6, 0.5); else sparkLines(p.x, p.y, ang + 180, '#ffb060', 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7);   // 入口火花(反向,對應角度)
           bulletHole(d, p.x, p.y, big);
           dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
@@ -853,8 +864,10 @@
         const d = defEl(); const N = useBeam ? (lv === 1 ? (big ? 3 : 1) : lv === 2 ? (big ? 4 : 2) : (big ? 6 : 3)) : lv;   // 狙擊彈發數=LV(1/2/3)，暴=同發數但有貫穿；光束維持原本
         maybeDodge(d, 460 + N * 70); const c = cen(d); const parts = splitDmg(big ? 999 : 350, N);
         const tgts = []; for (let k = 0; k < N; k++) tgts.push(k === 0 ? { x: c.x, y: c.y } : cardRndPt(d));
-        tgts.forEach((p, k) => { scope(p); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), 360 + k * 150); });
-        if (!useBeam) setTimeout(() => recoilCard(d, 14 + (N - 1) * 12 + (big ? 6 : 0)), 360 + 120);   // 被狙退後:退→停頓→慢慢回，發數越多退越遠
+        tgts.forEach((p, k) => {
+          if (useBeam) { scope(p); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), 360 + k * 150); }
+          else { const t0 = 300 + k * 470; setTimeout(() => scope(p), t0); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), t0 + 300); }   // 子彈狙擊：瞄準→發射→再瞄準(拉開間隔，像真狙擊不能連發)
+        });
       } else {
         // 全：每卡命中 perCard 發（LV2,3 各1；暴各2）
         const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
