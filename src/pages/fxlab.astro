@@ -249,8 +249,8 @@
       const r = st.getBoundingClientRect(); st.style.transformOrigin = (x / r.width * 100) + '% ' + (y / r.height * 100) + '%';
       st.animate([{ transform: 'scale(1)' }, { transform: 'scale(' + (1 + (amt || 0.035)) + ')', offset: .3 }, { transform: 'scale(1)' }], { duration: 300, easing: 'ease-out' });
     }
-    function afterGlow(x, y, col) {   // 卡後殘光(漸隱)
-      const n = add('', 520); n.style.cssText = 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:26px;height:26px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,' + col + ' 50%,transparent 72%)';
+    function afterGlow(x, y, col, sz) {   // 卡後殘光(漸隱)
+      const s = sz || 18; const n = add('', 520); n.style.cssText = 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + s + 'px;height:' + s + 'px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,' + col + ' 50%,transparent 72%)';
       n.animate([{ opacity: .85, transform: 'translate(-50%,-50%) scale(1)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(.5)' }], { duration: 500, easing: 'ease-out', fill: 'forwards' });
     }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
@@ -784,10 +784,11 @@
           const ac = atk === 'my' ? '#2f9bff' : '#ff4d4d', pc = atk === 'my' ? '#bfefff' : '#ffc2c2';
           muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, ac, big, ang, 'sm');
           if (miss) { beam(a, tgt, big, true, false, big ? 4 : 2); if (showMiss) dmg(d, 'MISS', 'miss'); return; }
-          const rad = ang * Math.PI / 180, over = { x: p.x + Math.cos(rad) * 72, y: p.y + Math.sin(rad) * 72 };   // 貫穿點(卡後)
+          const fr2 = field().getBoundingClientRect(), dr2 = d.getBoundingClientRect();
+          const over = { x: (atk === 'my' ? (dr2.right - fr2.left) + 6 : (dr2.left - fr2.left) - 6), y: p.y };   // 貫穿到卡背緣(不飛進卡外空隙)
           beam(a, over, big, false, false, big ? 4 : 2);   // 最細最利
           burst(p.x, p.y, '#fff', big); flinch(d); particlesDir(p.x, p.y, dir, pc, big ? 14 : 10);
-          afterGlow(over.x, over.y, ac); setTimeout(() => particlesDir(over.x, over.y, dir, pc, big ? 8 : 5), 40);   // 卡後殘光+出口火花
+          afterGlow(over.x, over.y, ac, big ? 18 : 14); setTimeout(() => particlesDir(over.x, over.y, dir, pc, big ? 7 : 4), 40);   // 卡背緣殘光+出口火花
           zoomPunch(p.x, p.y, big ? 0.05 : 0.035);
           dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(p.x, p.y, '#9fe8ff'); shake(); }
           return;
