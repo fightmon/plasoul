@@ -214,6 +214,10 @@
     #fl-aoe.on { background: #2e9e6b; border-color: #6fe0a8; color: #06210f; }
     #fl-dir.on { background: #c0453b; border-color: #ff8a7a; color: #fff; }
     .fl-moves { display: flex; flex-wrap: wrap; gap: 6px; }
+    .fl-mvgrp { width: 100%; }
+    .fl-mvgrp + .fl-mvgrp { margin-top: 8px; }
+    .fl-mvlab { font-size: 10px; color: #6b7a9c; letter-spacing: 2px; margin: 0 0 4px 2px; }
+    .fl-mvrow { display: flex; flex-wrap: wrap; gap: 6px; }
     .fl-mv { flex: 1 1 calc(20% - 6px); min-width: 52px; height: 42px; border-radius: 9px; background: #141c34; color: #e8ecf5; border: 1px solid #2c3a5e; font-size: 14px; font-weight: 700; cursor: pointer; }
     .fl-mv:active { background: #233156; transform: scale(.96); }
   </style>
@@ -759,13 +763,22 @@
       }, CH);
       setTimeout(() => { if (!missOn()) { if (big) { burst(b.x, b.y, '#c9a3ff', true); setTimeout(() => burst(b.x, b.y, '#fff', true), 110); } else ring(b.x, b.y, '#9b6bff', true); } resolve(defEl()); }, CH + 540);
     }
-    function eSnipe() {
+    function eSnipe() { snipeMove(false); }    // 狙擊(子彈)
+    function eSnipeB() { snipeMove(true); }     // 狙擊(光束)
+    function snipeMove(useBeam) {
       const big = critOn(); const aoe = aoeOn() && lv >= 2;
-      // 子彈：統一用 LV1 飛彈外觀（非雷射），從砲口飛向瞄準點
       const snipeShot = (d, p, dmgVal, showMiss) => {
-        const a = frontEdge(atkEl()); recoil(atkEl(), 6); muzzleAt(a.x, a.y, false, '#ffd24d');
+        const a = frontEdge(atkEl()); recoil(atkEl(), 6);
         const dir = atk === 'my' ? 0 : 180; const miss = missOn(); const tgt = miss ? missPoint(p) : p;
         const ang = Math.atan2(tgt.y - a.y, tgt.x - a.x) * 180 / Math.PI;
+        if (useBeam) {   // 光束狙擊：砲口光點+楕圓+雷射，瞬間命中
+          muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, atk === 'my' ? '#2f9bff' : '#ff4d4d', big, ang); beam(a, tgt, big, miss);
+          if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; }
+          burst(p.x, p.y, '#fff', big); flinch(d); particlesDir(p.x, p.y, dir, atk === 'my' ? '#bfefff' : '#ffc2c2', big ? 16 : 12); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) { critFlash(p.x, p.y, '#9fe8ff'); shake(); }
+          return;
+        }
+        // 子彈狙擊：飛彈外觀，從砲口飛向瞄準點
+        muzzleAt(a.x, a.y, false, '#ffd24d');
         const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
         const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 150, easing: 'linear' });
         an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); flinch(d); particlesDir(p.x, p.y, dir, '#ffb060', big ? 16 : 12); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };
@@ -924,20 +937,24 @@
     }
 
     const FX = {
-      laser: eLaser, cannon: eCannon, shotgun: eShotgun, shot: eShot, charge: eCharge, homing: eHoming, wave: eWave, snipe: eSnipe, bit: eBit,
+      laser: eLaser, cannon: eCannon, shotgun: eShotgun, shot: eShot, charge: eCharge, homing: eHoming, wave: eWave, snipe: eSnipe, snipeb: eSnipeB, bit: eBit,
       slash: eSlash, arc: eArc, iai: eIai, thrust: eThrust, cross: eCross, spin: eSpin, impact: eImpact,
       dduck: () => playDodge(dDuck), dback: () => playDodge(dBack), dside: () => playDodge(dSide), dafter: () => playDodge(dAfter), dblink: () => playDodge(dBlink), dspin: () => playDodge(dSpin), droll: () => playDodge(dRoll),
     };
 
-    // 分類 → 招式列（每招 3 字內；射/近/閃）
+    // 分類 → 招式列（每招 3 字內；射/近/閃）。射=兩排：炮擊系/光束系
+    const RANGED_ROWS = [
+      ['炮擊系', [['shot', '連發'], ['cannon', '炮彈'], ['shotgun', '散彈'], ['homing', '追蹤'], ['snipe', '狙擊']]],
+      ['光束系', [['laser', '雷射'], ['charge', '蓄力'], ['bit', '子機'], ['wave', '波動'], ['snipeb', '狙擊']]],
+    ];
     const MOVES = {
-      ranged: [['laser', '雷射'], ['cannon', '炮彈'], ['shotgun', '散彈'], ['shot', '連發'], ['charge', '蓄力'], ['homing', '追蹤'], ['wave', '波動'], ['snipe', '狙擊'], ['bit', '子機']],
+      ranged: RANGED_ROWS.flatMap(([, mv]) => mv),
       melee: [['slash', '直斬'], ['arc', '弧斬'], ['iai', '居合'], ['thrust', '突刺'], ['cross', '十字'], ['spin', '迴旋'], ['impact', '重擊']],
       evade: [['dduck', '下蹲'], ['dback', '後撤'], ['dside', '側移'], ['dafter', '殘影'], ['dblink', '瞬移'], ['dspin', '旋身'], ['droll', '翻滾']],
     };
     const aoeOn = () => $('fl-aoe').classList.contains('on');
     const isEvade = (k) => k[0] === 'd';
-    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun', 'shot', 'charge', 'homing', 'snipe', 'bit']);   // 自己處理全體演出的招式（不用通用逐卡重播）
+    const SELF_AOE = new Set(['laser', 'cannon', 'shotgun', 'shot', 'charge', 'homing', 'snipe', 'snipeb', 'bit']);   // 自己處理全體演出的招式（不用通用逐卡重播）
     // 單：打中間卡一次；全：依序對 3 張卡各施放一次（每次鎖定該卡，間隔夠長避免目標錯亂）
     function runMove(k) {
       const fn = FX[k]; if (!fn) return;
@@ -949,7 +966,12 @@
     }
     function renderMoves(cat) {
       const m = $('fl-moves');
-      m.innerHTML = MOVES[cat].map(([k, lab]) => '<button class="fl-mv" data-fx="' + k + '">' + lab + '</button>').join('');
+      const btns = (mv) => mv.map(([k, lab]) => '<button class="fl-mv" data-fx="' + k + '">' + lab + '</button>').join('');
+      if (cat === 'ranged') {   // 兩排：炮擊系 / 光束系
+        m.innerHTML = RANGED_ROWS.map(([lab, mv]) => '<div class="fl-mvgrp"><div class="fl-mvlab">' + lab + '</div><div class="fl-mvrow">' + btns(mv) + '</div></div>').join('');
+      } else {
+        m.innerHTML = btns(MOVES[cat]);
+      }
       m.querySelectorAll('.fl-mv').forEach((b) => b.addEventListener('click', () => runMove(b.dataset.fx)));
     }
     document.querySelectorAll('.fl-tab').forEach((t) => t.addEventListener('click', () => {
