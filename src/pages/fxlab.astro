@@ -828,7 +828,8 @@
     function snipeMove(useBeam) {
       const big = critOn(); const aoe = aoeOn() && lv >= 2;
       const snipeShot = (d, p, dmgVal, showMiss) => {
-        const a = frontEdge(atkEl()); recoil(atkEl(), 6);
+        const a0 = frontEdge(atkEl()); recoil(atkEl(), 6);
+        const aimR = Math.atan2(p.y - a0.y, p.x - a0.x); const a = { x: a0.x + Math.cos(aimR) * 16, y: a0.y + Math.sin(aimR) * 16 };   // 隱形槍口：砲口沿瞄準方向偏移(中間X前/上Y上/下Y下)
         const dir = atk === 'my' ? 0 : 180; const miss = missOn(); const tgt = miss ? missPoint(p) : p;
         const ang = Math.atan2(tgt.y - a.y, tgt.x - a.x) * 180 / Math.PI;
         if (useBeam) {   // 光束狙擊：同炮彈邏輯—一般=彈孔+前火花+小退；暴=貫穿(雷射穿過卡背)+退後+出口火花
