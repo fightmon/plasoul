@@ -1,0 +1,51 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import SnipeFx from "../../components/SnipeFx.astro";
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("devlog");
+  return posts.map((p) => ({ params: { slug: p.id }, props: { post: p } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const dateStr = post.data.date.toISOString().slice(0, 10);
+---
+
+<Layout title={post.data.title + " · 開發日誌 · 普拉魂"} description={post.data.summary}>
+  <article class="dl-post">
+    <a href="/devlog" class="dl-back">← 開發日誌</a>
+    <h1 class="dl-title">{post.data.title}</h1>
+    <div class="dl-meta">
+      <span>{dateStr}</span>
+      {post.data.tags.map((t) => <span class="dl-tag">#{t}</span>)}
+    </div>
+    <div class="dl-body">
+      <Content />
+    </div>
+    <a href="/devlog" class="dl-back dl-back-bottom">← 回開發日誌列表</a>
+  </article>
+  <SnipeFx />
+</Layout>
+
+<style>
+  .dl-post { max-width: 720px; margin: 0 auto; padding: clamp(24px, 5vw, 48px) 16px clamp(48px, 8vw, 80px); }
+  .dl-back { display: inline-block; color: var(--color-text-secondary); text-decoration: none; font-size: 14px; margin-bottom: 18px; }
+  .dl-back:hover { color: var(--color-primary); }
+  .dl-back-bottom { margin-top: 36px; }
+  .dl-title { font-size: clamp(24px, 5vw, 36px); font-weight: 800; line-height: 1.35; margin: 0 0 12px; color: var(--color-text); letter-spacing: -.5px; }
+  .dl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; color: var(--color-text-secondary); margin-bottom: 8px; }
+  .dl-tag { background: var(--color-bg); border: 1px solid var(--color-border-subtle); border-radius: 999px; padding: 2px 8px; }
+
+  /* markdown 內文排版 */
+  .dl-body { color: var(--color-text); font-size: 16px; line-height: 1.85; }
+  .dl-body :global(h2) { font-size: clamp(19px, 3.2vw, 24px); font-weight: 800; margin: 34px 0 12px; letter-spacing: -.3px; }
+  .dl-body :global(h3) { font-size: 18px; font-weight: 800; margin: 28px 0 10px; }
+  .dl-body :global(p) { margin: 0 0 16px; }
+  .dl-body :global(ul) { margin: 0 0 16px; padding-left: 22px; }
+  .dl-body :global(li) { margin: 4px 0; }
+  .dl-body :global(strong) { color: var(--color-primary-dark); }
+  .dl-body :global(hr) { border: none; border-top: 1px solid var(--color-border-subtle); margin: 30px 0; }
+  .dl-body :global(.snipe-demo) { margin: 22px auto; }
+</style>

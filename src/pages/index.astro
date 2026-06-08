@@ -1,5 +1,11 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import SnipeFx from "../components/SnipeFx.astro";
+import { getCollection } from "astro:content";
+
+const latestDevlog = (await getCollection("devlog")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+)[0];
 
 /**
  * 首頁
@@ -104,6 +110,31 @@ const SECONDARY_SERIES = [
     </section>
 
     {/* ============================================
+        開發日誌（最新一篇 teaser）
+        ============================================ */}
+    {latestDevlog && (
+      <section class="ps-devlog" aria-label="開發日誌">
+        <div class="ps-devlog-inner">
+          <div class="ps-section-head ps-devlog-head">
+            <span class="ps-eyebrow">DEVLOG</span>
+            <h2 class="ps-section-title">開發日誌</h2>
+            <p class="ps-devlog-lede">一個人把創鬥卡一招一招做出來的碎碎念。</p>
+          </div>
+          <a class="ps-devlog-card" href={`/devlog/${latestDevlog.id}`}>
+            <div class="ps-devlog-cover snipe-demo" data-variant={latestDevlog.data.cover} data-size="thumb"></div>
+            <div class="ps-devlog-text">
+              <div class="ps-devlog-date">{latestDevlog.data.date.toISOString().slice(0, 10)} · 最新</div>
+              <h3 class="ps-devlog-title">{latestDevlog.data.title}</h3>
+              <p class="ps-devlog-sum">{latestDevlog.data.summary}</p>
+              <span class="ps-devlog-more">讀這篇 →</span>
+            </div>
+          </a>
+          <a class="ps-devlog-all" href="/devlog">看全部開發日誌 →</a>
+        </div>
+      </section>
+    )}
+
+    {/* ============================================
         Stats (GAME8LA 風 4 格大字)
         ============================================ */}
     <section class="ps-stats" aria-label="資料統計">
@@ -174,6 +205,7 @@ const SECONDARY_SERIES = [
       </div>
     </section>
   </main>
+  <SnipeFx />
 </Layout>
 
 <style>
@@ -552,6 +584,31 @@ const SECONDARY_SERIES = [
   .ps-gc-2 { background: linear-gradient(135deg, #d6a3ff, #b15bff); color: #fff; transform: rotate(0) translateY(-6px); z-index: 1; }
   .ps-gc-3 { background: linear-gradient(135deg, #9fc0ff, #5b86ff); color: #fff; transform: rotate(8deg) translateY(6px); }
   @media (max-width: 480px) { .ps-gc { width: 68px; font-size: 13px; } }
+
+  /* ============================================
+     開發日誌 teaser
+     ============================================ */
+  .ps-devlog { padding: clamp(40px, 6vw, 64px) 16px; }
+  .ps-devlog-inner { max-width: 1200px; margin: 0 auto; }
+  .ps-devlog-head { margin-bottom: 20px; }
+  .ps-devlog-lede { margin: 8px 0 0; color: var(--color-text-secondary); font-size: 14px; }
+  .ps-devlog-card {
+    display: grid; grid-template-columns: 1fr; gap: 0;
+    background: var(--color-card); border: 1px solid var(--color-border-subtle);
+    border-radius: 16px; overflow: hidden; text-decoration: none; color: var(--color-text);
+    box-shadow: var(--shadow-sm); transition: transform .18s, border-color .18s, box-shadow .18s;
+  }
+  .ps-devlog-card:hover { transform: translateY(-3px); border-color: var(--accent-amber); box-shadow: 0 12px 30px rgba(0,0,0,.16); }
+  @media (min-width: 760px) { .ps-devlog-card { grid-template-columns: 4fr 5fr; } }
+  .ps-devlog-cover { margin: 0 !important; }
+  .ps-devlog-cover .sd-stage { max-width: none; border-radius: 0; border: none; height: 100%; }
+  .ps-devlog-text { padding: 20px 22px 22px; }
+  .ps-devlog-date { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+  .ps-devlog-title { font-size: clamp(18px, 2.4vw, 22px); font-weight: 800; line-height: 1.4; margin: 0 0 10px; }
+  .ps-devlog-sum { font-size: 14px; color: var(--color-text-secondary); line-height: 1.7; margin: 0 0 14px; }
+  .ps-devlog-more { font-weight: 700; color: var(--color-primary); font-size: 14px; }
+  .ps-devlog-all { display: inline-block; margin-top: 16px; color: var(--color-text-secondary); text-decoration: none; font-size: 14px; }
+  .ps-devlog-all:hover { color: var(--color-primary); }
 
   /* ============================================
      Stats（4 漸層卡 暗底暖光暈）

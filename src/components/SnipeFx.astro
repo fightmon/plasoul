@@ -1,0 +1,135 @@
+---
+/**
+ * 開發日誌用：自帶的「狙擊特效」迷你演示（純 CSS/JS，無 GIF / 無引擎依賴）
+ * 掃描頁面上的 <div class="snipe-demo" data-variant="final|graze|tuner"> 並掛上動畫，loop 播放。
+ * data-variant="tuner" 額外帶 3 個可調鈕（出口距離 / 後火花大小 / 顆粒樣式）。
+ */
+---
+
+<style is:global>
+  .snipe-demo { display: block; margin: 18px auto; }
+  .sd-stage { position: relative; width: 100%; max-width: 440px; margin: 0 auto; aspect-ratio: 5 / 4; border-radius: 14px; overflow: hidden; background: radial-gradient(circle at 50% 42%, #16223f, #0a0e1c 62%, #060812); border: 1px solid #1c2748; will-change: transform; }
+  .sd-stage[data-size="thumb"] { aspect-ratio: 16 / 9; border-radius: 12px; }
+  .sd-stars { position: absolute; inset: 0; background-image: radial-gradient(1.5px 1.5px at 20% 28%, #fff, transparent), radial-gradient(1px 1px at 70% 60%, #bcf, transparent), radial-gradient(1px 1px at 45% 82%, #fff, transparent), radial-gradient(1px 1px at 86% 30%, #ace, transparent); opacity: .5; }
+  .sd-fxb { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+  .sd-atk { position: absolute; left: 20%; top: 50%; transform: translate(-50%,-50%); font-size: clamp(26px, 7vw, 40px); z-index: 2; filter: drop-shadow(0 0 6px rgba(120,170,255,.5)); }
+  .sd-card { position: absolute; left: 72%; top: 50%; transform: translate(-50%,-50%); width: 24%; aspect-ratio: 3 / 4; border-radius: 10px; background: linear-gradient(160deg, #3a2418, #2a1810); border: 2px solid #7a5a3a; display: flex; align-items: center; justify-content: center; z-index: 3; box-shadow: 0 0 0 2px rgba(120,170,255,.35); }
+  .sd-art { font-size: clamp(22px, 6vw, 34px); }
+  .sd-fxf { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+  .sd-dmg { color: #ffd23d; font-weight: 900; font-size: clamp(18px, 5vw, 26px); text-shadow: 0 2px 6px #000; white-space: nowrap; }
+
+  /* tuner */
+  .sd-tuner { max-width: 440px; margin: 18px auto; }
+  .sd-ctrl { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .sd-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--color-text, #cdd6ea); }
+  .sd-row > label { flex-shrink: 0; width: 70px; font-weight: 700; }
+  .sd-range { flex: 1; accent-color: #2f9bff; }
+  .sd-val { width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--color-text-secondary, #8aa); }
+  .sd-seg { display: flex; gap: 6px; flex: 1; }
+  .sd-seg button { flex: 1; padding: 7px 4px; border-radius: 8px; border: 1px solid var(--color-border, #2c3a5e); background: var(--color-card, #141c34); color: var(--color-text, #cdd6ea); font-size: 13px; font-weight: 700; cursor: pointer; }
+  .sd-seg button.on { background: linear-gradient(135deg, #3b82f6, #1e50e5); border-color: #5b86ff; color: #fff; }
+  .sd-replay { margin-top: 2px; padding: 9px; border-radius: 9px; border: 1px solid var(--color-border, #2c3a5e); background: transparent; color: var(--color-text-secondary, #8aa); font-weight: 700; cursor: pointer; }
+  .sd-replay:hover { border-color: #5b86ff; color: var(--color-text, #fff); }
+</style>
+
+<script>
+  (function () {
+    const SIZES = { none: [0, 0], small: [6, 0.6], med: [10, 0.95], large: [16, 1.35] };
+    const VARIANTS = {
+      final: { style: 'line', exitP: 45, back: 'large', front: 'small', pierce: true, dir: 'in' },
+      graze: { style: 'dot', exitP: 0, back: 'none', front: 'med', pierce: false, dir: 'out' },
+      tuner: { style: 'line', exitP: 45, back: 'large', front: 'small', pierce: true, dir: 'in' },
+    };
+    function el(parent, cls, css) { const d = document.createElement('div'); if (cls) d.className = cls; if (css) d.style.cssText = css; parent.appendChild(d); return d; }
+    function spark(layer, x, y, dir, style, sizeKey, color) {
+      const s = SIZES[sizeKey] || [0, 0], count = s[0], mag = s[1], col = color || '#ffb060';
+      for (let k = 0; k < count; k++) {
+        const a = (dir + (Math.random() * 60 - 30)) * Math.PI / 180, deg = a * 180 / Math.PI;
+        const dist = (20 + Math.random() * 34) * mag, dx = Math.cos(a) * dist, dy = Math.sin(a) * dist;
+        if (style === 'line') {
+          const len = 7 + Math.random() * 8, th = 2 + Math.random() * 1.4;
+          const p = el(layer, '', 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + len + 'px;height:' + th + 'px;border-radius:' + th + 'px;background:linear-gradient(90deg,' + col + ',transparent);box-shadow:0 0 6px ' + col);
+          p.animate([{ transform: 'translate(-50%,-50%) rotate(' + deg + 'deg) scaleX(1.1)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px),calc(-50% + ' + dy + 'px)) rotate(' + deg + 'deg) scaleX(.25)', opacity: 0 }], { duration: 420 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' });
+        } else {
+          const sz = 4 + Math.random() * 4;
+          const p = el(layer, '', 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:' + col + ';box-shadow:0 0 6px ' + col + ';transform:translate(-50%,-50%)');
+          p.animate([{ transform: 'translate(-50%,-50%) scale(1.1)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px),calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 460 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' });
+        }
+      }
+    }
+    function runScene(stage, cfg) {
+      stage.classList.add('sd-stage'); stage.innerHTML = '';
+      el(stage, 'sd-stars');
+      const fxb = el(stage, 'sd-fxb');
+      el(stage, 'sd-atk').textContent = '🤖';
+      const card = el(stage, 'sd-card'); el(card, 'sd-art').textContent = '👾';
+      const fxf = el(stage, 'sd-fxf');
+      function play() {
+        fxf.innerHTML = ''; fxb.innerHTML = ''; const oh = card.querySelector('.sd-hole'); if (oh) oh.remove();
+        const r = stage.getBoundingClientRect(); if (!r.width) return;
+        const a = { x: r.width * 0.27, y: r.height * 0.5 };
+        const cr = card.getBoundingClientRect();
+        const p = { x: (cr.left - r.left) + cr.width / 2, y: (cr.top - r.top) + cr.height / 2 };
+        // 砲口閃光
+        el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;width:18px;height:18px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,#ffd24d 55%,transparent 74%)').animate([{ opacity: .9, transform: 'translate(-50%,-50%) scale(.5)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.3)' }], { duration: 240, fill: 'forwards' });
+        // 子彈飛向命中點
+        const b = el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;width:14px;height:6px;border-radius:4px;background:linear-gradient(90deg,#ffd24d,#ff7a1f);box-shadow:0 0 8px #ff9a3d;transform:translate(-50%,-50%)');
+        b.animate([{ transform: 'translate(-50%,-50%)' }, { transform: 'translate(calc(-50% + ' + (p.x - a.x) + 'px),calc(-50% + ' + (p.y - a.y) + 'px))' }], { duration: 175, easing: 'linear' }).onfinish = function () { b.remove(); impact(); };
+        function impact() {
+          // 入口彈孔（掛在卡上）
+          const lx = p.x - (cr.left - r.left), ly = p.y - (cr.top - r.top);
+          el(card, 'sd-hole', 'position:absolute;left:' + lx + 'px;top:' + ly + 'px;width:13px;height:13px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#140d05 36%,#3a2913 62%,rgba(90,55,22,.45) 80%,transparent 92%);box-shadow:0 0 6px rgba(0,0,0,.55);z-index:3;pointer-events:none').animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .1 }, { opacity: 1, offset: .62 }, { opacity: 0 }], { duration: 1300, easing: 'ease-out', fill: 'forwards' });
+          // 入口火花（in=反向鑽入 / out=往後擦傷）
+          spark(fxf, p.x, p.y, cfg.dir === 'in' ? 180 : 0, cfg.style, cfg.front);
+          // 傷害數字
+          const dn = el(fxf, 'sd-dmg', 'position:absolute;left:' + p.x + 'px;top:' + p.y + 'px'); dn.textContent = '-999!';
+          dn.animate([{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 }, { transform: 'translate(-50%,-92%) scale(1.1)', opacity: 1, offset: .3 }, { transform: 'translate(-50%,-150%) scale(1)', opacity: 0 }], { duration: 950, easing: 'ease-out', fill: 'forwards' });
+          // 擊退 + 鏡頭微縮放
+          card.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(7px,0)', offset: .3 }, { transform: 'translate(0,0)' }], { duration: 320, easing: 'ease-out', composite: 'add' });
+          stage.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.03)', offset: .3 }, { transform: 'scale(1)' }], { duration: 260, easing: 'ease-out' });
+          // 貫穿：子彈滑出卡背（卡後層）+ 出口火花
+          if (cfg.pierce) {
+            const ex = { x: p.x + cfg.exitP, y: p.y };
+            setTimeout(function () {
+              const m2 = el(fxb, '', 'position:absolute;left:' + p.x + 'px;top:' + p.y + 'px;width:14px;height:6px;border-radius:4px;background:linear-gradient(90deg,#ffd24d,#ff7a1f);box-shadow:0 0 8px #ff9a3d;transform:translate(-50%,-50%)');
+              m2.animate([{ transform: 'translate(-50%,-50%)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + (cfg.exitP + 45) + 'px),-50%)', opacity: 0 }], { duration: 300, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { m2.remove(); };
+              spark(fxb, ex.x, ex.y, 0, cfg.style, cfg.back);
+            }, 45);
+          }
+        }
+      }
+      play(); setInterval(play, 2600);
+      return { play: play };
+    }
+    function buildTuner(root, cfg, play) {
+      const ctrl = el(root, 'sd-ctrl');
+      ctrl.innerHTML =
+        '<div class="sd-row"><label>出口距離</label><input type="range" class="sd-range" min="5" max="60" value="' + cfg.exitP + '"><span class="sd-val">P+' + cfg.exitP + '</span></div>' +
+        '<div class="sd-row"><label>後火花</label><div class="sd-seg" data-key="back"><button data-v="small">小</button><button data-v="med">中</button><button data-v="large">大</button></div></div>' +
+        '<div class="sd-row"><label>顆粒樣式</label><div class="sd-seg" data-key="style"><button data-v="dot">圓點</button><button data-v="line">線條</button></div></div>' +
+        '<button class="sd-replay">▶ 重播</button>';
+      function sync() { ctrl.querySelectorAll('.sd-seg').forEach(function (seg) { const key = seg.getAttribute('data-key'); seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === String(cfg[key])); }); }); }
+      sync();
+      const range = ctrl.querySelector('.sd-range'), val = ctrl.querySelector('.sd-val');
+      range.addEventListener('input', function () { cfg.exitP = +range.value; val.textContent = 'P+' + range.value; play(); });
+      ctrl.querySelectorAll('.sd-seg button').forEach(function (b) { b.addEventListener('click', function () { const key = b.closest('.sd-seg').getAttribute('data-key'); cfg[key] = b.getAttribute('data-v'); sync(); play(); }); });
+      ctrl.querySelector('.sd-replay').addEventListener('click', play);
+    }
+    function init() {
+      document.querySelectorAll('.snipe-demo').forEach(function (root) {
+        if (root.dataset.sdInit) return; root.dataset.sdInit = '1';
+        const v = root.getAttribute('data-variant') || 'final';
+        const cfg = Object.assign({}, VARIANTS[v] || VARIANTS.final);
+        if (v === 'tuner') {
+          root.classList.add('sd-tuner');
+          const stage = el(root, 'sd-stage'); if (root.getAttribute('data-size')) stage.setAttribute('data-size', root.getAttribute('data-size'));
+          const api = runScene(stage, cfg);
+          buildTuner(root, cfg, api.play);
+        } else {
+          runScene(root, cfg);
+        }
+      });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  })();
+</script>

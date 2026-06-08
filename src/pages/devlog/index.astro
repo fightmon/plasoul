@@ -1,0 +1,62 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import SnipeFx from "../../components/SnipeFx.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("devlog")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const fmt = (d) => d.toISOString().slice(0, 10);
+---
+
+<Layout
+  title="開發日誌 · 普拉魂"
+  description="普拉魂 / 創鬥卡 的開發歷程與心情，build in public。一個人把一招一招做出來的碎碎念。"
+>
+  <main class="dl-list">
+    <header class="dl-head">
+      <span class="dl-eyebrow">DEVLOG</span>
+      <h1 class="dl-h1">開發日誌</h1>
+      <p class="dl-lede">一個人把創鬥卡一招一招做出來的碎碎念。沒什麼大道理，就是把過程記下來。</p>
+    </header>
+
+    {posts.length === 0 && <p class="dl-empty">還沒有日誌，敬請期待。</p>}
+
+    <div class="dl-cards">
+      {posts.map((p) => (
+        <a class="dl-card" href={`/devlog/${p.id}`}>
+          <div class="dl-card-cover snipe-demo" data-variant={p.data.cover} data-size="thumb"></div>
+          <div class="dl-card-body">
+            <div class="dl-card-date">{fmt(p.data.date)}</div>
+            <h2 class="dl-card-title">{p.data.title}</h2>
+            <p class="dl-card-sum">{p.data.summary}</p>
+            <div class="dl-card-tags">{p.data.tags.map((t) => <span class="dl-tag">#{t}</span>)}</div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </main>
+  <SnipeFx />
+</Layout>
+
+<style>
+  .dl-list { max-width: 880px; margin: 0 auto; padding: clamp(28px, 6vw, 56px) 16px clamp(48px, 8vw, 80px); }
+  .dl-head { margin-bottom: 28px; }
+  .dl-eyebrow { display: inline-block; padding: 5px 12px; border-radius: 999px; background: var(--accent-amber-soft); color: var(--color-primary-dark); border: 1px solid rgba(21,119,224,.3); font-size: 12px; font-weight: 700; letter-spacing: 2px; margin-bottom: 12px; }
+  .dl-h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 800; margin: 0 0 8px; color: var(--color-text); letter-spacing: -.5px; }
+  .dl-lede { color: var(--color-text-secondary); font-size: 15px; line-height: 1.7; margin: 0; max-width: 560px; }
+  .dl-empty { color: var(--color-text-secondary); }
+
+  .dl-cards { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  @media (min-width: 720px) { .dl-cards { grid-template-columns: 1fr 1fr; } }
+  .dl-card { display: flex; flex-direction: column; background: var(--color-card); border: 1px solid var(--color-border-subtle); border-radius: 16px; overflow: hidden; text-decoration: none; color: var(--color-text); box-shadow: var(--shadow-sm); transition: transform .18s, border-color .18s, box-shadow .18s; }
+  .dl-card:hover { transform: translateY(-3px); border-color: var(--accent-amber); box-shadow: 0 10px 28px rgba(0,0,0,.16); }
+  .dl-card-cover { margin: 0 !important; width: 100%; }
+  .dl-card-cover .sd-stage { max-width: none; border-radius: 0; border: none; border-bottom: 1px solid var(--color-border-subtle); }
+  .dl-card-body { padding: 16px 18px 18px; }
+  .dl-card-date { font-size: 12px; color: var(--color-text-secondary); font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+  .dl-card-title { font-size: 18px; font-weight: 800; line-height: 1.4; margin: 0 0 8px; }
+  .dl-card-sum { font-size: 14px; color: var(--color-text-secondary); line-height: 1.6; margin: 0 0 12px; }
+  .dl-card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dl-tag { font-size: 11px; color: var(--color-text-secondary); background: var(--color-bg); border: 1px solid var(--color-border-subtle); border-radius: 999px; padding: 2px 8px; }
+</style>
