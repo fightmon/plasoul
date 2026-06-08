@@ -285,8 +285,8 @@
         d.style.transition = 'none'; d.style.transform = 'translate(0px,' + st.fy + 'px)'; d.style.animation = 'none'; void d.offsetWidth;
         st.frozen = true;
       }
-      st.dist = Math.max(-90, Math.min(90, st.dist + (big ? 22 : 12) * fwd));            // 累積後退（普通小/暴中；大退預留 LV4/5）
-      st.rot = Math.max(-46, Math.min(46, st.rot + (-oy * (big ? 18 : 11) * fwd)));      // 中彈部位後仰累積
+      st.dist = Math.max(-44, Math.min(44, st.dist + (big ? 10 : 6) * fwd));             // 後退大幅改小(讓貫穿看得到)；累積上限收緊
+      st.rot = Math.max(-28, Math.min(28, st.rot + (-oy * (big ? 10 : 7) * fwd)));       // 後仰也改小
       d.style.transition = 'transform .14s ease-out';
       d.style.transform = 'translate(' + st.dist + 'px,' + st.fy + 'px) rotate(' + st.rot + 'deg)';   // 急退(垂直凍結→不下掉/不飄)
       clearTimeout(st.ret);
