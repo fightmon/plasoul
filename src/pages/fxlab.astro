@@ -316,7 +316,7 @@
       if (big) shake();
     }
 
-    function beam(a, b, big, miss, plasma, hOv) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = hOv || (big ? 16 : 6); const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.height = h + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
+    function beam(a, b, big, miss, plasma, hOv, layer) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = hOv || (big ? 16 : 6); const n = add('fl-laser ' + cc() + (big ? ' big' : ''), 550, layer); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.height = h + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
     // 電漿火花沿光束散布
     function sparksAlong(a, b, color) { for (let k = 0; k < 5; k++) { const t = 0.12 + Math.random() * 0.76; const x = a.x + (b.x - a.x) * t + (Math.random() * 12 - 6), y = a.y + (b.y - a.y) * t + (Math.random() * 16 - 8); const s = add('fl-spark', 240); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = color; s.style.boxShadow = '0 0 9px ' + color; } }
     // 命中爆閃（鏡頭光斑）
@@ -836,13 +836,15 @@
           muzzleAt(a.x, a.y, false, atk === 'my' ? '#9fe8ff' : '#ff8a8a'); aperture(a.x, a.y, ac, big, ang);   // 楕圓改一般大小
           if (miss) { beam(a, tgt, big, true); if (showMiss) setTimeout(() => dmg(d, 'MISS', 'miss'), 130); return; }
           if (big) {
-            const rad2 = ang * Math.PI / 180, ex = { x: p.x + Math.cos(rad2) * 55, y: p.y + Math.sin(rad2) * 55 };   // 貫穿到卡背
-            beam(a, ex, true, false);   // 雷射粗細同雷射招式(16)
+            beam(a, p, true, false);   // 主雷射打到彈著點(末點不超出)
             setTimeout(() => {   // 命中效果延到雷射抵達目標才出現
               burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
               hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
               dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
-              setTimeout(() => sparkLines(ex.x, ex.y, ang, pc, 16, 1.0, fxB()), 40);   // 出口火花(卡後層,對應角度)
+              const fr2 = field().getBoundingClientRect(), dr2 = d.getBoundingClientRect();
+              const ex = { x: (atk === 'my' ? (dr2.right - fr2.left) : (dr2.left - fr2.left)), y: p.y };   // 卡背緣
+              beam(p, ex, true, false, false, null, fxB());   // 貫穿段放卡後層(被卡擋住=穿過去)
+              setTimeout(() => sparkLines(ex.x, ex.y, ang, pc, 16, 1.0, fxB()), 40);   // 出口火花(卡後層)
             }, 130);
           } else {
             beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
