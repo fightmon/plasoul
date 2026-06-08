@@ -808,7 +808,7 @@
         muzzleAt(a.x, a.y, false, '#ffd24d');
         const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
         const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 150, easing: 'linear' });
-        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, 1.7); bulletHole(d, p.x, p.y, big); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };   // 擊退 + 顆粒反向大幅濺 + 著彈洞(隨卡浮動)=打進卡的鑽入感
+        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); bulletHole(d, p.x, p.y, big); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };   // 擊退 + 顆粒反向大幅濺 + 著彈洞(隨卡浮動)=打進卡的鑽入感
       };
       const scope = (p) => { const cr = add('fl-cross', 640); cr.style.left = p.x + 'px'; cr.style.top = p.y + 'px'; };
       if (!aoe) {
