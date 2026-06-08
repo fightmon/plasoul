@@ -325,7 +325,7 @@
     }
 
     // 定向顆粒：沿 dirDeg 方向呈扇形噴散（往對方卡後方）
-    function particlesDir(x, y, dirDeg, color, count) { const col = color || '#9fe8ff'; for (let k = 0; k < count; k++) { const ang = (dirDeg + (Math.random() * 70 - 35)) * Math.PI / 180; const dist = 42 + Math.random() * 72; const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist; const sz = 5 + Math.random() * 6; const p = add('fl-particle', 680); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = col; p.style.boxShadow = '0 0 7px ' + col; p.animate([{ transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 520 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' }); } }
+    function particlesDir(x, y, dirDeg, color, count, mag) { const col = color || '#9fe8ff'; for (let k = 0; k < count; k++) { const ang = (dirDeg + (Math.random() * 70 - 35)) * Math.PI / 180; const dist = (42 + Math.random() * 72) * (mag || 1); const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist; const sz = 5 + Math.random() * 6; const p = add('fl-particle', 680); p.style.left = x + 'px'; p.style.top = y + 'px'; p.style.width = sz + 'px'; p.style.height = sz + 'px'; p.style.background = col; p.style.boxShadow = '0 0 7px ' + col; p.animate([{ transform: 'translate(-50%,-50%) scale(1.2)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + dx + 'px), calc(-50% + ' + dy + 'px)) scale(.2)', opacity: 0 }], { duration: 520 + Math.random() * 180, easing: 'ease-out', fill: 'forwards' }); } }
 
     // ---- 射擊類 ----
     // 卡身朝目標快速俯仰（射全體時用）
@@ -797,7 +797,7 @@
         muzzleAt(a.x, a.y, false, '#ffd24d');
         const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
         const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 150, easing: 'linear' });
-        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); flinch(d); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 16 : 12); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };   // 顆粒反向(朝射來方向)濺=打進卡的鑽入感
+        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); flinch(d); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, 1.7); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };   // 顆粒反向(朝射來方向)大幅濺=打進卡的鑽入感
       };
       const scope = (p) => { const cr = add('fl-cross', 640); cr.style.left = p.x + 'px'; cr.style.top = p.y + 'px'; };
       if (!aoe) {
