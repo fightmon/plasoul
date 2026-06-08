@@ -275,24 +275,23 @@
         { transform: 'translate(0,0)', easing: 'ease-in-out' },
       ], { duration: 1300, composite: 'add' });
     }
-    function hitReact(d, p, big) {   // 反應式中彈(累積器)：中彈時凍結浮動於當前高度(停頓時靜止不上下飄)→每發往更後退+依高度後仰→最後一發後才回正並無縫接回浮動
+    function hitReact(d, p, big) {   // 反應式中彈(累積器,疊在浮動上 composite add)：只疊水平後退+依高度後仰，浮動全程不中斷→回正無接縫；只有最後一發後才回正
       const fwd = atk === 'my' ? 1 : -1; const fr = field().getBoundingClientRect(), dr = d.getBoundingClientRect();
       const cy = (dr.top - fr.top) + dr.height / 2; let oy = Math.max(-1, Math.min(1, (p.y - cy) / (dr.height / 2 || 1)));
       if (Math.abs(oy) < 0.18) oy = 0;   // 中心死區→不旋轉(避免浮動誤差造成歪)
-      const st = d.__rc || (d.__rc = { dist: 0, rot: 0, ret: 0, fy: 0, frozen: false });
-      if (!st.frozen) {   // 第一發：凍結浮動於當前高度(無縫，不跳動)
-        st.fy = (new DOMMatrix(getComputedStyle(d).transform)).f || 0;
-        d.style.transition = 'none'; d.style.transform = 'translate(0px,' + st.fy + 'px)'; d.style.animation = 'none'; void d.offsetWidth;
-        st.frozen = true;
-      }
-      st.dist = Math.max(-44, Math.min(44, st.dist + (big ? 10 : 6) * fwd));             // 後退大幅改小(讓貫穿看得到)；累積上限收緊
-      st.rot = Math.max(-28, Math.min(28, st.rot + (-oy * (big ? 10 : 7) * fwd)));       // 後仰也改小
-      d.style.transition = 'transform .14s ease-out';
-      d.style.transform = 'translate(' + st.dist + 'px,' + st.fy + 'px) rotate(' + st.rot + 'deg)';   // 急退(垂直凍結→不下掉/不飄)
+      const st = d.__rc || (d.__rc = { dist: 0, rot: 0, ret: 0, anim: null });
+      const prevT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';
+      st.dist = Math.max(-44, Math.min(44, st.dist + (big ? 10 : 6) * fwd));             // 後退(小)；累積上限收緊
+      st.rot = Math.max(-28, Math.min(28, st.rot + (-oy * (big ? 10 : 7) * fwd)));       // 依中彈高度後仰
+      const newT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';
+      if (st.anim) { try { st.anim.cancel(); } catch (e) {} }
+      st.anim = d.animate([{ transform: prevT }, { transform: newT }], { duration: 140, easing: 'ease-out', fill: 'both', composite: 'add' });
       clearTimeout(st.ret);
-      st.ret = setTimeout(() => {   // 最後一發後：停頓結束 → 慢慢回原位(垂直回浮動0%基準) → 還原浮動(無縫)
-        d.style.transition = 'transform .5s ease-in-out'; d.style.transform = 'translate(0px,0px) rotate(0deg)';
-        setTimeout(() => { d.style.transition = ''; d.style.transform = ''; d.style.animation = ''; st.frozen = false; st.dist = 0; st.rot = 0; }, 520);
+      st.ret = setTimeout(() => {   // 最後一發後：慢慢回到 +0 偏移(回純浮動，無接縫)
+        const fromT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)'; st.dist = 0; st.rot = 0;
+        if (st.anim) { try { st.anim.cancel(); } catch (e) {} }
+        const back = d.animate([{ transform: fromT }, { transform: 'translate(0,0) rotate(0deg)' }], { duration: 520, easing: 'ease-in-out', fill: 'both', composite: 'add' });
+        st.anim = back; back.onfinish = () => { try { back.cancel(); } catch (e) {} if (st.anim === back) st.anim = null; };
       }, 700);
     }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
