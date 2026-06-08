@@ -253,9 +253,16 @@
       const s = sz || 18; const n = add('', 520); n.style.cssText = 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + s + 'px;height:' + s + 'px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,' + col + ' 50%,transparent 72%)';
       n.animate([{ opacity: .85, transform: 'translate(-50%,-50%) scale(1)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(.5)' }], { duration: 500, easing: 'ease-out', fill: 'forwards' });
     }
-    function bulletHole(x, y, big) {   // 著彈洞(焦黑彈孔)：快速浮現→停留→慢慢淡掉
-      const s = big ? 18 : 13; const n = add('', 1500); n.style.cssText = 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + s + 'px;height:' + s + 'px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#140d05 36%,#3a2913 62%,rgba(90,55,22,.45) 80%,transparent 92%);box-shadow:0 0 6px rgba(0,0,0,.55)';
+    function bulletHole(d, x, y, big) {   // 著彈洞(焦黑彈孔)：掛在卡上隨卡浮動，快速浮現→停留→慢慢淡掉
+      const dr = d.getBoundingClientRect(), fr = field().getBoundingClientRect();
+      const lx = x - (dr.left - fr.left), ly = y - (dr.top - fr.top); const s = big ? 18 : 13;
+      const n = document.createElement('div'); n.style.cssText = 'position:absolute;left:' + lx + 'px;top:' + ly + 'px;width:' + s + 'px;height:' + s + 'px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#140d05 36%,#3a2913 62%,rgba(90,55,22,.45) 80%,transparent 92%);box-shadow:0 0 6px rgba(0,0,0,.55);pointer-events:none;z-index:5';
+      d.appendChild(n); setTimeout(() => n.remove(), 1500);
       n.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .08 }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .55 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1)' }], { duration: 1450, easing: 'ease-out', fill: 'forwards' });
+    }
+    function knockback(d, amt) {   // 中彈擊退：往後退一下(疊加在浮動上)
+      const fwd = atk === 'my' ? 1 : -1; const k = (amt || 16) * fwd;
+      d.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + k + 'px,0)', offset: .28 }, { transform: 'translate(0,0)' }], { duration: 360, easing: 'ease-out', composite: 'add' });
     }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
     function burst(x, y, color, big) { const r = add('fl-ring', 680); r.style.left = x + 'px'; r.style.top = y + 'px'; if (color) r.style.borderColor = color; r.style.setProperty('--rs', big ? '4.4' : '3.4'); const f = add('fl-flash' + (big ? ' big' : ''), 340); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; }
@@ -801,7 +808,7 @@
         muzzleAt(a.x, a.y, false, '#ffd24d');
         const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
         const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 150, easing: 'linear' });
-        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); flinch(d); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, 1.7); bulletHole(p.x, p.y, big); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };   // 顆粒反向大幅濺 + 著彈洞=打進卡的鑽入感
+        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, 1.7); bulletHole(d, p.x, p.y, big); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake(); };   // 擊退 + 顆粒反向大幅濺 + 著彈洞(隨卡浮動)=打進卡的鑽入感
       };
       const scope = (p) => { const cr = add('fl-cross', 640); cr.style.left = p.x + 'px'; cr.style.top = p.y + 'px'; };
       if (!aoe) {
