@@ -831,7 +831,7 @@
             const fp = cur, ftp = tp, dval = parts[bi++], last = (pIdx === podsPerCard - 1 && v === volleys - 1);
             ((fp, ftp, dval, last) => setTimeout(() => {
               const aimAng = ang(fp, ftp);   // 子機已在飛行末段轉到此角度，不再瞬轉
-              const rad = aimAng * Math.PI / 180, mp = { x: fp.x + Math.cos(rad) * 16, y: fp.y + Math.sin(rad) * 16 };   // 發射點推到三角尖頭前方
+              const rad = aimAng * Math.PI / 180, mp = { x: fp.x + Math.cos(rad) * 10, y: fp.y + Math.sin(rad) * 10 };   // 發射點推到三角尖頭附近(取中間值)
               muzzleAt(mp.x, mp.y, false, '#ffffff'); aperture(mp.x, mp.y, col, false, aimAng, 'sm');   // 小楕圓 + 白光點
               beam(mp, ftp, big, missOn(), false, big ? 4 : 3);   // 更細束(比招式雷射弱)
               if (missOn()) { if (last) dmg(d, 'MISS', 'miss'); }
