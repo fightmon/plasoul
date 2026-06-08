@@ -275,19 +275,22 @@
         { transform: 'translate(0,0)', easing: 'ease-in-out' },
       ], { duration: 1300, composite: 'add' });
     }
-    function hitReact(d, p, big) {   // 反應式中彈(單一累積器)：每次中彈往更後退+依中彈高度後仰→停頓→只有最後一發後才慢慢回
+    function hitReact(d, p, big) {   // 反應式中彈(累積器,疊在浮動上不移除浮動)：每次中彈往更後退+依中彈高度後仰→停頓→只有最後一發後才慢慢回
       const fwd = atk === 'my' ? 1 : -1; const fr = field().getBoundingClientRect(), dr = d.getBoundingClientRect();
       const cy = (dr.top - fr.top) + dr.height / 2, oy = Math.max(-1, Math.min(1, (p.y - cy) / (dr.height / 2 || 1)));   // -1上(頭)~1下(腳)
-      const st = d.__rc || (d.__rc = { dist: 0, rot: 0, ret: 0 });
+      const st = d.__rc || (d.__rc = { dist: 0, rot: 0, ret: 0, anim: null });
+      const prevT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';
       st.dist = Math.max(-90, Math.min(90, st.dist + (big ? 22 : 12) * fwd));            // 累積後退（普通小/暴中；大退預留 LV4/5）
       st.rot = Math.max(-46, Math.min(46, st.rot + (-oy * (big ? 18 : 11) * fwd)));      // 中彈部位後仰累積
+      const newT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';
+      if (st.anim) { try { st.anim.cancel(); } catch (e) {} }
+      st.anim = d.animate([{ transform: prevT }, { transform: newT }], { duration: 140, easing: 'ease-out', fill: 'both', composite: 'add' });   // 急退到累積位置(疊在浮動上)
       clearTimeout(st.ret);
-      d.style.animation = 'none';   // 暫離浮動，讓中彈位移生效
-      d.style.transition = 'transform .14s ease-out';
-      d.style.transform = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';    // 急退到累積位置(連發=更後)
-      st.ret = setTimeout(() => {   // 最後一發後：停頓結束 → 慢慢回原位 → 還原浮動
-        d.style.transition = 'transform .5s ease-in-out'; d.style.transform = 'translate(0,0) rotate(0deg)'; st.dist = 0; st.rot = 0;
-        setTimeout(() => { d.style.transition = ''; d.style.transform = ''; d.style.animation = ''; }, 520);
+      st.ret = setTimeout(() => {   // 最後一發後：停頓結束 → 慢慢回原位
+        const fromT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)'; st.dist = 0; st.rot = 0;
+        if (st.anim) { try { st.anim.cancel(); } catch (e) {} }
+        const back = d.animate([{ transform: fromT }, { transform: 'translate(0,0) rotate(0deg)' }], { duration: 520, easing: 'ease-in-out', fill: 'both', composite: 'add' });
+        st.anim = back; back.onfinish = () => { try { back.cancel(); } catch (e) {} if (st.anim === back) st.anim = null; };
       }, 480);
     }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
