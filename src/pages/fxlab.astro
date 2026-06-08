@@ -813,7 +813,8 @@
         an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); bulletHole(d, p.x, p.y, big); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
           if (big && lv === 1) {   // LV1暴：貫穿—子彈從命中點(卡後層)滑出卡背緣、出口顆粒在卡背緣往後噴(卡後層z4=被卡擋住部分像從背後鑽出)
             const dr3 = d.getBoundingClientRect(), fr3 = field().getBoundingClientRect(), rad2 = dir * Math.PI / 180;
-            const ex = { x: (atk === 'my' ? (dr3.right - fr3.left) : (dr3.left - fr3.left)), y: p.y };   // 卡背緣
+            const backX = (atk === 'my' ? (dr3.right - fr3.left) : (dr3.left - fr3.left));   // 卡背緣
+            const ex = { x: (backX + p.x + Math.cos(rad2) * 5) / 2, y: p.y };   // 卡背緣與(p+5)的中間值(≈p+25)
             const out = { x: ex.x + Math.cos(rad2) * 55, y: ex.y + Math.sin(rad2) * 55 };
             setTimeout(() => {
               const m2 = add('fl-missile', 0, fxB()); m2.style.left = p.x + 'px'; m2.style.top = p.y + 'px';   // 從命中點(卡後)滑出背面
