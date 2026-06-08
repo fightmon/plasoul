@@ -843,8 +843,8 @@
               hitReact(d, p, true); sparkLines(p.x, p.y, ang + 180, pc, 6, 0.5); bulletHole(d, p.x, p.y, true);   // 退後+入口小火花+彈孔
               dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
               d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 700);   // 把這張卡暫抬到貫穿層(z4)之上→貫穿在卡後、又不被別張卡(z2)擋
-              const rad2 = ang * Math.PI / 180, ex = { x: p.x + Math.cos(rad2) * 55, y: p.y + Math.sin(rad2) * 55 };   // 沿角度貫穿
-              beam(p, ex, true, false, false, null, fxB());   // 貫穿段放卡後層(被抬高的卡擋住=在卡後)
+              const rad2 = ang * Math.PI / 180, ex = { x: p.x + Math.cos(rad2) * 95, y: p.y + Math.sin(rad2) * 95 };   // 沿角度貫穿(夠長才露出卡背外)
+              beam(p, ex, true, false, false, null, fxB());   // 貫穿段放卡後層(被抬高的卡擋住=在卡後，露出部分看得到)
               setTimeout(() => sparkLines(ex.x, ex.y, ang, pc, 16, 1.0, fxB()), 40);   // 出口火花(卡後層,對應角度)
             }, 130);
           } else {
