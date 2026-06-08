@@ -811,11 +811,11 @@
         an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); particlesDir(p.x, p.y, dir + 180, '#ffb060', big ? 18 : 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); bulletHole(d, p.x, p.y, big); dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
           if (big && lv === 1) {   // LV1暴：貫穿—子彈從卡背同點冒出繼續往後飛 + 卡後顆粒往後噴
             const dr3 = d.getBoundingClientRect(), fr3 = field().getBoundingClientRect();
-            const ex = { x: (atk === 'my' ? (dr3.right - fr3.left) + 4 : (dr3.left - fr3.left) - 4), y: p.y }, rad2 = dir * Math.PI / 180, out = { x: ex.x + Math.cos(rad2) * 90, y: ex.y + Math.sin(rad2) * 90 };
+            const ex = { x: (atk === 'my' ? (dr3.right - fr3.left) : (dr3.left - fr3.left)), y: p.y }, rad2 = dir * Math.PI / 180, out = { x: ex.x + Math.cos(rad2) * 90, y: ex.y + Math.sin(rad2) * 90 };
             setTimeout(() => {
               const m2 = add('fl-missile', 0); m2.style.left = ex.x + 'px'; m2.style.top = ex.y + 'px';
               m2.animate([{ transform: 'translate(-50%,-50%) rotate(' + dir + 'deg)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + (out.x - ex.x) + 'px),calc(-50% + ' + (out.y - ex.y) + 'px)) rotate(' + dir + 'deg)', opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { m2.remove(); };
-              particlesDir(ex.x, ex.y, dir, '#ffb060', 12, 1.5); bulletHole(d, ex.x, ex.y, big);
+              particlesDir(ex.x, ex.y, dir, '#ffb060', 12, 0.6); bulletHole(d, ex.x, ex.y, big);   // 顆粒貼著卡背濺(幅度小)
             }, 45);
           }
         };   // 擊退 + 顆粒反向大幅濺 + 著彈洞(隨卡浮動)=打進卡的鑽入感；LV1暴另有貫穿
