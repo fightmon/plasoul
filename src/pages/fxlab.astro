@@ -968,7 +968,7 @@
       const m = $('fl-moves');
       const btns = (mv) => mv.map(([k, lab]) => '<button class="fl-mv" data-fx="' + k + '">' + lab + '</button>').join('');
       if (cat === 'ranged') {   // 兩排：炮擊系 / 光束系
-        m.innerHTML = RANGED_ROWS.map(([lab, mv]) => '<div class="fl-mvgrp"><div class="fl-mvlab">' + lab + '</div><div class="fl-mvrow">' + btns(mv) + '</div></div>').join('');
+        m.innerHTML = RANGED_ROWS.map(([, mv]) => '<div class="fl-mvgrp"><div class="fl-mvrow">' + btns(mv) + '</div></div>').join('');
       } else {
         m.innerHTML = btns(MOVES[cat]);
       }
