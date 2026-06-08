@@ -816,7 +816,7 @@
             setTimeout(() => {
               const m2 = add('fl-missile', 0, fxB()); m2.style.left = ex.x + 'px'; m2.style.top = ex.y + 'px';   // 續飛子彈放卡後層(往後飛出)
               m2.animate([{ transform: 'translate(-50%,-50%) rotate(' + dir + 'deg)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + (out.x - ex.x) + 'px),calc(-50% + ' + (out.y - ex.y) + 'px)) rotate(' + dir + 'deg)', opacity: 0 }], { duration: 240, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { m2.remove(); };
-              particlesDir(ex.x, ex.y, dir, '#ffb060', 10, 0.55);   // 出口顆粒(離前洞約5px，小幅)
+              particlesDir(ex.x, ex.y, dir, '#ffb060', 10, 0.55, fxB());   // 出口顆粒(卡後層 z4，離前洞約5px，小幅)
             }, 45);
           }
         };   // 擊退 + 顆粒反向大幅濺 + 著彈洞(隨卡浮動)=打進卡的鑽入感；LV1暴另有貫穿
