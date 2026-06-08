@@ -881,6 +881,7 @@
         // 全：每卡各 1 發(中心)；暴=各發都有貫穿(同 LV1 暴)；發間隔像單暴一樣拉開
         const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
         const cards = lv === 2 ? [fs[1], (Math.random() < 0.5 ? fs[0] : fs[2])] : fs.slice();
+        if (Math.random() < 0.5) cards.reverse();   // 攻擊順序隨機(上中下 / 下中上)
         const parts = splitDmg(big ? 999 : 350, cards.length);
         cards.forEach((d, ci) => {
           const p = cen(d); const last = ci === cards.length - 1;
