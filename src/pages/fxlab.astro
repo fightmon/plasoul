@@ -266,6 +266,15 @@
       const fwd = atk === 'my' ? 1 : -1; const k = (amt || 16) * fwd;
       d.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + k + 'px,0)', offset: .28 }, { transform: 'translate(0,0)' }], { duration: 360, easing: 'ease-out', composite: 'add' });
     }
+    function recoilCard(d, dist) {   // 被狙退後：退到位→停頓→慢慢回原位(疊加在浮動上)
+      const fwd = atk === 'my' ? 1 : -1; const k = dist * fwd;
+      d.animate([
+        { transform: 'translate(0,0)' },
+        { transform: 'translate(' + k + 'px,0)', offset: .16, easing: 'ease-out' },
+        { transform: 'translate(' + k + 'px,0)', offset: .52 },
+        { transform: 'translate(0,0)', easing: 'ease-in-out' },
+      ], { duration: 1300, composite: 'add' });
+    }
     function ring(x, y, color, big) { const n = add('fl-ring', 660); n.style.left = x + 'px'; n.style.top = y + 'px'; if (color) n.style.borderColor = color; n.style.setProperty('--rs', big ? '3.4' : '2'); }
     function burst(x, y, color, big) { const r = add('fl-ring', 680); r.style.left = x + 'px'; r.style.top = y + 'px'; if (color) r.style.borderColor = color; r.style.setProperty('--rs', big ? '4.4' : '3.4'); const f = add('fl-flash' + (big ? ' big' : ''), 340); f.style.left = x + 'px'; f.style.top = y + 'px'; if (color) f.style.background = 'radial-gradient(circle,' + color + ',transparent 68%)'; }
     function critFlash(x, y, color) { const c = color || '#ffd24d'; const f = add('fl-flash huge', 380); f.style.left = x + 'px'; f.style.top = y + 'px'; f.style.background = 'radial-gradient(circle,#fff 12%,' + c + ' 46%,transparent 72%)'; ring(x, y, '#fff', true); setTimeout(() => ring(x, y, c, true), 90); setTimeout(() => ring(x, y, c, true), 180); }
@@ -820,18 +829,23 @@
         muzzleAt(a.x, a.y, false, '#ffd24d');
         const m = add('fl-missile', 0); m.style.left = a.x + 'px'; m.style.top = a.y + 'px';
         const an = m.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tgt.x - a.x) + 'px), calc(-50% + ' + (tgt.y - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 150, easing: 'linear' });
-        an.onfinish = () => { m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; } burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d'); knockback(d, big ? 24 : 16); if (big) sparkLines(p.x, p.y, dir + 180, '#ffb060', 6, 0.5); else sparkLines(p.x, p.y, dir + 180, '#ffb060', 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7); bulletHole(d, p.x, p.y, big);   // 入口火光線條(反向)；暴(貫穿)=入口小火花 dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
-          if (big) {   // 暴(各等級)：貫穿—子彈從命中點(卡後層)滑出卡背緣、出口顆粒在卡背緣往後噴(卡後層z4=被卡擋住部分像從背後鑽出)
-            const dr3 = d.getBoundingClientRect(), fr3 = field().getBoundingClientRect(), rad2 = dir * Math.PI / 180;
-            const ex = { x: p.x + Math.cos(rad2) * 55, y: p.y };   // 出口點 P+55
+        an.onfinish = () => {
+          m.remove(); if (miss) { if (showMiss) dmg(d, 'MISS', 'miss'); return; }
+          burst(p.x, p.y, '#ff9a3d', big); if (big) critFlash(p.x, p.y, '#ff9a3d');
+          if (big) sparkLines(p.x, p.y, ang + 180, '#ffb060', 6, 0.5); else sparkLines(p.x, p.y, ang + 180, '#ffb060', 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7);   // 入口火花(反向,對應角度)
+          bulletHole(d, p.x, p.y, big);
+          dmgPt(p.x, p.y, '-' + dmgVal + (big ? '!' : ''), big ? 'crit' : ''); if (big) shake();
+          if (big) {   // 暴(各等級)：貫穿—沿子彈角度從命中點滑出卡背(卡後層) + 出口火花(對應角度)
+            const rad2 = ang * Math.PI / 180;
+            const ex = { x: p.x + Math.cos(rad2) * 55, y: p.y + Math.sin(rad2) * 55 };
             const out = { x: ex.x + Math.cos(rad2) * 55, y: ex.y + Math.sin(rad2) * 55 };
             setTimeout(() => {
-              const m2 = add('fl-missile', 0, fxB()); m2.style.left = p.x + 'px'; m2.style.top = p.y + 'px';   // 從命中點(卡後)滑出背面
-              m2.animate([{ transform: 'translate(-50%,-50%) rotate(' + dir + 'deg)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + (out.x - p.x) + 'px),calc(-50% + ' + (out.y - p.y) + 'px)) rotate(' + dir + 'deg)', opacity: 0 }], { duration: 300, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { m2.remove(); };
-              sparkLines(ex.x, ex.y, dir, '#ffb060', 16, 1.0, fxB());   // 出口火光線條往後噴(卡後層)=大
+              const m2 = add('fl-missile', 0, fxB()); m2.style.left = p.x + 'px'; m2.style.top = p.y + 'px';
+              m2.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)', opacity: 1 }, { transform: 'translate(calc(-50% + ' + (out.x - p.x) + 'px),calc(-50% + ' + (out.y - p.y) + 'px)) rotate(' + ang + 'deg)', opacity: 0 }], { duration: 300, easing: 'ease-out', fill: 'forwards' }).onfinish = function () { m2.remove(); };
+              sparkLines(ex.x, ex.y, ang, '#ffb060', 16, 1.0, fxB());   // 出口火光線條(對應角度,卡後層)
             }, 45);
           }
-        };   // 擊退 + 顆粒反向大幅濺 + 著彈洞(隨卡浮動)=打進卡的鑽入感；LV1暴另有貫穿
+        };
       };
       const scope = (p) => { const cr = add('fl-cross', 640); cr.style.left = p.x + 'px'; cr.style.top = p.y + 'px'; };
       if (!aoe) {
@@ -840,6 +854,7 @@
         maybeDodge(d, 460 + N * 70); const c = cen(d); const parts = splitDmg(big ? 999 : 350, N);
         const tgts = []; for (let k = 0; k < N; k++) tgts.push(k === 0 ? { x: c.x, y: c.y } : cardRndPt(d));
         tgts.forEach((p, k) => { scope(p); setTimeout(() => snipeShot(d, p, parts[k], k === N - 1), 360 + k * 150); });
+        if (!useBeam) setTimeout(() => recoilCard(d, 14 + (N - 1) * 12 + (big ? 6 : 0)), 360 + 120);   // 被狙退後:退→停頓→慢慢回，發數越多退越遠
       } else {
         // 全：每卡命中 perCard 發（LV2,3 各1；暴各2）
         const fs = [0, 1, 2].map((i) => card(oth(), i)).filter(Boolean);
