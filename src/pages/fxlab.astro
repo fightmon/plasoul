@@ -112,6 +112,7 @@
 
     .fl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
     .fl-fxb { position: absolute; inset: 0; pointer-events: none; z-index: 4; }   /* 卡片後方特效層(子彈/子機用) */
+    .fl-fxbb { position: absolute; inset: 0; pointer-events: none; z-index: 1; }   /* 更深層(所有卡之下)：狙擊雷射貫穿用→不需抬高卡 */
     /* 狙擊雷射模擬器 */
     .fl-tunebtn { position: absolute; top: 8px; left: 10px; z-index: 20; width: 30px; height: 30px; border-radius: 8px; background: rgba(20,28,52,.85); border: 1px solid #2c3a5e; color: #cdd6ea; font-size: 16px; cursor: pointer; }
     .fl-tune { position: absolute; top: 44px; left: 10px; z-index: 20; width: 210px; background: rgba(12,16,28,.94); border: 1px solid #2c3a5e; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
@@ -257,6 +258,7 @@
     const field = () => $('fl-field');
     const fxL = () => $('fl-fx');
     let _fxb; const fxB = () => { if (!_fxb || !_fxb.isConnected) { _fxb = document.createElement('div'); _fxb.className = 'fl-fxb'; field().appendChild(_fxb); } return _fxb; };   // 卡後特效層
+    let _fxbb; const fxBB = () => { if (!_fxbb || !_fxbb.isConnected) { _fxbb = document.createElement('div'); _fxbb.className = 'fl-fxbb'; field().appendChild(_fxbb); } return _fxbb; };   // 更深層(所有卡之下,狙擊雷射貫穿用)
     let atk = 'my';
     let lv = 1;   // 招式等級（1~3 先做，4/5 預留）
     const STUNE = { thick: 16, entryExt: 15, pierce: 95, hole: 35, recoil: 18, holePos: 0 };   // 狙擊雷射模擬器(粗細/入射末端/貫穿長度/灼熱孔大小/退後/孔位沿角度偏移)
@@ -897,13 +899,12 @@
           if (big) {
             const rad2 = ang * Math.PI / 180;
             hitReact(d, p, big, ang);   // 後退(沿雷射方向→孔不脫線;累積:第2發再退)+依中彈高度後仰(頭/腳)+停頓回正
-            d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 1100);   // 抬高→出射在卡後
             const ee = { x: p.x + Math.cos(rad2) * STUNE.entryExt, y: p.y + Math.sin(rad2) * STUNE.entryExt };   // 入射雷射末端(入射長度可調)
             beam(a, ee, true, false, false, STUNE.thick, null, true);    // 入射段(末端=ee)
             const ex = { x: p.x + Math.cos(rad2) * STUNE.pierce, y: p.y + Math.sin(rad2) * STUNE.pierce };
             const hp = { x: p.x + Math.cos(rad2) * STUNE.holePos, y: p.y + Math.sin(rad2) * STUNE.holePos };   // 孔沿雷射線移動(X/Y同步)→永遠在雷射上;0=命中點(中心),正值沿雷射前移(斜角時即往上/下)
             const pe = { x: p.x + Math.cos(rad2) * 45, y: p.y + Math.sin(rad2) * 45 };
-            beam(p, ex, true, false, false, STUNE.thick, fxB(), true);  // 出射貫穿(命中點→卡後;貫穿線長,涵蓋卡後退區→不脫節)
+            beam(p, ex, true, false, false, STUNE.thick, fxBB(), true);  // 出射貫穿(命中點→卡後;用fxBB卡之下→不需抬高卡,維持卡堆疊)
             burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
             const wl = hitLight(hp.x, hp.y, true, STUNE.thick * 1.8, true);   // 白光點(特效層→在雷射上可見),同灼熱孔位hp,大小對應粗細,長停留
             const rdx = Math.cos(rad2) * 10, rdy = Math.sin(rad2) * 10;   // 跟卡退後同步:沿雷射方向(同hitReact big首發10),140ms退→停到700ms→回
@@ -912,7 +913,7 @@
             dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
             for (let q = 0; q < 3; q++) setTimeout(() => {   // 每發分3次錯開噴(LV1=3次/LV3=9次)
               particlesDir(p.x, p.y, ang + 180, pc, 12, 1.0, null, 32);   // 前顆粒(中Y)
-              particlesDir(pe.x, pe.y, ang, pc, 16, 1.2, fxB(), 55);        // 後顆粒(大Y, P+45)
+              particlesDir(pe.x, pe.y, ang, pc, 16, 1.2, fxBB(), 55);        // 後顆粒(大Y, P+45;卡之下層)
             }, q * 90);
           } else {
             beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
