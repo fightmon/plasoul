@@ -21,6 +21,17 @@
         <div class="fl-round">VS</div>
         <div class="side"><div class="fl-pname" style="text-align:right">敵方</div><div class="fl-bar foe"><i></i></div></div>
       </div>
+      <button class="fl-tunebtn" id="fl-tunebtn" title="狙擊雷射 模擬器">⚙</button>
+      <div class="fl-tune" id="fl-tune" hidden>
+        <div class="fl-tune-h">狙擊雷射 模擬器</div>
+        <label>雷射粗細 <input type="range" id="tn-thick" min="3" max="30" value="16"><input type="number" class="tn-num" id="tnv-thick" min="3" max="30" value="16"></label>
+        <label>入射長度 <input type="range" id="tn-entry" min="-40" max="160" value="15"><input type="number" class="tn-num" id="tnv-entry" min="-40" max="160" value="15"></label>
+        <label>貫穿長度 <input type="range" id="tn-pierce" min="40" max="320" value="95"><input type="number" class="tn-num" id="tnv-pierce" min="40" max="320" value="95"></label>
+        <label>灼熱孔 <input type="range" id="tn-hole" min="10" max="60" value="35"><input type="number" class="tn-num" id="tnv-hole" min="10" max="60" value="35"></label>
+        <label>孔位 <input type="range" id="tn-holepos" min="-40" max="160" value="0"><input type="number" class="tn-num" id="tnv-holepos" min="-40" max="160" value="0"></label>
+        <label>退後距離 <input type="range" id="tn-recoil" min="0" max="50" value="18"><input type="number" class="tn-num" id="tnv-recoil" min="0" max="50" value="18"></label>
+        <button class="fl-tune-play" id="tn-play">▶ 放狙擊雷射（暴）</button>
+      </div>
       <div class="fl-field" id="fl-field">
         <div class="fl-darken" id="fl-darken"></div>
         <div class="fl-u my-side" data-i="0" id="fl-my-0"><div class="fl-noimg t-my">🤖</div></div>
@@ -101,6 +112,17 @@
 
     .fl-fx { position: absolute; inset: 0; pointer-events: none; z-index: 12; }
     .fl-fxb { position: absolute; inset: 0; pointer-events: none; z-index: 4; }   /* 卡片後方特效層(子彈/子機用) */
+    /* 狙擊雷射模擬器 */
+    .fl-tunebtn { position: absolute; top: 8px; left: 10px; z-index: 20; width: 30px; height: 30px; border-radius: 8px; background: rgba(20,28,52,.85); border: 1px solid #2c3a5e; color: #cdd6ea; font-size: 16px; cursor: pointer; }
+    .fl-tune { position: absolute; top: 44px; left: 10px; z-index: 20; width: 210px; background: rgba(12,16,28,.94); border: 1px solid #2c3a5e; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+    .fl-tune[hidden] { display: none; }   /* 修正:display:flex 會蓋掉[hidden]，補這條才收得起來 */
+    .fl-tune-h { font-size: 12px; font-weight: 800; color: #9fe8ff; letter-spacing: 1px; }
+    .fl-tune label { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #cdd6ea; }
+    .fl-tune label input[type=range] { flex: 1; accent-color: #2f9bff; min-width: 0; }
+    .fl-tune label b { width: 28px; text-align: right; font-variant-numeric: tabular-nums; color: #8aa; }
+    .fl-tune label input.tn-num { width: 40px; flex: 0 0 auto; background: #0c1322; border: 1px solid #2c3a5e; border-radius: 5px; color: #cdeaff; font-size: 11px; text-align: right; padding: 2px 4px; font-variant-numeric: tabular-nums; }
+    .fl-tune label input.tn-num:focus { outline: none; border-color: #2f9bff; }
+    .fl-tune-play { margin-top: 2px; padding: 7px; border-radius: 8px; border: 1px solid #5b86ff; background: linear-gradient(135deg,#3b82f6,#1e50e5); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; }
     .fl-ghost { position: absolute; aspect-ratio: 3/4; border-radius: 10px; overflow: hidden; border: 2px solid #46557c; pointer-events: none; filter: brightness(.8) saturate(.6); z-index: 1; }
 
     .fl-dmg { position: absolute; font-size: 22px; font-weight: 900; color: #fff; text-shadow: 0 2px 6px #000; transform: translate(-50%,-50%); animation: fl-pop .85s ease-out forwards; white-space: nowrap; }
@@ -169,6 +191,11 @@
     .fl-ap.sm { width: 13px; height: 32px; border-width: 2px; }
     .fl-ap.sm::before { width: 6px; height: 6px; }
     @keyframes fl-ap { 0%{opacity:.3; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(.25);} 42%{opacity:1; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) rotate(var(--apang,0deg)) scale(1);} }
+    .fl-hitpt { position: absolute; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 0 9px #fff, 0 0 16px #fff; transform: translate(-50%,-50%) scale(.3); animation: fl-hitpt .42s ease-out forwards; }   /* 彈著光點(白核,仿子機aperture核) */
+    .fl-hitpt.big { width: 17px; height: 17px; box-shadow: 0 0 13px #fff, 0 0 22px #fff; }
+    @keyframes fl-hitpt { 0%{opacity:0; transform:translate(-50%,-50%) scale(.2);} 35%{opacity:1; transform:translate(-50%,-50%) scale(1.1);} 100%{opacity:0; transform:translate(-50%,-50%) scale(1.5);} }
+    .fl-hitpt.hold { animation: fl-hitpt-hold .62s ease-out forwards; }   /* 暴擊白光點:長停留版 */
+    @keyframes fl-hitpt-hold { 0%{opacity:0; transform:translate(-50%,-50%) scale(.2);} 16%{opacity:1; transform:translate(-50%,-50%) scale(1.1);} 62%{opacity:1; transform:translate(-50%,-50%) scale(1);} 100%{opacity:0; transform:translate(-50%,-50%) scale(1.35);} }
 
     .fl-missile { position: absolute; left: 0; top: 0; width: 16px; height: 7px; border-radius: 4px; background: linear-gradient(90deg,#ffd24d,#ff7a1f); box-shadow: 0 0 10px #ff9a3d; offset-rotate: auto; }
     .fl-bit { position: absolute; width: 22px; height: 16px; transform: translate(-50%,-50%); background: linear-gradient(90deg,#5bc8ff,#eafaff); box-shadow: 0 0 14px #6fd3ff; clip-path: polygon(100% 50%, 0 0, 0 100%); }
@@ -232,6 +259,7 @@
     let _fxb; const fxB = () => { if (!_fxb || !_fxb.isConnected) { _fxb = document.createElement('div'); _fxb.className = 'fl-fxb'; field().appendChild(_fxb); } return _fxb; };   // 卡後特效層
     let atk = 'my';
     let lv = 1;   // 招式等級（1~3 先做，4/5 預留）
+    const STUNE = { thick: 16, entryExt: 15, pierce: 95, hole: 35, recoil: 18, holePos: 0 };   // 狙擊雷射模擬器(粗細/入射末端/貫穿長度/灼熱孔大小/退後/孔位沿角度偏移)
 
     const oth = () => atk === 'my' ? 'foe' : 'my';
     const card = (s, i) => $('fl-' + s + '-' + i);
@@ -266,10 +294,24 @@
     }
     function beamHole(d, x, y, big) {   // 灼熱貫穿孔(狙擊雷射)：白心→黃→橘→紅漸層+發光，掛在卡上隨卡浮動，浮現→停留→淡掉
       const dr = d.getBoundingClientRect(), fr = field().getBoundingClientRect();
-      const lx = x - (dr.left - fr.left), ly = y - (dr.top - fr.top); const s = big ? 22 : 15;
+      const lx = x - (dr.left - fr.left), ly = y - (dr.top - fr.top); const s = big ? STUNE.hole : 15;
       const n = document.createElement('div'); n.style.cssText = 'position:absolute;left:' + lx + 'px;top:' + ly + 'px;width:' + s + 'px;height:' + s + 'px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff 15%,#ffe26a 33%,#ff8a1f 55%,#e6300f 76%,transparent 92%);box-shadow:0 0 13px #ff7a1f,0 0 5px #fff;pointer-events:none;z-index:5';
       d.appendChild(n); setTimeout(() => n.remove(), 1400);
       n.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .1 }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .5 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(.95)' }], { duration: 1350, easing: 'ease-out', fill: 'forwards' });
+    }
+    function snipeRecoilFreeze(d, recoilX) {   // 狙擊中彈：凍結浮動(原地暫停,不碰Y→無+1/無snap)→只疊純X後退→停留→慢慢回→unpause接續浮動
+      d.style.animationPlayState = 'paused';   // 浮動原地凍住(Y停在當下,完全不動)
+      clearTimeout(d.__rz);
+      if (d.__rzAnim) { try { d.__rzAnim.cancel(); } catch (e) {} }
+      d.__rzAnim = d.animate([{ transform: 'translateX(0px)' }, { transform: 'translateX(' + recoilX + 'px)' }],
+        { duration: 90, easing: 'ease-out', fill: 'both', composite: 'add' });   // 瞬間退後(只疊X,Y不動)
+      d.__rz = setTimeout(() => {
+        if (d.__rzAnim) { try { d.__rzAnim.cancel(); } catch (e) {} }
+        const back = d.animate([{ transform: 'translateX(' + recoilX + 'px)' }, { transform: 'translateX(0px)' }],
+          { duration: 450, easing: 'ease-in-out', fill: 'both', composite: 'add' });   // 慢慢回(只動X)
+        d.__rzAnim = back;
+        back.onfinish = () => { try { back.cancel(); } catch (e) {} if (d.__rzAnim === back) d.__rzAnim = null; d.style.animationPlayState = ''; };   // unpause→浮動從暫停點接續(無縫)
+      }, 850);
     }
     function knockback(d, amt) {   // 中彈擊退：往後退一下(疊加在浮動上)
       const fwd = atk === 'my' ? 1 : -1; const k = (amt || 16) * fwd;
@@ -284,22 +326,24 @@
         { transform: 'translate(0,0)', easing: 'ease-in-out' },
       ], { duration: 1300, composite: 'add' });
     }
-    function hitReact(d, p, big) {   // 反應式中彈(累積器,疊在浮動上 composite add)：只疊水平後退+依高度後仰，浮動全程不中斷→回正無接縫；只有最後一發後才回正
+    function hitReact(d, p, big, angDeg) {   // 反應式中彈(累積器,疊在浮動上 composite add)：後退+依高度後仰，回正無接縫。angDeg=沿雷射方向後退(斜角時孔才不脫線);省略=純水平(子彈)
       const fwd = atk === 'my' ? 1 : -1; const fr = field().getBoundingClientRect(), dr = d.getBoundingClientRect();
       const cy = (dr.top - fr.top) + dr.height / 2; let oy = Math.max(-1, Math.min(1, (p.y - cy) / (dr.height / 2 || 1)));
       if (Math.abs(oy) < 0.18) oy = 0;   // 中心死區→不旋轉(避免浮動誤差造成歪)
+      const ca = angDeg != null ? Math.cos(angDeg * Math.PI / 180) : 1, sa = angDeg != null ? Math.sin(angDeg * Math.PI / 180) : 0;
+      const T = (dist, rot) => { const m = angDeg != null ? Math.abs(dist) : dist; return 'translate(' + (m * ca) + 'px,' + (m * sa) + 'px) rotate(' + rot + 'deg)'; };   // angDeg:沿雷射(用絕對量,方向由角度決定);否則純水平
       const st = d.__rc || (d.__rc = { dist: 0, rot: 0, ret: 0, anim: null });
-      const prevT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';
+      const prevT = T(st.dist, st.rot);
       st.dist = Math.max(-44, Math.min(44, st.dist + (big ? 10 : 6) * fwd));             // 後退(小)；累積上限收緊
       st.rot = Math.max(-28, Math.min(28, st.rot + (-oy * (big ? 10 : 7) * fwd)));       // 依中彈高度後仰
-      const newT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)';
+      const newT = T(st.dist, st.rot);
       if (st.anim) { try { st.anim.cancel(); } catch (e) {} }
       st.anim = d.animate([{ transform: prevT }, { transform: newT }], { duration: 140, easing: 'ease-out', fill: 'both', composite: 'add' });
       clearTimeout(st.ret);
       st.ret = setTimeout(() => {   // 最後一發後：慢慢回到 +0 偏移(回純浮動，無接縫)
-        const fromT = 'translate(' + st.dist + 'px,0) rotate(' + st.rot + 'deg)'; st.dist = 0; st.rot = 0;
+        const fromT = T(st.dist, st.rot); st.dist = 0; st.rot = 0;
         if (st.anim) { try { st.anim.cancel(); } catch (e) {} }
-        const back = d.animate([{ transform: fromT }, { transform: 'translate(0,0) rotate(0deg)' }], { duration: 520, easing: 'ease-in-out', fill: 'both', composite: 'add' });
+        const back = d.animate([{ transform: fromT }, { transform: T(0, 0) }], { duration: 520, easing: 'ease-in-out', fill: 'both', composite: 'add' });
         st.anim = back; back.onfinish = () => { try { back.cancel(); } catch (e) {} if (st.anim === back) st.anim = null; };
       }, 700);
     }
@@ -325,7 +369,7 @@
       if (big) shake();
     }
 
-    function beam(a, b, big, miss, plasma, hOv, layer, hold) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = hOv || (big ? 16 : 6); const n = add('fl-laser ' + cc() + (big ? ' big' : '') + (hold ? ' hold' : ''), hold ? 950 : 550, layer); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.height = h + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; }
+    function beam(a, b, big, miss, plasma, hOv, layer, hold) { if (miss) b = missPoint(b); const dx = b.x - a.x, dy = b.y - a.y; const len = Math.hypot(dx, dy); const ang = Math.atan2(dy, dx) * 180 / Math.PI; const h = hOv || (big ? 16 : 6); const n = add('fl-laser ' + cc() + (big ? ' big' : '') + (hold ? ' hold' : ''), hold ? 950 : 550, layer); n.style.left = a.x + 'px'; n.style.top = a.y + 'px'; n.style.height = h + 'px'; n.style.marginTop = (-h / 2) + 'px'; n.style.width = len + 'px'; n.style.transform = 'rotate(' + ang + 'deg)'; n.innerHTML = plasma ? '<i></i><u></u>' : '<i></i>'; if (!miss && !layer && !hold) hitLight(b.x, b.y, big); }   // 命中端補白光點(雷射/狙擊雷射單體;貫穿後段layer與hold雷射不加,暴擊另手動補)
     // 電漿火花沿光束散布
     function sparksAlong(a, b, color) { for (let k = 0; k < 5; k++) { const t = 0.12 + Math.random() * 0.76; const x = a.x + (b.x - a.x) * t + (Math.random() * 12 - 6), y = a.y + (b.y - a.y) * t + (Math.random() * 16 - 8); const s = add('fl-spark', 240); s.style.left = x + 'px'; s.style.top = y + 'px'; s.style.background = color; s.style.boxShadow = '0 0 9px ' + color; } }
     // 命中爆閃（鏡頭光斑）
@@ -347,6 +391,11 @@
     function aperture(x, y, color, big, ang, cls) { const n = add('fl-ap' + (big ? ' big' : '') + (cls ? ' ' + cls : ''), 540); n.style.left = x + 'px'; n.style.top = y + 'px'; if (ang) n.style.setProperty('--apang', ang + 'deg'); if (color) { n.style.borderColor = color; n.style.color = color; } }
     function muzzle(el, big, color) { const p = frontEdge(el); const col = color || (atk === 'my' ? '#3aa0ff' : '#ff5a5a'); const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = p.x + 'px'; m.style.top = p.y + 'px'; m.style.background = 'radial-gradient(circle,#fff,' + col + ' 55%,transparent 74%)'; }
     function muzzleAt(x, y, big, color) { const col = color || (atk === 'my' ? '#3aa0ff' : '#ff5a5a'); const m = add('fl-muzzle' + (big ? ' big' : ''), 260); m.style.left = x + 'px'; m.style.top = y + 'px'; m.style.background = 'radial-gradient(circle,#fff,' + col + ' 55%,transparent 74%)'; }
+    function hitLight(x, y, big, size, hold) {   // 彈著光點;size=直徑;hold=長停留(暴擊用)。回傳元素(可再疊退後位移)
+      const n = add('fl-hitpt' + (big ? ' big' : '') + (hold ? ' hold' : ''), hold ? 640 : 440);
+      n.style.left = x + 'px'; n.style.top = y + 'px'; if (size) { n.style.width = size + 'px'; n.style.height = size + 'px'; }
+      return n;
+    }
 
     // 近身衝刺（單招用中央卡；ult 用指定卡）
     function lunge(cb, ratio) {
@@ -756,7 +805,7 @@
         glowPulse(aEl, '#fff');
         const pcount = single ? (2 * lv + 1) : (2 * lv - 1); const dmgs = splitDmg(big ? 999 : 350, targets.length);   // 單 2LV+1、全每卡 2LV-1；數字每卡1個
         const tAt = (frac) => Math.max(0, frac * outDur);
-        const burstAt = (f, px, py) => { flinch(f); particlesDir(px, py, angA({ x: px, y: py }), pcol, big ? 26 : 12); scorch(px, py, sh); if (big) critFlash(px, py, '#9fe8ff'); };   // 暴=誇張
+        const burstAt = (f, px, py) => { flinch(f); hitLight(px, py, big); particlesDir(px, py, angA({ x: px, y: py }), pcol, big ? 26 : 12); scorch(px, py, sh); if (big) critFlash(px, py, '#9fe8ff'); };   // 暴=誇張；彈著光點
         if (single) {
           const f = targets[0], c = cen(f);
           if (missOn()) { setTimeout(() => { missDodge(f); dmg(f, 'MISS', 'miss'); }, tAt(0.5)); }
@@ -847,20 +896,30 @@
           if (miss) { beam(a, tgt, big, true); if (showMiss) setTimeout(() => dmg(d, 'MISS', 'miss'), 130); return; }
           if (big) {
             const rad2 = ang * Math.PI / 180;
-            d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 1100);   // 命中卡抬高→出射在卡後
-            beam(a, p, true, false, false, null, null, true);          // 入射→彈著點(快彈出+長停留)
-            const ex = { x: p.x + Math.cos(rad2) * 95, y: p.y + Math.sin(rad2) * 95 };
-            const pe = { x: p.x + Math.cos(rad2) * 45, y: p.y + Math.sin(rad2) * 45 };   // 後顆粒位置 P+45(卡背緣)
-            beam(p, ex, true, false, false, null, fxB(), true);        // 出射貫穿(卡後層)──與入射同時建立、同時消失
+            hitReact(d, p, big, ang);   // 後退(沿雷射方向→孔不脫線;累積:第2發再退)+依中彈高度後仰(頭/腳)+停頓回正
+            d.style.zIndex = '7'; clearTimeout(d.__pz); d.__pz = setTimeout(() => { d.style.zIndex = ''; }, 1100);   // 抬高→出射在卡後
+            const ee = { x: p.x + Math.cos(rad2) * STUNE.entryExt, y: p.y + Math.sin(rad2) * STUNE.entryExt };   // 入射雷射末端(入射長度可調)
+            beam(a, ee, true, false, false, STUNE.thick, null, true);    // 入射段(末端=ee)
+            const ex = { x: p.x + Math.cos(rad2) * STUNE.pierce, y: p.y + Math.sin(rad2) * STUNE.pierce };
+            const hp = { x: p.x + Math.cos(rad2) * STUNE.holePos, y: p.y + Math.sin(rad2) * STUNE.holePos };   // 孔沿雷射線移動(X/Y同步)→永遠在雷射上;0=命中點(中心),正值沿雷射前移(斜角時即往上/下)
+            const pe = { x: p.x + Math.cos(rad2) * 45, y: p.y + Math.sin(rad2) * 45 };
+            beam(p, ex, true, false, false, STUNE.thick, fxB(), true);  // 出射貫穿(命中點→卡後;貫穿線長,涵蓋卡後退區→不脫節)
             burst(p.x, p.y, '#fff', true); critFlash(p.x, p.y, '#9fe8ff');
-            beamHole(d, p.x, p.y, true);   // 灼熱貫穿孔(白心黃紅漸層)；雷射貫穿不退後(避免卡推離靜止雷射末點)
+            const wl = hitLight(hp.x, hp.y, true, STUNE.thick * 1.8, true);   // 白光點(特效層→在雷射上可見),同灼熱孔位hp,大小對應粗細,長停留
+            const rdx = Math.cos(rad2) * 10, rdy = Math.sin(rad2) * 10;   // 跟卡退後同步:沿雷射方向(同hitReact big首發10),140ms退→停到700ms→回
+            wl.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + rdx + 'px,' + rdy + 'px)', offset: .14, easing: 'ease-out' }, { transform: 'translate(' + rdx + 'px,' + rdy + 'px)', offset: .7 }, { transform: 'translate(0,0)', easing: 'ease-in-out' }], { duration: 1000, composite: 'add' });
+            beamHole(d, hp.x, hp.y, true);   // 灼熱貫穿孔(沿角度偏移,掛卡上跟著後退)
             dmgPt(p.x, p.y, '-' + dmgVal + '!', 'crit'); shake(); zoomPunch(p.x, p.y, 0.05);
-            particlesDir(p.x, p.y, ang + 180, pc, 12, 1.0, null, 32);   // 前面顆粒(中Y, 朝砲口)
-            particlesDir(pe.x, pe.y, ang, pc, 16, 1.2, fxB(), 55);      // 背後顆粒(大Y, P+45)
+            for (let q = 0; q < 3; q++) setTimeout(() => {   // 每發分3次錯開噴(LV1=3次/LV3=9次)
+              particlesDir(p.x, p.y, ang + 180, pc, 12, 1.0, null, 32);   // 前顆粒(中Y)
+              particlesDir(pe.x, pe.y, ang, pc, 16, 1.2, fxB(), 55);        // 後顆粒(大Y, P+45)
+            }, q * 90);
           } else {
             beam(a, tgt, false, false);   // 一般：粗細同雷射招式(6)
+            const hpn = { x: p.x + Math.cos(ang * Math.PI / 180) * STUNE.holePos, y: p.y + Math.sin(ang * Math.PI / 180) * STUNE.holePos };   // 孔沿雷射線移動(X/Y同步)→永遠在雷射上;0=命中點(中心)
             setTimeout(() => {   // 命中效果延到雷射抵達目標才出現
-              beamHole(d, p.x, p.y, false); sparkLines(p.x, p.y, ang + 180, pc, 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7);   // 灼熱孔+前火花(一般不退後,避免脫節)
+              hitReact(d, p, false, ang);   // 一般小退(沿雷射方向→孔不脫線)+依中彈高度後仰
+              beamHole(d, hpn.x, hpn.y, false); sparkLines(p.x, p.y, ang + 180, pc, 14, lv === 1 ? 1.2 : lv === 2 ? 1.5 : 1.7);   // 灼熱孔(沿角度)+前火花
               dmgPt(p.x, p.y, '-' + dmgVal, '');
             }, 130);
           }
@@ -1095,6 +1154,15 @@
       t.classList.add('on'); renderMoves(t.dataset.cat);
     }));
     renderMoves('ranged');
+
+    // 狙擊雷射模擬器：開關 + 滑桿 + 一鍵放招
+    (function () {
+      const btn = $('fl-tunebtn'), panel = $('fl-tune'); if (!btn || !panel) return;
+      btn.addEventListener('click', () => { panel.hidden = !panel.hidden; });
+      const bind = (id, key) => { const r = $('tn-' + id), v = $('tnv-' + id); if (!r) return; r.addEventListener('input', () => { STUNE[key] = Number(r.value); v.value = r.value; }); v.addEventListener('input', () => { STUNE[key] = Number(v.value); r.value = v.value; }); };   // 拉桿↔數字框雙向同步
+      bind('thick', 'thick'); bind('entry', 'entryExt'); bind('pierce', 'pierce'); bind('hole', 'hole'); bind('recoil', 'recoil'); bind('holepos', 'holePos');
+      $('tn-play').addEventListener('click', () => { $('fl-crit').classList.add('on'); runMove('snipeb'); });
+    })();
 
     // 等級鈕：單選（亮藍=目前等級）
     $('fl-lv').querySelectorAll('.fl-lvb').forEach((b) => b.addEventListener('click', () => {

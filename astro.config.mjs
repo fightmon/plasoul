@@ -5,4 +5,5 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
   // 靜態 build：landing / catalog / gundam pages
   // 動態（/api/*、/admin/*）由 functions/ Pages Functions 處理
+  devToolbar: { enabled: false },   // 關掉開發工具列(底部浮動的 Astro 功能鍵,會擋到 UI)
 });
