@@ -43,6 +43,8 @@
       'diffuse-tuner': { lines: 5, chargeT: 620 },
       bit: {},
       charge: {},
+      wave: {},
+      snipebeam: {},
     };
     const SNIPE_V = { final: 1, graze: 1, tuner: 1 };
     function el(parent, cls, css) { const d = document.createElement('div'); if (cls) d.className = cls; if (css) d.style.cssText = css; parent.appendChild(d); return d; }
@@ -259,6 +261,63 @@
       return { play: play };
     }
 
+    function runWave(stage, cfg) {   // 被砍掉的「波動」：一圈圈往外推的聲波／能量波（格鬥遊戲味，非鋼彈）
+      const s = setupStage(stage), fxf = s.fxf, card = s.card;
+      function play() {
+        fxf.innerHTML = '';
+        const r = stage.getBoundingClientRect(); if (!r.width) return;
+        const a = { x: r.width * 0.27, y: r.height * 0.5 };
+        const cr = card.getBoundingClientRect(); const p = { x: (cr.left - r.left) + cr.width * 0.5, y: (cr.top - r.top) + cr.height * 0.5 };
+        const n = 4;
+        for (let k = 0; k < n; k++) setTimeout(function () {
+          const w = el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;width:46px;height:74px;border:5px solid transparent;border-right-color:#7fd0ff;border-radius:50%;transform:translate(-50%,-50%);filter:drop-shadow(0 0 5px #fff)');
+          w.animate([{ transform: 'translate(-50%,-50%) scale(.45)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(.85)', opacity: .95, offset: .2 }, { transform: 'translate(calc(-50% + ' + (p.x - a.x) + 'px),-50%) scale(1.9)', opacity: 0 }], { duration: 580, easing: 'ease-out', fill: 'forwards' });
+          setTimeout(function () { try { w.remove(); } catch (e) {} }, 640);
+        }, k * 100);
+        setTimeout(function () {
+          el(fxf, '', 'position:absolute;left:' + p.x + 'px;top:' + p.y + 'px;width:36px;height:36px;border-radius:50%;border:3px solid #c9a3ff;transform:translate(-50%,-50%)').animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: .9 }, { transform: 'translate(-50%,-50%) scale(1.6)', opacity: 0 }], { duration: 420, easing: 'ease-out', fill: 'forwards' });
+          dmgNum(fxf, p.x, p.y, '-350');
+          card.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(5px,0)', offset: .3 }, { transform: 'translate(0,0)' }], { duration: 300, composite: 'add' });
+        }, n * 100 + 320);
+      }
+      play(); setInterval(play, 2400);
+      return { play: play };
+    }
+    function beamSeg(layer, x, y, len, angDeg, h) {   // 一段雷射：從(x,y)沿角度長出來→停留→消
+      const n = el(layer, '', 'position:absolute;left:' + x + 'px;top:' + y + 'px;height:' + h + 'px;margin-top:' + (-h / 2) + 'px;width:' + len + 'px;border-radius:' + h + 'px;transform-origin:left center;background:linear-gradient(90deg,#9fe8ff,#2f9bff);box-shadow:0 0 12px #2f9bff');
+      n.animate([{ transform: 'rotate(' + angDeg + 'deg) scaleX(0)', opacity: .6 }, { transform: 'rotate(' + angDeg + 'deg) scaleX(1)', opacity: 1, offset: .12 }, { transform: 'rotate(' + angDeg + 'deg) scaleX(1)', opacity: 1, offset: .72 }, { transform: 'rotate(' + angDeg + 'deg) scaleX(1)', opacity: 0 }], { duration: 760, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(function () { try { n.remove(); } catch (e) {} }, 800);
+    }
+    function heatHole(card, lx, ly) {   // 灼熱貫穿孔（白→黃→橘→紅）
+      const n = el(card, '', 'position:absolute;left:' + lx + 'px;top:' + ly + 'px;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff 15%,#ffe26a 33%,#ff8a1f 55%,#e6300f 76%,transparent 92%);box-shadow:0 0 13px #ff7a1f,0 0 5px #fff;z-index:4');
+      n.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.2)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .12 }, { opacity: 1, offset: .6 }, { opacity: 0 }], { duration: 1100, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(function () { try { n.remove(); } catch (e) {} }, 1150);
+    }
+    function runSnipeBeam(stage, cfg) {   // 狙擊雷射貫穿：入射雷射→卡上灼熱孔/白光點→卡後仍有一條貫穿雷射(關鍵差異)
+      const s = setupStage(stage), fxb = s.fxb, fxf = s.fxf, card = s.card;
+      function play() {
+        fxf.innerHTML = ''; fxb.innerHTML = '';
+        const r = stage.getBoundingClientRect(); if (!r.width) return;
+        const a = { x: r.width * 0.27, y: r.height * 0.5 };
+        const cr = card.getBoundingClientRect(); const p = { x: (cr.left - r.left) + cr.width * 0.5, y: (cr.top - r.top) + cr.height * 0.5 };
+        const ang = Math.atan2(p.y - a.y, p.x - a.x) * 180 / Math.PI, h = 14;
+        const cross = el(fxf, '', 'position:absolute;left:' + p.x + 'px;top:' + p.y + 'px;width:34px;height:34px;border-radius:50%;border:2px solid rgba(159,232,255,.85);transform:translate(-50%,-50%)');
+        cross.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(1.6)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .5 }, { opacity: .5 }], { duration: 300, fill: 'forwards' });
+        setTimeout(function () { try { cross.remove(); } catch (e) {} }, 340);
+        setTimeout(function () {
+          beamSeg(fxf, a.x, a.y, Math.hypot(p.x - a.x, p.y - a.y), ang, h);   // 入射(到卡)
+          beamSeg(fxb, p.x, p.y, (r.width - p.x) + 40, ang, h);               // 出射貫穿(卡後層→繼續穿出畫面)
+          heatHole(card, p.x - (cr.left - r.left), p.y - (cr.top - r.top));
+          hitPoint(fxf, p.x, p.y, true);
+          spark(fxf, p.x, p.y, ang + 180, 'line', 'med', '#bfefff');
+          spark(fxb, p.x + 56, p.y, ang, 'line', 'large', '#bfefff');
+          dmgNum(fxf, p.x, p.y, '-999!');
+          card.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(6px,0)', offset: .3 }, { transform: 'translate(0,0)' }], { duration: 340, composite: 'add' });
+        }, 360);
+      }
+      play(); setInterval(play, 2600);
+      return { play: play };
+    }
     function buildDiffuseTuner(root, cfg, play) {
       const ctrl = el(root, 'sd-ctrl');
       ctrl.innerHTML =
@@ -289,6 +348,8 @@
         } else if (v === 'diffuse') { runDiffuse(root, cfg); }
         else if (v === 'bit') { runBit(root, cfg); }
         else if (v === 'charge') { runCharge(root, cfg); }
+        else if (v === 'wave') { runWave(root, cfg); }
+        else if (v === 'snipebeam') { runSnipeBeam(root, cfg); }
         else { runScene(root, cfg); }
       });
     }
