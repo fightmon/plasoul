@@ -51,60 +51,45 @@ const SECONDARY_SERIES = [
         <div class="ps-hero-content">
           <span class="ps-eyebrow ps-eyebrow--hero">
             <span class="ps-eyebrow-dot" aria-hidden="true"></span>
-            每日更新 · 玩家社群實時參考價
+            🎴 創鬥卡 ARENA · 用你的模型對戰
           </span>
           <h1 class="ps-hero-title">
-            普拉犬，<span class="ps-hero-title-accent">幫你嗅出</span><br />賣家自售價
+            拍下你的模型，<br /><span class="ps-hero-title-accent">生成專屬戰鬥卡</span>
           </h1>
           <p class="ps-hero-subtitle">
-            收錄各大社群實際交易價 · HG / RG / MG 全系列<br />
-            不漏接任何一筆便宜貨
+            拍照 → 生成能力卡 → 組艦對戰<br />
+            炫耀你親手做的鋼彈／鋼普拉模型
           </p>
-          <form action="/search" method="get" class="ps-hero-search" role="search">
-            <input
-              type="search"
-              name="q"
-              class="ps-hero-search-input"
-              placeholder="輸入型號或名稱，例：RX-78-2、自由、牛鋼"
-              aria-label="搜尋鋼彈"
-              autocomplete="off"
-            />
-            <button type="submit" class="ps-hero-search-btn">
-              搜尋
-              <span class="ps-cta-arrow">→</span>
-            </button>
-          </form>
           <div class="ps-hero-ctas">
-            <a href="/search?sort=newest" class="ps-cta ps-cta-secondary">
-              最新賣家動態
+            <a href="/arena" class="ps-cta ps-cta-primary">
+              進入競技場
               <span class="ps-cta-arrow">→</span>
             </a>
           </div>
         </div>
         <div class="ps-hero-visual" aria-hidden="true">
           <div class="ps-blob">
-            <span class="ps-blob-label">鋼普拉模型示意</span>
+            <span class="ps-blob-label">戰鬥卡示意</span>
           </div>
         </div>
       </div>
     </section>
 
     {/* ============================================
-        創鬥卡主軸帶（找便宜 × 創鬥卡 雙主軸）
+        找便宜帶（比價搜尋；定位翻轉後移到遊戲 hero 下方）
         ============================================ */}
-    <section class="ps-game-band" aria-label="創鬥卡">
+    <section class="ps-game-band" aria-label="找便宜">
       <div class="ps-game-bg" aria-hidden="true"></div>
       <div class="ps-game-inner">
         <div class="ps-game-content">
-          <span class="ps-game-eyebrow">🎴 NEW · 創鬥卡 ARENA</span>
-          <h2 class="ps-game-title">拍下你的鋼彈，<br />生成<span class="ps-game-accent">專屬戰鬥卡</span></h2>
-          <p class="ps-game-sub">拍照 → AI 生成能力卡 → 組艦對戰、炫耀你親手做的鋼彈</p>
-          <a href="/arena" class="ps-game-cta">進入競技場 <span class="ps-cta-arrow">→</span></a>
-        </div>
-        <div class="ps-game-cards" aria-hidden="true">
-          <div class="ps-gc ps-gc-1">SSR</div>
-          <div class="ps-gc ps-gc-2">SR</div>
-          <div class="ps-gc ps-gc-3">R</div>
+          <span class="ps-game-eyebrow">🐶 每日更新 · 玩家社群實時參考價</span>
+          <h2 class="ps-game-title">普拉犬，幫你<span class="ps-game-accent">嗅出賣家自售價</span></h2>
+          <p class="ps-game-sub">收錄各大社群實際交易價 · HG / RG / MG 全系列，不漏接任何一筆便宜貨</p>
+          <form action="/search" method="get" class="ps-hero-search" role="search">
+            <input type="search" name="q" class="ps-hero-search-input" placeholder="輸入型號或名稱，例：RX-78-2、自由、牛鋼" aria-label="搜尋鋼彈" autocomplete="off" />
+            <button type="submit" class="ps-hero-search-btn">搜尋 <span class="ps-cta-arrow">→</span></button>
+          </form>
+          <a href="/search?sort=newest" class="ps-cta ps-cta-secondary" style="margin-top:14px;">最新賣家動態 <span class="ps-cta-arrow">→</span></a>
         </div>
       </div>
     </section>

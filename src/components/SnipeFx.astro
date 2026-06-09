@@ -39,12 +39,17 @@
       final: { style: 'line', exitP: 55, back: 'large', front: 'small', pierce: true, dir: 'in' },
       graze: { style: 'dot', exitP: 0, back: 'none', front: 'med', pierce: false, dir: 'out' },
       tuner: { style: 'line', exitP: 55, back: 'large', front: 'small', pierce: true, dir: 'in' },
+      diffuse: { lines: 5, chargeT: 620 },
+      'diffuse-tuner': { lines: 5, chargeT: 620 },
+      bit: {},
+      charge: {},
     };
+    const SNIPE_V = { final: 1, graze: 1, tuner: 1 };
     function el(parent, cls, css) { const d = document.createElement('div'); if (cls) d.className = cls; if (css) d.style.cssText = css; parent.appendChild(d); return d; }
-    function spark(layer, x, y, dir, style, sizeKey, color) {
-      const s = SIZES[sizeKey] || [0, 0], count = s[0], mag = s[1], col = color || '#ffb060';
+    function spark(layer, x, y, dir, style, sizeKey, color, spreadDeg) {
+      const s = SIZES[sizeKey] || [0, 0], count = s[0], mag = s[1], col = color || '#ffb060', sp = spreadDeg || 60;
       for (let k = 0; k < count; k++) {
-        const a = (dir + (Math.random() * 60 - 30)) * Math.PI / 180, deg = a * 180 / Math.PI;
+        const a = (dir + (Math.random() * sp - sp / 2)) * Math.PI / 180, deg = a * 180 / Math.PI;
         const dist = (20 + Math.random() * 34) * mag, dx = Math.cos(a) * dist, dy = Math.sin(a) * dist;
         if (style === 'line') {
           const len = 7 + Math.random() * 8, th = 2 + Math.random() * 1.4;
@@ -115,6 +120,157 @@
       ctrl.querySelectorAll('.sd-seg button').forEach(function (b) { b.addEventListener('click', function () { const key = b.closest('.sd-seg').getAttribute('data-key'); cfg[key] = b.getAttribute('data-v'); sync(); play(); }); });
       ctrl.querySelector('.sd-replay').addEventListener('click', play);
     }
+    // ---- 射擊系（擴散 / 子機光繪 / 蓄力）共用 ----
+    const SVGNS = 'http://www.w3.org/2000/svg';
+    function setupStage(stage) {
+      stage.classList.add('sd-stage'); stage.innerHTML = '';
+      el(stage, 'sd-stars');
+      const fxb = el(stage, 'sd-fxb');
+      el(stage, 'sd-atk').textContent = '🤖';
+      const card = el(stage, 'sd-card'); el(card, 'sd-art').textContent = '👾';
+      const fxf = el(stage, 'sd-fxf');
+      return { fxb: fxb, card: card, fxf: fxf };
+    }
+    function hitPoint(layer, x, y, big) {   // 白光點（子機/雷射/擴散命中那顆）
+      const s = big ? 17 : 11;
+      const n = el(layer, '', 'position:absolute;left:' + x + 'px;top:' + y + 'px;width:' + s + 'px;height:' + s + 'px;border-radius:50%;background:#fff;box-shadow:0 0 9px #fff,0 0 16px #fff;transform:translate(-50%,-50%) scale(.3);z-index:6');
+      n.animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(.2)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1.1)', offset: .35 }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.5)' }], { duration: 560, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(function () { try { n.remove(); } catch (e) {} }, 600);
+    }
+    function dmgNum(layer, x, y, txt) {
+      const dn = el(layer, 'sd-dmg', 'position:absolute;left:' + x + 'px;top:' + y + 'px'); dn.textContent = txt;
+      dn.animate([{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 }, { transform: 'translate(-50%,-92%) scale(1.1)', opacity: 1, offset: .3 }, { transform: 'translate(-50%,-150%) scale(1)', opacity: 0 }], { duration: 950, easing: 'ease-out', fill: 'forwards' });
+    }
+    function trailPath(svg, d, dur, color) {   // 光繪軌跡：沿曲線逐段描出→殘留→淡出
+      const p = document.createElementNS(SVGNS, 'path');
+      p.setAttribute('d', d); p.setAttribute('fill', 'none'); p.setAttribute('stroke', color); p.setAttribute('stroke-width', '1.6'); p.setAttribute('stroke-linecap', 'round');
+      p.style.filter = 'drop-shadow(0 0 5px ' + color + ') drop-shadow(0 0 2px #fff)'; svg.appendChild(p);
+      const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+      p.animate([{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: dur, easing: 'ease-in-out', fill: 'forwards' });
+      p.animate([{ opacity: 1, offset: 0 }, { opacity: 1, offset: dur / (dur + 420) }, { opacity: 0, offset: 1 }], { duration: dur + 420, fill: 'forwards' });
+      setTimeout(function () { try { p.remove(); } catch (e) {} }, dur + 470);
+    }
+
+    function runDiffuse(stage, cfg) {
+      const s = setupStage(stage), fxf = s.fxf, card = s.card;
+      function play() {
+        fxf.innerHTML = '';
+        const r = stage.getBoundingClientRect(); if (!r.width) return;
+        const a = { x: r.width * 0.27, y: r.height * 0.5 };
+        const cr = card.getBoundingClientRect(); const cx0 = cr.left - r.left, cy0 = cr.top - r.top;
+        const chargeT = cfg.chargeT || 620;
+        // 蓄力：中心白點漸大
+        const dot = el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff 42%,rgba(255,255,255,.4) 70%,transparent 85%);box-shadow:0 0 12px #fff');
+        dot.animate([{ transform: 'translate(-50%,-50%) scale(.15)', opacity: .5 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }], { duration: chargeT, easing: 'ease-in', fill: 'forwards' });
+        setTimeout(function () { try { dot.remove(); } catch (e) {} }, chargeT + 240);
+        // 蓄力：顆粒由外往內集中
+        const waves = 6, travel = 300, span = Math.max(0, chargeT - travel);
+        for (let w = 0; w < waves; w++) setTimeout(function () {
+          for (let k = 0; k < 4; k++) {
+            const ang = Math.random() * Math.PI * 2, rad = 38 + Math.random() * 22;
+            const sx = a.x + Math.cos(ang) * rad, sy = a.y + Math.sin(ang) * rad, sz = 3 + Math.random() * 3;
+            const pp = el(fxf, '', 'position:absolute;left:' + sx + 'px;top:' + sy + 'px;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;background:#bfefff;box-shadow:0 0 6px #9fe8ff;transform:translate(-50%,-50%)');
+            pp.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .3 }, { transform: 'translate(calc(-50% + ' + (a.x - sx) + 'px),calc(-50% + ' + (a.y - sy) + 'px)) scale(.2)', opacity: .9 }], { duration: travel, easing: 'ease-in', fill: 'forwards' });
+            setTimeout(function () { try { pp.remove(); } catch (e) {} }, travel + 60);
+          }
+        }, waves > 1 ? span * w / (waves - 1) : 0);
+        // 蓄滿→發射
+        setTimeout(function () {
+          el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;width:22px;height:22px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,#9fe8ff 55%,transparent 74%)').animate([{ opacity: .95, transform: 'translate(-50%,-50%) scale(.5)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.4)' }], { duration: 260, fill: 'forwards' });
+          spark(fxf, a.x, a.y, 0, 'line', 'large', '#7fd4ff', 150);   // 發射火光線條（上下大幅散佈）
+          const N = cfg.lines || 5;
+          for (let i = 0; i < N; i++) {
+            const tx = cx0 + cr.width * (0.2 + Math.random() * 0.6), ty = cy0 + cr.height * (0.2 + Math.random() * 0.6);
+            const ang = Math.atan2(ty - a.y, tx - a.x) * 180 / Math.PI;
+            const st = el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;width:26px;height:3px;border-radius:3px;transform:translate(-50%,-50%) rotate(' + ang + 'deg);background:linear-gradient(90deg,transparent,rgba(159,232,255,.5) 55%,#2f9bff);box-shadow:0 0 8px #2f9bff');
+            st.animate([{ transform: 'translate(-50%,-50%) rotate(' + ang + 'deg)' }, { transform: 'translate(calc(-50% + ' + (tx - a.x) + 'px),calc(-50% + ' + (ty - a.y) + 'px)) rotate(' + ang + 'deg)' }], { duration: 230 + Math.random() * 70, easing: 'linear' }).onfinish = (function (tx, ty, ang, st) { return function () { st.remove(); hitPoint(fxf, tx, ty); spark(fxf, tx, ty, ang, 'dot', 'small', '#bfefff'); }; })(tx, ty, ang, st);
+          }
+          dmgNum(fxf, cx0 + cr.width * 0.5, cy0 + cr.height * 0.42, '-350');
+          card.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(5px,0)', offset: .3 }, { transform: 'translate(0,0)' }], { duration: 300, easing: 'ease-out', composite: 'add' });
+        }, chargeT + 80);
+      }
+      play(); setInterval(play, (cfg.chargeT || 620) + 2200);
+      return { play: play };
+    }
+
+    function runBit(stage, cfg) {
+      const s = setupStage(stage), fxf = s.fxf, card = s.card;
+      const svg = document.createElementNS(SVGNS, 'svg');
+      svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible'; stage.appendChild(svg);
+      function play() {
+        fxf.innerHTML = ''; svg.innerHTML = '';
+        const r = stage.getBoundingClientRect(); if (!r.width) return;
+        svg.setAttribute('viewBox', '0 0 ' + r.width + ' ' + r.height);
+        const a = { x: r.width * 0.27, y: r.height * 0.5 }; const cr = card.getBoundingClientRect();
+        const tx = (cr.left - r.left) + cr.width * 0.42, ty = (cr.top - r.top) + cr.height * 0.45;
+        const c1 = { x: a.x + r.width * 0.14, y: a.y - r.height * 0.32 }, c2 = { x: (a.x + tx) / 2, y: ty - r.height * 0.3 };
+        const d = 'M ' + a.x + ' ' + a.y + ' C ' + c1.x + ' ' + c1.y + ' ' + c2.x + ' ' + c2.y + ' ' + tx + ' ' + ty;
+        trailPath(svg, d, 640, '#8fe0ff');
+        const pod = el(fxf, '', 'position:absolute;left:0;top:0;width:18px;height:13px;background:linear-gradient(90deg,#5bc8ff,#eafaff);box-shadow:0 0 12px #6fd3ff;clip-path:polygon(100% 50%,0 0,0 100%);z-index:6');
+        pod.style.offsetPath = "path('" + d + "')"; pod.style.offsetRotate = 'auto'; pod.style.offsetDistance = '0%';
+        pod.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: 640, easing: 'ease-in-out', fill: 'forwards' }).onfinish = function () {
+          el(fxf, '', 'position:absolute;left:' + tx + 'px;top:' + ty + 'px;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,#9fe8ff 55%,transparent 74%)').animate([{ opacity: .9, transform: 'translate(-50%,-50%) scale(.5)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.3)' }], { duration: 240, fill: 'forwards' });
+          hitPoint(fxf, tx, ty); spark(fxf, tx, ty, 0, 'dot', 'small', '#bfefff');
+          dmgNum(fxf, tx, ty, '-350');
+          card.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(5px,0)', offset: .3 }, { transform: 'translate(0,0)' }], { duration: 300, composite: 'add' });
+          // 飛回
+          const bp = { x: a.x, y: a.y }, bc = { x: (tx + bp.x) / 2, y: Math.min(ty, bp.y) - r.height * 0.32 };
+          const d2 = 'M ' + tx + ' ' + ty + ' C ' + bc.x + ' ' + bc.y + ' ' + bc.x + ' ' + bc.y + ' ' + bp.x + ' ' + bp.y;
+          setTimeout(function () {
+            trailPath(svg, d2, 440, '#8fe0ff');
+            pod.style.offsetPath = "path('" + d2 + "')"; pod.style.offsetDistance = '0%';
+            pod.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: 440, easing: 'ease-in-out', fill: 'forwards' }).onfinish = function () { try { pod.remove(); } catch (e) {} };
+          }, 260);
+        };
+      }
+      play(); setInterval(play, 2900);
+      return { play: play };
+    }
+
+    function runCharge(stage, cfg) {
+      const s = setupStage(stage), fxf = s.fxf, card = s.card;
+      function play() {
+        fxf.innerHTML = '';
+        const r = stage.getBoundingClientRect(); if (!r.width) return;
+        const a = { x: r.width * 0.27, y: r.height * 0.5 }; const cr = card.getBoundingClientRect();
+        const p = { x: (cr.left - r.left) + cr.width * 0.5, y: (cr.top - r.top) + cr.height * 0.5 };
+        for (let k = 0; k < 3; k++) setTimeout(function () {
+          const c = el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;width:40px;height:40px;border-radius:50%;border:3px solid #9fe8ff;box-shadow:0 0 10px #9fe8ff;transform:translate(-50%,-50%)');
+          c.animate([{ transform: 'translate(-50%,-50%) scale(1.8)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.8)', opacity: .85, offset: .18 }, { transform: 'translate(-50%,-50%) scale(.25)', opacity: 0 }], { duration: 440, easing: 'ease-in', fill: 'forwards' });
+          setTimeout(function () { try { c.remove(); } catch (e) {} }, 460);
+        }, k * 120);
+        setTimeout(function () {
+          const len = Math.hypot(p.x - a.x, p.y - a.y) + 26, ang = Math.atan2(p.y - a.y, p.x - a.x) * 180 / Math.PI, h = 22;
+          const beam = el(fxf, '', 'position:absolute;left:' + a.x + 'px;top:' + a.y + 'px;height:' + h + 'px;margin-top:' + (-h / 2) + 'px;width:' + len + 'px;border-radius:' + h + 'px;transform-origin:left center;background:linear-gradient(90deg,#9fe8ff,#2f9bff);box-shadow:0 0 18px #2f9bff');
+          beam.animate([
+            { transform: 'rotate(' + ang + 'deg) scaleY(1)', opacity: 0 },
+            { transform: 'rotate(' + ang + 'deg) scaleY(1)', opacity: 1, offset: .1 },
+            { transform: 'rotate(' + ang + 'deg) scaleY(1)', opacity: 1, offset: .78 },
+            { transform: 'rotate(' + ang + 'deg) scaleY(.14)', opacity: 1, offset: .92 },
+            { transform: 'rotate(' + ang + 'deg) scaleY(.14)', opacity: 0 },
+          ], { duration: 780, easing: 'ease-out', fill: 'forwards' });
+          setTimeout(function () { try { beam.remove(); } catch (e) {} }, 840);
+          el(fxf, '', 'position:absolute;left:' + p.x + 'px;top:' + p.y + 'px;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,#9fe8ff 50%,transparent 72%)').animate([{ opacity: .9, transform: 'translate(-50%,-50%) scale(.4)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.5)' }], { duration: 420, easing: 'ease-out', fill: 'forwards' });
+          spark(fxf, p.x, p.y, ang, 'line', 'med', '#9fe8ff');
+          dmgNum(fxf, p.x, p.y, '-999!');
+        }, 420);
+      }
+      play(); setInterval(play, 2600);
+      return { play: play };
+    }
+
+    function buildDiffuseTuner(root, cfg, play) {
+      const ctrl = el(root, 'sd-ctrl');
+      ctrl.innerHTML =
+        '<div class="sd-row"><label>線數</label><input type="range" class="sd-range" data-k="lines" min="3" max="9" value="' + cfg.lines + '"><span class="sd-val">' + cfg.lines + '</span></div>' +
+        '<div class="sd-row"><label>蓄力</label><input type="range" class="sd-range" data-k="chargeT" min="300" max="1100" step="20" value="' + cfg.chargeT + '"><span class="sd-val">' + cfg.chargeT + 'ms</span></div>' +
+        '<button class="sd-replay">▶ 重播</button>';
+      ctrl.querySelectorAll('.sd-range').forEach(function (rg) {
+        rg.addEventListener('input', function () { const k = rg.getAttribute('data-k'); cfg[k] = +rg.value; rg.nextElementSibling.textContent = k === 'chargeT' ? rg.value + 'ms' : rg.value; play(); });
+      });
+      ctrl.querySelector('.sd-replay').addEventListener('click', play);
+    }
+
     function init() {
       document.querySelectorAll('.snipe-demo').forEach(function (root) {
         if (root.dataset.sdInit) return; root.dataset.sdInit = '1';
@@ -125,9 +281,15 @@
           const stage = el(root, 'sd-stage'); if (root.getAttribute('data-size')) stage.setAttribute('data-size', root.getAttribute('data-size'));
           const api = runScene(stage, cfg);
           buildTuner(root, cfg, api.play);
-        } else {
-          runScene(root, cfg);
-        }
+        } else if (v === 'diffuse-tuner') {
+          root.classList.add('sd-tuner');
+          const stage = el(root, 'sd-stage'); if (root.getAttribute('data-size')) stage.setAttribute('data-size', root.getAttribute('data-size'));
+          const api = runDiffuse(stage, cfg);
+          buildDiffuseTuner(root, cfg, api.play);
+        } else if (v === 'diffuse') { runDiffuse(root, cfg); }
+        else if (v === 'bit') { runBit(root, cfg); }
+        else if (v === 'charge') { runCharge(root, cfg); }
+        else { runScene(root, cfg); }
       });
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();

@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "--port", "4399"],
       "port": 4399
+    },
+    {
+      "name": "ninja-block",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "http-server", "C:\\Users\\USER\\Desktop\\case\\20260609_忍者方塊\\001_website", "-p", "8137", "-c-1"],
+      "port": 8137
     }
   ]
 }
