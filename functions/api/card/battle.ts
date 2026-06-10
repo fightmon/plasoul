@@ -44,6 +44,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   const opponentId = typeof body?.opponent_id === 'string' ? body.opponent_id : null;
   let foeName = pick(GHOST_TEAMS), foeBase = SHIP_HP, foeScore = p?.rank_score || 0;
   let foeTeam: any[] = [];
+  let foeGhostOwner: string | null = null;   // 打幽靈快照時記下來源玩家（好友相遇紀錄用）
 
   if (ghostId) {
     // 凍結快照：對手之後改牌不影響此戰；數值即快照當下正規化四圍 → 不碰結算公式。
@@ -56,6 +57,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       foeName = gr.display_name || '謎之對手';
       foeBase = gr.ship_base_hp || SHIP_HP;
       foeScore = gr.rank_score || 0;
+      foeGhostOwner = gr.user_id || null;
     }
   } else if (opponentId && opponentId !== auth.sub) {
     const op = await context.env.DB.prepare(
@@ -109,6 +111,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
   // 結算後 rank_score/tier 已寫入 DB → 重凍自己防守快照吃到新分（決策案1）；失敗不擋回應。
   try { await buildGhostSnapshot(context.env.DB, auth.sub, now); } catch {}
+
+  // M4：若打到的是好友的防守幽靈 → 記一筆相遇（async 相遇通知用）；純通知、不影響結算。
+  if (foeGhostOwner) {
+    try {
+      const fr = await context.env.DB.prepare(
+        `SELECT 1 AS x FROM arena_friends WHERE user_id = ? AND friend_id = ? LIMIT 1`
+      ).bind(auth.sub, foeGhostOwner).first<any>();
+      if (fr) {
+        await context.env.DB.prepare(
+          `INSERT INTO arena_encounters (id, user_id, ghost_id, ghost_owner, is_friend, win, created_at) VALUES (?, ?, ?, ?, 1, ?, ?)`
+        ).bind(`enc_${crypto.randomUUID()}`, auth.sub, ghostId, foeGhostOwner, sim.win ? 1 : 0, now).run();
+      }
+    } catch {}
+  }
 
   return new Response(JSON.stringify({
     ok: true, win: sim.win, log: sim.log,
