@@ -227,6 +227,10 @@ import Layout from '../layouts/Layout.astro';
   .ar-mc-r { position:absolute; top:3px; right:3px; font-size:9px; font-weight:800; padding:0 4px; border-radius:5px; color:#101010; }
   .ar-mc-pow { font-size:10px; color:var(--ar-dim); margin-top:3px; }
   .ar-opp-go { width:100%; }
+  /* 資訊霧：藏牌組時的霧化佔位 */
+  .ar-mc-fog .ar-mc-img { color:var(--ar-dim); background:repeating-linear-gradient(45deg,var(--ar-bg),var(--ar-bg) 6px,var(--ar-card2) 6px,var(--ar-card2) 12px); opacity:.7; }
+  .ar-fog-hint { text-align:center; font-size:12px; color:var(--ar-dim); margin:0 16px 10px; }
+  .ar-opp-friend { border-color:#ffd23d; box-shadow:0 0 0 1px #ffd23d33 inset; }
 
   /* fab */
   .ar-fab { position:fixed; left:50%; transform:translateX(-50%); bottom:112px; z-index:30; padding:14px 30px; border:none; border-radius:999px; background:var(--ar-red); color:#fff; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 8px 24px rgba(238,34,51,.45); }
@@ -625,7 +629,7 @@ import Layout from '../layouts/Layout.astro';
     el.innerHTML = '<div class="ar-bt-loading"><div class="ar-spin"></div><div>搜尋對手中…</div></div>';
     el.removeAttribute('hidden');
     try {
-      const r = await fetch('/api/card/ladder', { credentials: 'include' });
+      const r = await fetch('/api/card/ghost/match', { credentials: 'include' });
       const d = await r.json();
       if (!d.ok) { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('對手載入失敗'); return; }
       ladderCache = d; renderMatch(d);
@@ -641,34 +645,39 @@ import Layout from '../layouts/Layout.astro';
     el.querySelectorAll('.ar-cz-chip').forEach((b) => b.addEventListener('click', () => { const k = (b as HTMLElement).dataset.tk; if (!k) return; setTone(k); el.setAttribute('hidden', ''); el.innerHTML = ''; renderFleet(); toast('語氣已設定 ✅'); }));
   }
   function renderMatch(d: any) {
-    const cand = (d.candidates || []).map((o: any, i: number) => {
-      const fleet = (o.fleet || []).map((c: any) => `<div class="ar-mc"><div class="ar-mc-img">${c.photo ? `<img src="${esc(c.photo)}"/>` : '<span>👾</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span><span class="ar-mc-r r-${esc(c.rarity)}">${esc(c.rarity)}</span></div></div>`).join('');
-      return `<div class="ar-opp" data-oid="${esc(o.user_id)}">
-        <div class="ar-opp-head"><span class="ar-opp-name">${esc(o.name)}</span><span class="ar-opp-score">${o.rank_score} 分</span></div>
+    const cand = (d.candidates || []).map((o: any) => {
+      // 資訊霧：open 回 fleet 陣列照現狀顯示；hidden_*（fleet=null）顯示霧化佔位，不洩牌組
+      const fleet = o.fleet
+        ? o.fleet.map((c: any) => `<div class="ar-mc"><div class="ar-mc-img">${c.photo ? `<img src="${esc(c.photo)}"/>` : '<span>👾</span>'}<span class="ar-tbadge ${TYPE[c.type]?.c || ''}">${TYPE[c.type]?.t || '?'}</span><span class="ar-mc-r r-${esc(c.rarity)}">${esc(c.rarity)}</span></div></div>`).join('')
+        : Array.from({ length: o.card_count || 3 }).map(() => `<div class="ar-mc ar-mc-fog"><div class="ar-mc-img"><span>❔</span></div></div>`).join('');
+      return `<div class="ar-opp${o.is_friend ? ' ar-opp-friend' : ''}" data-gid="${esc(o.ghost_id)}">
+        <div class="ar-opp-head"><span class="ar-opp-name">${o.is_friend ? '🤝 ' : ''}${esc(o.name)}</span><span class="ar-opp-score">${o.rank_score} 分</span></div>
         <div class="ar-opp-fleet">${fleet}</div>
-        <button class="ar-sortie ar-opp-go" data-oid="${esc(o.user_id)}">⚔️ 挑戰</button>
+        <button class="ar-sortie ar-opp-go" data-gid="${esc(o.ghost_id)}">⚔️ 挑戰</button>
       </div>`;
     }).join('');
-    const myRank = d.me.rank ? `#${d.me.rank}` : '未上榜';
+    const FOG_HINT: any = { open: '🔓 可見對方艦隊（低階優勢）', hidden_fleet: '🌫️ 米諾夫斯基粒子：選敵看不到陣容，進場才知', hidden_type: '🌫️ 高濃度粒子：連屬性都成謎，純手動讀' };
     $('ar-match')!.innerHTML = `<div class="ar-modal-box ar-match-box">
       <div class="ar-modal-head"><b>⚔️ 選擇對手</b><button class="ar-x" id="ar-match-x">✕</button></div>
-      <div class="ar-match-me">我的名次 <b>${myRank}</b> · ${d.me.rank_score} 分</div>
+      <div class="ar-match-me">我的牌位 <b>${esc(d.me.tier || '?')}</b> · ${d.me.rank_score} 分</div>
+      <div class="ar-fog-hint">${FOG_HINT[d.fog] || ''}</div>
       <div class="ar-opps">${cand || '<div class="ar-empty-hangar">目前找不到對手</div>'}</div>
       <button class="ar-edit" id="ar-match-refresh" style="width:100%;margin-top:4px">🔄 換一批對手</button>
     </div>`;
     $('ar-match-x')!.addEventListener('click', closeMatch);
     $('ar-match-refresh')!.addEventListener('click', openMatch);
-    $('ar-match')!.querySelectorAll('.ar-opp-go').forEach((b) => b.addEventListener('click', () => { const oid = (b as HTMLElement).dataset.oid!; closeMatch(); doBattle(oid); }));
+    $('ar-match')!.querySelectorAll('.ar-opp-go').forEach((b) => b.addEventListener('click', () => { const gid = (b as HTMLElement).dataset.gid!; closeMatch(); doBattle({ ghost_id: gid }); }));
   }
 
   // 戰鬥
-  async function doBattle(opponentId?: string) {
+  async function doBattle(opt?: { ghost_id?: string; opponent_id?: string }) {
     const el = $('ar-battle')!;
     el.innerHTML = '<div class="ar-bt-loading"><div class="ar-spin"></div><div>出擊中…</div></div>';
     el.removeAttribute('hidden');
     let d: any = null;
     try {
-      const r = await fetch('/api/card/battle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(opponentId ? { opponent_id: opponentId } : {}) });
+      const body = opt?.ghost_id ? { ghost_id: opt.ghost_id } : opt?.opponent_id ? { opponent_id: opt.opponent_id } : {};
+      const r = await fetch('/api/card/battle', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(body) });
       d = await r.json(); if (!r.ok || !d.ok) { el.setAttribute('hidden', ''); el.innerHTML = ''; toast((d && d.message) || '出擊失敗'); return; }
     } catch { el.setAttribute('hidden', ''); el.innerHTML = ''; toast('網路錯誤'); return; }
     animateBattle(d);

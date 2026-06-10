@@ -196,5 +196,17 @@ ok(bf3.total === 6 && bf3.built === 6, `force：整池重刷 6 名（實得 buil
 const activePerUser = db.prepare(`SELECT user_id, COUNT(*) AS n FROM arena_ghosts WHERE is_active = 1 GROUP BY user_id HAVING n > 1`).all();
 ok(activePerUser.length === 0, '每位玩家仍僅一隻 active 幽靈（無重複）');
 
+console.log('\n[T8] 結算後重凍時序（階段1B）：先寫新分→再重凍→快照吃到新分/新階');
+// 模擬 battle.ts 結算：gl 230(tier1) → 贏到 420(tier2)，先 UPDATE players（如 battle.ts 行105），再 buildSnapshot
+db.prepare(`UPDATE arena_players SET rank_score = 420 WHERE user_id = 'gl'`).run();
+buildSnapshot('gl', NOW + 20000);
+const glGhost = db.prepare(`SELECT rank_score, tier_idx FROM arena_ghosts WHERE user_id = 'gl' AND is_active = 1`).get();
+ok(glGhost.rank_score === 420, `快照吃到結算後新分 420（實得 ${glGhost.rank_score}）`);
+ok(glGhost.tier_idx === 2, `快照 tier_idx 隨新分更新為 2（實得 ${glGhost.tier_idx}）`);
+const glActive = db.prepare(`SELECT COUNT(*) AS n FROM arena_ghosts WHERE user_id = 'gl' AND is_active = 1`).get().n;
+ok(glActive === 1, `gl 仍僅一隻 active（舊段快照已退役，實得 ${glActive}）`);
+const glPlayerTier = db.prepare(`SELECT tier_idx FROM arena_players WHERE user_id = 'gl'`).get().tier_idx;
+ok(glPlayerTier === 2, `arena_players.tier_idx 快取回寫為 2（實得 ${glPlayerTier}）`);
+
 console.log(`\n===== ${pass} passed, ${fail} failed =====`);
 process.exit(fail ? 1 : 0);

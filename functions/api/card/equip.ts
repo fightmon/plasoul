@@ -4,6 +4,7 @@
  * MVP：1 艘戰艦，出戰即防守（幽靈）。
  */
 import { requireUser } from '../../_lib/auth';
+import { buildGhostSnapshot } from '../../_lib/arena-ghost';
 
 export interface Env { DB: D1Database; JWT_SECRET: string; }
 
@@ -30,6 +31,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     `INSERT INTO arena_players (user_id, ship_card_ids, created_at, updated_at) VALUES (?, ?, ?, ?)
      ON CONFLICT(user_id) DO UPDATE SET ship_card_ids = excluded.ship_card_ids, updated_at = excluded.updated_at`
   ).bind(auth.sub, JSON.stringify(ids), now, now).run();
+
+  // 編成改動後立即重凍防守幽靈快照（決策案1：玩家驅動重灌）；失敗不擋存檔。
+  try { await buildGhostSnapshot(context.env.DB, auth.sub, now); } catch {}
 
   return new Response(JSON.stringify({ ok: true, ship_card_ids: ids }), { status: 200, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
 };

@@ -8,7 +8,7 @@
  *    toFoe:{dmg,crit,block,dodge}|null, toMe:{...}|null, ult:{side,name,dmg}|null, myHP, foeHP }
  */
 import { requireUser } from '../../_lib/auth';
-import { parseGhostCards } from '../../_lib/arena-ghost';
+import { parseGhostCards, buildGhostSnapshot } from '../../_lib/arena-ghost';
 
 export interface Env { DB: D1Database; JWT_SECRET: string; }
 
@@ -106,6 +106,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   await context.env.DB.prepare(
     `UPDATE arena_cards SET battles = battles + 1, wins = wins + ? WHERE user_id = ? AND id IN (${ph})`
   ).bind(sim.win ? 1 : 0, auth.sub, ...ids).run();
+
+  // 結算後 rank_score/tier 已寫入 DB → 重凍自己防守快照吃到新分（決策案1）；失敗不擋回應。
+  try { await buildGhostSnapshot(context.env.DB, auth.sub, now); } catch {}
 
   return new Response(JSON.stringify({
     ok: true, win: sim.win, log: sim.log,
