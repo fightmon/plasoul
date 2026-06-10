@@ -27,7 +27,7 @@ function tierIdx(s) { let i = 0; for (let k = 0; k < TIER_MIN.length; k++) if (s
 function fogLevel(idx) { if (idx <= 3) return 'open'; if (idx <= 5) return 'hidden_fleet'; return 'hidden_type'; }
 
 // ---- 測試結果累計 ----
-let pass = 0, fail = 0;
+let pass = 0, fail = 0, seq = 0;
 function ok(cond, msg) { if (cond) { pass++; console.log(`  ✓ ${msg}`); } else { fail++; console.log(`  ✗ ${msg}`); } }
 
 // ---- 建庫 + 套 schema ----
@@ -96,7 +96,7 @@ function buildSnapshot(userId, now) {
   const optIn = !!prow.region_opt_in;
   const country = optIn ? (prow.region_country ?? null) : null;
   const city = optIn ? (prow.region_city ?? null) : null;
-  const ghostId = `ghost_${userId}_${now}`;
+  const ghostId = `ghost_${userId}_${++seq}`;   // harness：單調計數器保證唯一（產品碼用 crypto.randomUUID）
   db.prepare(`UPDATE arena_ghosts SET is_active = 0 WHERE user_id = ? AND is_active = 1`).run(userId);
   db.prepare(
     `INSERT INTO arena_ghosts (id, user_id, display_name, cards_json, ship_base_hp, rank_score, tier_idx,
@@ -173,6 +173,28 @@ const gid = db.prepare(`SELECT id FROM arena_ghosts WHERE user_id = 'fr' AND is_
 const gr = db.prepare(`SELECT user_id, display_name, cards_json, ship_base_hp, rank_score FROM arena_ghosts WHERE id = ? AND is_active = 1`).get(gid);
 const gcards = JSON.parse(gr.cards_json);
 ok(gr.display_name === '阿福' && gcards.length === 1 && gcards[0].type === 'melee', 'ghost 快照可載入（fr/阿福/melee）');
+
+// ===== admin backfill 的實際 SQL（鏡像 functions/api/admin/arena/backfill-ghosts.ts）=====
+function runBackfill(force) {
+  const where = force
+    ? `ship_card_ids IS NOT NULL AND ship_card_ids != '[]'`
+    : `ship_card_ids IS NOT NULL AND ship_card_ids != '[]' AND active_ghost_id IS NULL`;
+  const rows = db.prepare(`SELECT user_id FROM arena_players WHERE ${where}`).all();
+  let built = 0, skipped = 0;
+  for (const r of rows) { const s = buildSnapshot(r.user_id, NOW + 9000); s ? built++ : skipped++; }
+  return { total: rows.length, built, skipped };
+}
+
+console.log('\n[T7] backfill：冷啟動灌池（非 force 跳過已灌、force 整池重刷）');
+db.exec(`DELETE FROM arena_ghosts; UPDATE arena_players SET active_ghost_id = NULL;`);
+const bf1 = runBackfill(false);
+ok(bf1.total === 6 && bf1.built === 6, `首刷：6 名全灌（實得 total=${bf1.total} built=${bf1.built}）`);
+const bf2 = runBackfill(false);
+ok(bf2.total === 0 && bf2.built === 0, `重跑非 force：已灌者跳過，built=0（實得 total=${bf2.total}）`);
+const bf3 = runBackfill(true);
+ok(bf3.total === 6 && bf3.built === 6, `force：整池重刷 6 名（實得 built=${bf3.built}）`);
+const activePerUser = db.prepare(`SELECT user_id, COUNT(*) AS n FROM arena_ghosts WHERE is_active = 1 GROUP BY user_id HAVING n > 1`).all();
+ok(activePerUser.length === 0, '每位玩家仍僅一隻 active 幽靈（無重複）');
 
 console.log(`\n===== ${pass} passed, ${fail} failed =====`);
 process.exit(fail ? 1 : 0);
