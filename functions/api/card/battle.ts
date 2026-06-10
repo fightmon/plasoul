@@ -8,6 +8,7 @@
  *    toFoe:{dmg,crit,block,dodge}|null, toMe:{...}|null, ult:{side,name,dmg}|null, myHP, foeHP }
  */
 import { requireUser } from '../../_lib/auth';
+import { parseGhostCards } from '../../_lib/arena-ghost';
 
 export interface Env { DB: D1Database; JWT_SECRET: string; }
 
@@ -37,12 +38,26 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   if (!rows.length) return new Response(JSON.stringify({ ok: false, message: '出戰卡不存在' }), { status: 400, headers: hdr() });
   const myTeam = rows.map((c) => ({ ...c, photo: c.photo_r2_key ? `/api/screenshot/${c.photo_r2_key}` : null }));
 
-  // 對手：天梯指定的真人防守艦隊；否則隨機幽靈
+  // 對手來源（決策 4）：優先打幽靈快照(ghost_id)；opponent_id 即時牌組留作相容層；都沒有則隨機幽靈。
   let body: any = {}; try { body = await context.request.json(); } catch {}
+  const ghostId = typeof body?.ghost_id === 'string' ? body.ghost_id : null;
   const opponentId = typeof body?.opponent_id === 'string' ? body.opponent_id : null;
   let foeName = pick(GHOST_TEAMS), foeBase = SHIP_HP, foeScore = p?.rank_score || 0;
   let foeTeam: any[] = [];
-  if (opponentId && opponentId !== auth.sub) {
+
+  if (ghostId) {
+    // 凍結快照：對手之後改牌不影響此戰；數值即快照當下正規化四圍 → 不碰結算公式。
+    const gr = await context.env.DB.prepare(
+      `SELECT user_id, display_name, cards_json, ship_base_hp, rank_score FROM arena_ghosts WHERE id = ? AND is_active = 1`
+    ).bind(ghostId).first<any>();
+    const gcards = parseGhostCards(gr?.cards_json);
+    if (gr && gcards.length) {
+      foeTeam = gcards.map((c) => ({ ...c, photo: c.photo_r2_key ? `/api/screenshot/${c.photo_r2_key}` : null }));
+      foeName = gr.display_name || '謎之對手';
+      foeBase = gr.ship_base_hp || SHIP_HP;
+      foeScore = gr.rank_score || 0;
+    }
+  } else if (opponentId && opponentId !== auth.sub) {
     const op = await context.env.DB.prepare(
       `SELECT p.ship_card_ids, p.ship_base_hp, p.rank_score, u.display_name
        FROM arena_players p JOIN users u ON u.id = p.user_id WHERE p.user_id = ?`
