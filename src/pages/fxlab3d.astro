@@ -51,6 +51,9 @@
   <script type="module" is:inline>
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
     const ADD = THREE.AdditiveBlending;
     const app = document.getElementById('app');
@@ -72,6 +75,12 @@
     controls.target.set(0, 0.9, 0);
     controls.enableDamping = true; controls.dampingFactor = 0.08;
     controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 4; controls.maxDistance = 20;
+
+    // ---- bloom 發光後製（3D 質感的關鍵）----
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.95, 0.6, 0.82); // strength, radius, threshold
+    composer.addPass(bloom);
 
     // ---- lights ----
     scene.add(new THREE.AmbientLight(0x5566aa, 0.7));
@@ -171,16 +180,46 @@
       const base = card.userData.baseX, away = -card.userData.sign; let t = 0; const L = 0.4, dx = 0.32;
       addU((dt) => { t += dt; const k = Math.min(1, t / L); card.position.x = base + Math.sin(k*Math.PI)*dx*away; if (t >= L) { card.position.x = base; return false; } return true; });
     }
-    function impact(card, color, big) { const p = card.position.clone(); burst(p, color, big ? 26 : 14, big ? 3.2 : 2, big ? 0.85 : 0.65); dmgNum(card, big); knock(card); }
+    // 白光點（命中那顆，bloom 會讓它爆亮）
+    function lightPoint(pos, big) {
+      const mat = new THREE.SpriteMaterial({ map: GLOW, color: 0xffffff, transparent: true, opacity: 1, blending: ADD, depthWrite: false });
+      const s = new THREE.Sprite(mat); const sz = big ? 1.3 : 0.8; s.position.copy(pos); scene.add(s);
+      let t = 0; const L = 0.5;
+      addU((dt) => { t += dt; const k = t / L; const g = k < 0.25 ? 0.4 + (k / 0.25) * 0.6 : 1; s.scale.setScalar(sz * g * (1 + k * 0.5)); mat.opacity = k < 0.25 ? 1 : Math.max(0, 1 - (k - 0.25) / 0.75); if (t >= L) { scene.remove(s); mat.dispose(); return false; } return true; });
+    }
+    // 線形火花（沿方向飛的拉長亮條，取代圓顆粒）
+    function sparkLines3D(pos, dir, color, count, mag, big) {
+      const base = (dir && dir.lengthSq() > 1e-6) ? dir.clone().normalize() : new THREE.Vector3(0, 1, 0);
+      for (let i = 0; i < count; i++) {
+        const len = (big ? 0.7 : 0.45) * (0.6 + Math.random()), r = big ? 0.05 : 0.032;
+        const geo = new THREE.CylinderGeometry(r * 0.25, r, len, 6, 1, true);
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 1, blending: ADD, depthWrite: false });
+        const m = new THREE.Mesh(geo, mat);
+        const d = base.clone(); d.x += (Math.random() - 0.5) * 1.2; d.y += (Math.random() - 0.5) * 1.2; d.z += (Math.random() - 0.5) * 1.2; d.normalize();
+        m.position.copy(pos); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); scene.add(m);
+        const speed = (big ? 5.5 : 3.8) * (0.6 + Math.random()) * (mag || 1); let t = 0; const L = 0.38 + Math.random() * 0.2;
+        addU((dt) => { t += dt; m.position.addScaledVector(d, speed * dt); const k = t / L; m.scale.setScalar(Math.max(0.05, 1 - k)); mat.opacity = Math.max(0, 1 - k); if (t >= L) { scene.remove(m); geo.dispose(); mat.dispose(); return false; } return true; });
+      }
+    }
+    // 鏡頭震 + 微 zoom（暴擊）
+    let shakeAmt = 0, fovPunch = 0;
+    function camPunch(a) { shakeAmt = Math.max(shakeAmt, a); fovPunch = Math.max(fovPunch, a * 10); }
+    function impact(card, color, big, dir) {
+      const p = card.position.clone().add(new THREE.Vector3(0, 0.2, 0));
+      lightPoint(p, big);
+      sparkLines3D(p, dir, 0xbfe6ff, big ? 13 : 8, big ? 1.3 : 1, big);
+      dmgNum(card, big); knock(card);
+      if (big) camPunch(0.28);
+    }
     function muzzle(card, toward) { const d = new THREE.Vector3().subVectors(toward.position, card.position).normalize(); return card.position.clone().add(d.multiplyScalar(0.8)).add(new THREE.Vector3(0, 0.15, 0)); }
 
     // ---- 招式 ----
-    function fxLaser(big) { const atk = myCards[1], tgt = foeCards[1]; beam(muzzle(atk, tgt), tgt.position, 0x4f8bff, big); burst(muzzle(atk, tgt), 0xbfe6ff, 6, 1, 0.3); setTimeout(() => impact(tgt, 0xbfe6ff, big), 80); }
-    function fxShotgun(big) { const atk = myCards[1]; const mz = muzzle(atk, foeCards[1]); burst(mz, 0xffd24d, 8, 1.2, 0.3);
+    function fxLaser(big) { const atk = myCards[1], tgt = foeCards[1]; const mz = muzzle(atk, tgt); const dir = new THREE.Vector3().subVectors(tgt.position, atk.position).normalize(); beam(mz, tgt.position, 0x4f8bff, big); lightPoint(mz, false); setTimeout(() => impact(tgt, 0xbfe6ff, big, dir), 80); }
+    function fxShotgun(big) { const atk = myCards[1]; const mz = muzzle(atk, foeCards[1]); lightPoint(mz, false); sparkLines3D(mz, new THREE.Vector3(1, 0.2, 0), 0xffd24d, 6, 1, false);
       foeCards.forEach((tgt, i) => setTimeout(() => {
         const ball = new THREE.Mesh(new THREE.SphereGeometry(big ? 0.18 : 0.12, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffd24d, blending: ADD, transparent: true }));
         ball.position.copy(mz); scene.add(ball); let t = 0; const L = 0.32; const end = tgt.position.clone();
-        addU((dt) => { t += dt; const k = Math.min(1, t / L); ball.position.lerpVectors(mz, end, k); if (k >= 1) { scene.remove(ball); ball.geometry.dispose(); ball.material.dispose(); impact(tgt, 0xffd24d, big); return false; } return true; });
+        addU((dt) => { t += dt; const k = Math.min(1, t / L); ball.position.lerpVectors(mz, end, k); if (k >= 1) { scene.remove(ball); ball.geometry.dispose(); ball.material.dispose(); impact(tgt, 0xffd24d, big, new THREE.Vector3().subVectors(tgt.position, mz).normalize()); return false; } return true; });
       }, i * 70)); }
     function bez(a, c, b, t) { const it = 1 - t; return new THREE.Vector3(it*it*a.x + 2*it*t*c.x + t*t*b.x, it*it*a.y + 2*it*t*c.y + t*t*b.y, it*it*a.z + 2*it*t*c.z + t*t*b.z); }
     function fireBit(tgt, big, delay) {
@@ -193,7 +232,7 @@
         addU((dt) => { t += dt; const k = Math.min(1, t / L); const p = bez(start, ctrl, end, k); cone.position.copy(p);
           const v = new THREE.Vector3().subVectors(p, prev); if (v.lengthSq() > 1e-6) cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.normalize()); prev.copy(p);
           trailT += dt; if (trailT > 0.03) { trailT = 0; burst(p, 0x8fe0ff, 1, 0.2, 0.4); }
-          if (k >= 1) { beam(p, tgt.position, 0x2f9bff, big); impact(tgt, 0xbfe6ff, big); scene.remove(cone); cone.geometry.dispose(); cone.material.dispose(); return false; } return true; });
+          if (k >= 1) { beam(p, tgt.position, 0x2f9bff, big); impact(tgt, 0xbfe6ff, big, new THREE.Vector3().subVectors(tgt.position, p).normalize()); scene.remove(cone); cone.geometry.dispose(); cone.material.dispose(); return false; } return true; });
       }, delay);
     }
     function fxBit(big) { const n = big ? 3 : 1; for (let i = 0; i < n; i++) fireBit(foeCards[big ? i : 1], big, i * 180); }
@@ -206,7 +245,7 @@
         d.position.copy(sp); scene.add(d); let t = 0; const L = 0.34;
         addU((dt) => { t += dt; const k = Math.min(1, t / L); d.position.lerpVectors(sp, mz, k); if (k >= 1) { scene.remove(d); d.geometry.dispose(); d.material.dispose(); return false; } return true; });
       }, i * 24);
-      setTimeout(() => { const tgt = foeCards[1]; beam(mz, tgt.position, 0x2f9bff, big); impact(tgt, 0xbfe6ff, big); }, 640);
+      setTimeout(() => { const tgt = foeCards[1]; lightPoint(mz, big); beam(mz, tgt.position, 0x2f9bff, big); impact(tgt, 0xbfe6ff, big, new THREE.Vector3().subVectors(tgt.position, mz).normalize()); }, 640);
     }
 
     const crit = () => document.getElementById('o-crit').checked;
@@ -225,12 +264,18 @@
       for (let i = updaters.length - 1; i >= 0; i--) { if (!updaters[i](dt)) updaters.splice(i, 1); }
       if (document.getElementById('o-auto').checked) { autoT += dt; if (autoT > 2.6) { autoT = 0; seq[si % seq.length](crit()); si++; } }
       controls.update();
-      renderer.render(scene, camera);
+      // 鏡頭震 + 微 zoom（暴擊）
+      let ox = 0, oy = 0, oz = 0;
+      if (shakeAmt > 0.002) { ox = (Math.random()-0.5)*shakeAmt; oy = (Math.random()-0.5)*shakeAmt; oz = (Math.random()-0.5)*shakeAmt; shakeAmt *= Math.max(0, 1 - 9*dt); }
+      if (fovPunch > 0.01) { camera.fov = 50 - fovPunch; camera.updateProjectionMatrix(); fovPunch *= Math.max(0, 1 - 7*dt); } else if (camera.fov !== 50) { camera.fov = 50; camera.updateProjectionMatrix(); }
+      camera.position.x += ox; camera.position.y += oy; camera.position.z += oz;
+      composer.render();
+      camera.position.x -= ox; camera.position.y -= oy; camera.position.z -= oz;
       requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
 
-    addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+    addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); });
   </script>
 </body>
 </html>
