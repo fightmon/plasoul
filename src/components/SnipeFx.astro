@@ -42,6 +42,7 @@
       diffuse: { lines: 5, chargeT: 620 },
       'diffuse-tuner': { lines: 5, chargeT: 620 },
       bit: {},
+      bit3: { pods: 3, crit: true },
       charge: {},
       wave: {},
       snipebeam: {},
@@ -199,33 +200,39 @@
       const s = setupStage(stage), fxf = s.fxf, card = s.card;
       const svg = document.createElementNS(SVGNS, 'svg');
       svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4;overflow:visible'; stage.appendChild(svg);
+      const pods = cfg.pods || 1, crit = !!cfg.crit;
+      function launch(a, cr, r, i) {
+        const tx = (cr.left - r.left) + cr.width * (0.3 + Math.random() * 0.4);
+        const ty = (cr.top - r.top) + cr.height * (0.25 + Math.random() * 0.42);
+        const ud = i % 2 === 0 ? -1 : 1;
+        const c1 = { x: a.x + r.width * (0.1 + Math.random() * 0.08), y: a.y + ud * r.height * (0.28 + Math.random() * 0.1) };
+        const c2 = { x: (a.x + tx) / 2, y: ty + ud * r.height * 0.24 };
+        const d = 'M ' + a.x + ' ' + a.y + ' C ' + c1.x + ' ' + c1.y + ' ' + c2.x + ' ' + c2.y + ' ' + tx + ' ' + ty;
+        trailPath(svg, d, 600, '#8fe0ff');
+        const pod = el(fxf, '', 'position:absolute;left:0;top:0;width:18px;height:13px;background:linear-gradient(90deg,#5bc8ff,#eafaff);box-shadow:0 0 12px #6fd3ff;clip-path:polygon(100% 50%,0 0,0 100%);z-index:6');
+        pod.style.offsetPath = "path('" + d + "')"; pod.style.offsetRotate = 'auto'; pod.style.offsetDistance = '0%';
+        pod.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: 600, easing: 'ease-in-out', fill: 'forwards' }).onfinish = function () {
+          el(fxf, '', 'position:absolute;left:' + tx + 'px;top:' + ty + 'px;width:' + (crit ? 22 : 14) + 'px;height:' + (crit ? 22 : 14) + 'px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,#9fe8ff 55%,transparent 74%)').animate([{ opacity: .95, transform: 'translate(-50%,-50%) scale(.5)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(' + (crit ? 1.8 : 1.3) + ')' }], { duration: 280, fill: 'forwards' });
+          hitPoint(fxf, tx, ty, crit); spark(fxf, tx, ty, 0, 'dot', crit ? 'large' : 'small', '#bfefff', 80);
+          dmgNum(fxf, tx, ty, crit ? '-999!' : '-350');
+          card.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(' + (crit ? 7 : 5) + 'px,0)', offset: .3 }, { transform: 'translate(0,0)' }], { duration: 300, composite: 'add' });
+          const bp = { x: a.x, y: a.y }, bc = { x: (tx + bp.x) / 2, y: Math.min(ty, bp.y) - r.height * 0.3 };
+          const d2 = 'M ' + tx + ' ' + ty + ' C ' + bc.x + ' ' + bc.y + ' ' + bc.x + ' ' + bc.y + ' ' + bp.x + ' ' + bp.y;
+          setTimeout(function () {
+            trailPath(svg, d2, 420, '#8fe0ff');
+            pod.style.offsetPath = "path('" + d2 + "')"; pod.style.offsetDistance = '0%';
+            pod.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: 420, easing: 'ease-in-out', fill: 'forwards' }).onfinish = function () { try { pod.remove(); } catch (e) {} };
+          }, 220);
+        };
+      }
       function play() {
         fxf.innerHTML = ''; svg.innerHTML = '';
         const r = stage.getBoundingClientRect(); if (!r.width) return;
         svg.setAttribute('viewBox', '0 0 ' + r.width + ' ' + r.height);
         const a = { x: r.width * 0.27, y: r.height * 0.5 }; const cr = card.getBoundingClientRect();
-        const tx = (cr.left - r.left) + cr.width * 0.42, ty = (cr.top - r.top) + cr.height * 0.45;
-        const c1 = { x: a.x + r.width * 0.14, y: a.y - r.height * 0.32 }, c2 = { x: (a.x + tx) / 2, y: ty - r.height * 0.3 };
-        const d = 'M ' + a.x + ' ' + a.y + ' C ' + c1.x + ' ' + c1.y + ' ' + c2.x + ' ' + c2.y + ' ' + tx + ' ' + ty;
-        trailPath(svg, d, 640, '#8fe0ff');
-        const pod = el(fxf, '', 'position:absolute;left:0;top:0;width:18px;height:13px;background:linear-gradient(90deg,#5bc8ff,#eafaff);box-shadow:0 0 12px #6fd3ff;clip-path:polygon(100% 50%,0 0,0 100%);z-index:6');
-        pod.style.offsetPath = "path('" + d + "')"; pod.style.offsetRotate = 'auto'; pod.style.offsetDistance = '0%';
-        pod.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: 640, easing: 'ease-in-out', fill: 'forwards' }).onfinish = function () {
-          el(fxf, '', 'position:absolute;left:' + tx + 'px;top:' + ty + 'px;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff,#9fe8ff 55%,transparent 74%)').animate([{ opacity: .9, transform: 'translate(-50%,-50%) scale(.5)' }, { opacity: 0, transform: 'translate(-50%,-50%) scale(1.3)' }], { duration: 240, fill: 'forwards' });
-          hitPoint(fxf, tx, ty); spark(fxf, tx, ty, 0, 'dot', 'small', '#bfefff');
-          dmgNum(fxf, tx, ty, '-350');
-          card.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(5px,0)', offset: .3 }, { transform: 'translate(0,0)' }], { duration: 300, composite: 'add' });
-          // 飛回
-          const bp = { x: a.x, y: a.y }, bc = { x: (tx + bp.x) / 2, y: Math.min(ty, bp.y) - r.height * 0.32 };
-          const d2 = 'M ' + tx + ' ' + ty + ' C ' + bc.x + ' ' + bc.y + ' ' + bc.x + ' ' + bc.y + ' ' + bp.x + ' ' + bp.y;
-          setTimeout(function () {
-            trailPath(svg, d2, 440, '#8fe0ff');
-            pod.style.offsetPath = "path('" + d2 + "')"; pod.style.offsetDistance = '0%';
-            pod.animate([{ offsetDistance: '0%' }, { offsetDistance: '100%' }], { duration: 440, easing: 'ease-in-out', fill: 'forwards' }).onfinish = function () { try { pod.remove(); } catch (e) {} };
-          }, 260);
-        };
+        for (let i = 0; i < pods; i++) setTimeout(function () { launch(a, cr, r, i); }, i * 200);
       }
-      play(); setInterval(play, 2900);
+      play(); setInterval(play, pods > 1 ? 3400 : 2900);
       return { play: play };
     }
 
@@ -346,7 +353,7 @@
           const api = runDiffuse(stage, cfg);
           buildDiffuseTuner(root, cfg, api.play);
         } else if (v === 'diffuse') { runDiffuse(root, cfg); }
-        else if (v === 'bit') { runBit(root, cfg); }
+        else if (v === 'bit' || v === 'bit3') { runBit(root, cfg); }
         else if (v === 'charge') { runCharge(root, cfg); }
         else if (v === 'wave') { runWave(root, cfg); }
         else if (v === 'snipebeam') { runSnipeBeam(root, cfg); }
