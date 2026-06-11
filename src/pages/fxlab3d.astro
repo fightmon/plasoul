@@ -1,0 +1,236 @@
+---
+// /fxlab3d — 3D 招式實驗室（Three.js / WebGL）。完全獨立的探索沙盒：
+// 不碰 fxlab.astro / arena.astro / 機制。用 CDN importmap 載 three（需連網）。
+---
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>fxlab3d · 3D 招式實驗室 · 普拉魂</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #06080f; font-family: system-ui, "Noto Sans TC", sans-serif; }
+    #app { position: fixed; inset: 0; }
+    .ui { position: fixed; top: 12px; left: 12px; z-index: 10; width: 220px; background: rgba(10,14,28,.82); border: 1px solid #2c3a5e; border-radius: 12px; padding: 12px; backdrop-filter: blur(6px); color: #cdd6ea; }
+    .ui h1 { font-size: 14px; margin: 0 0 2px; color: #9fe8ff; letter-spacing: 1px; }
+    .ui .sub { font-size: 11px; color: #7f8db0; margin-bottom: 10px; }
+    .row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .row button { flex: 1 1 46%; padding: 9px 6px; border-radius: 8px; border: 1px solid #2c3a5e; background: #141c34; color: #dce6ff; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .row button:hover { border-color: #5b86ff; }
+    .opts { display: flex; gap: 12px; font-size: 12px; align-items: center; margin-top: 4px; }
+    .opts label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+    .hint { position: fixed; bottom: 10px; left: 0; right: 0; text-align: center; color: #5f6e95; font-size: 11px; z-index: 10; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div class="ui">
+    <h1>3D 招式實驗室</h1>
+    <div class="sub">fxlab3d · WebGL 探索沙盒</div>
+    <div class="row">
+      <button id="b-laser">雷射</button>
+      <button id="b-charge">蓄力炮</button>
+      <button id="b-shotgun">散彈(全)</button>
+      <button id="b-bit">子機</button>
+    </div>
+    <div class="opts">
+      <label><input type="checkbox" id="o-crit" /> 暴擊</label>
+      <label><input type="checkbox" id="o-auto" /> 自動循環</label>
+    </div>
+  </div>
+  <div class="hint">滑鼠拖曳旋轉 · 滾輪縮放 · 右鍵平移</div>
+
+  <script type="importmap" is:inline>
+    { "imports": {
+      "three": "https://esm.sh/three@0.161.0",
+      "three/addons/": "https://esm.sh/three@0.161.0/examples/jsm/"
+    } }
+  </script>
+  <script type="module" is:inline>
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    const ADD = THREE.AdditiveBlending;
+    const app = document.getElementById('app');
+
+    // ---- renderer / scene / camera ----
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    app.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x06080f);
+    scene.fog = new THREE.Fog(0x06080f, 12, 30);
+
+    const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+    camera.position.set(0, 4.2, 9.5);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0.9, 0);
+    controls.enableDamping = true; controls.dampingFactor = 0.08;
+    controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 4; controls.maxDistance = 20;
+
+    // ---- lights ----
+    scene.add(new THREE.AmbientLight(0x5566aa, 0.7));
+    const key = new THREE.DirectionalLight(0xffffff, 1.1); key.position.set(4, 8, 6); scene.add(key);
+    scene.add(new THREE.PointLight(0x3a6bff, 0.6, 30));
+
+    // ---- ground + grid ----
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(40, 40),
+      new THREE.MeshStandardMaterial({ color: 0x0c1224, metalness: 0.4, roughness: 0.8 })
+    );
+    ground.rotation.x = -Math.PI / 2; scene.add(ground);
+    const grid = new THREE.GridHelper(40, 40, 0x21407a, 0x14244a);
+    grid.position.y = 0.01; grid.material.opacity = 0.25; grid.material.transparent = true; scene.add(grid);
+
+    // ---- stars ----
+    (() => {
+      const g = new THREE.BufferGeometry(); const n = 600; const p = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) { p[3*i] = (Math.random()-0.5)*80; p[3*i+1] = Math.random()*40; p[3*i+2] = (Math.random()-0.5)*80; }
+      g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0x8aa0d0, size: 0.08, transparent: true, opacity: 0.7 })));
+    })();
+
+    // ---- glow texture (粒子/光點共用) ----
+    const GLOW = (() => {
+      const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
+      const grd = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.4, 'rgba(255,255,255,0.6)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+      x.fillStyle = grd; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+    })();
+
+    // ---- cards ----
+    function makeCard(color, emissive) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 1.7, 0.1),
+        new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: 0.55, metalness: 0.5, roughness: 0.45 })
+      );
+      g.add(body);
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(body.geometry), new THREE.LineBasicMaterial({ color: emissive }));
+      g.add(edge);
+      return g;
+    }
+    const myCards = [], foeCards = [];
+    const zs = [-2, 0, 2];
+    zs.forEach((z) => {
+      const m = makeCard(0x16224a, 0x4f8bff); m.position.set(-3.4, 0.85, z); m.userData.baseX = -3.4; m.userData.sign = 1; scene.add(m); myCards.push(m);
+      const f = makeCard(0x3a1622, 0xff5a6e); f.position.set(3.4, 0.85, z); f.userData.baseX = 3.4; f.userData.sign = -1; scene.add(f); foeCards.push(f);
+    });
+
+    // ---- updater loop ----
+    const updaters = [];
+    const addU = (fn) => updaters.push(fn);
+
+    // ---- fx helpers ----
+    function burst(pos, color, count, spread, life) {
+      const geo = new THREE.BufferGeometry(); const arr = new Float32Array(count * 3); const vel = [];
+      for (let i = 0; i < count; i++) {
+        arr[3*i] = pos.x; arr[3*i+1] = pos.y; arr[3*i+2] = pos.z;
+        const a = Math.random()*Math.PI*2, b = Math.acos(2*Math.random()-1), s = spread*(0.4+Math.random());
+        vel.push(new THREE.Vector3(Math.sin(b)*Math.cos(a), Math.cos(b), Math.sin(b)*Math.sin(a)).multiplyScalar(s));
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      const mat = new THREE.PointsMaterial({ size: 0.28, map: GLOW, color, transparent: true, opacity: 1, blending: ADD, depthWrite: false });
+      const pts = new THREE.Points(geo, mat); scene.add(pts);
+      let t = 0; const L = life || 0.7;
+      addU((dt) => { t += dt; const p = geo.attributes.position.array;
+        for (let i = 0; i < count; i++) { p[3*i]+=vel[i].x*dt; p[3*i+1]+=vel[i].y*dt - 0.9*dt*t; p[3*i+2]+=vel[i].z*dt; }
+        geo.attributes.position.needsUpdate = true; mat.opacity = Math.max(0, 1 - t / L);
+        if (t >= L) { scene.remove(pts); geo.dispose(); mat.dispose(); return false; } return true; });
+    }
+    function beam(from, to, color, big) {
+      const dir = new THREE.Vector3().subVectors(to, from); const len = dir.length();
+      const r = big ? 0.16 : 0.07;
+      const geo = new THREE.CylinderGeometry(r, r, len, 14, 1, true);
+      const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0, blending: ADD, depthWrite: false });
+      const m = new THREE.Mesh(geo, mat);
+      m.position.copy(from).add(to).multiplyScalar(0.5);
+      m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      scene.add(m);
+      let t = 0; const L = 0.42;
+      addU((dt) => { t += dt; const k = t / L; mat.opacity = k < 0.18 ? k/0.18 : (1 - (k-0.18)/0.82); if (t >= L) { scene.remove(m); geo.dispose(); mat.dispose(); return false; } return true; });
+    }
+    function makeTextSprite(text, color) {
+      const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d');
+      x.font = 'bold 78px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.lineWidth = 8; x.strokeStyle = '#000'; x.strokeText(text, 128, 64); x.fillStyle = color; x.fillText(text, 128, 64);
+      const tex = new THREE.CanvasTexture(c); const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+      const s = new THREE.Sprite(mat); s.scale.set(2, 1, 1); return { s, mat, tex };
+    }
+    function dmgNum(card, big) {
+      const { s, mat, tex } = makeTextSprite(big ? '-999!' : '-350', big ? '#ffd24d' : '#ffffff');
+      s.position.copy(card.position).add(new THREE.Vector3(0, 1.1, 0)); scene.add(s);
+      let t = 0; const L = 0.95;
+      addU((dt) => { t += dt; s.position.y += dt * 1.3; mat.opacity = Math.max(0, 1 - t / L); if (t >= L) { scene.remove(s); mat.dispose(); tex.dispose(); return false; } return true; });
+    }
+    function knock(card) {
+      const base = card.userData.baseX, away = -card.userData.sign; let t = 0; const L = 0.4, dx = 0.32;
+      addU((dt) => { t += dt; const k = Math.min(1, t / L); card.position.x = base + Math.sin(k*Math.PI)*dx*away; if (t >= L) { card.position.x = base; return false; } return true; });
+    }
+    function impact(card, color, big) { const p = card.position.clone(); burst(p, color, big ? 26 : 14, big ? 3.2 : 2, big ? 0.85 : 0.65); dmgNum(card, big); knock(card); }
+    function muzzle(card, toward) { const d = new THREE.Vector3().subVectors(toward.position, card.position).normalize(); return card.position.clone().add(d.multiplyScalar(0.8)).add(new THREE.Vector3(0, 0.15, 0)); }
+
+    // ---- 招式 ----
+    function fxLaser(big) { const atk = myCards[1], tgt = foeCards[1]; beam(muzzle(atk, tgt), tgt.position, 0x4f8bff, big); burst(muzzle(atk, tgt), 0xbfe6ff, 6, 1, 0.3); setTimeout(() => impact(tgt, 0xbfe6ff, big), 80); }
+    function fxShotgun(big) { const atk = myCards[1]; const mz = muzzle(atk, foeCards[1]); burst(mz, 0xffd24d, 8, 1.2, 0.3);
+      foeCards.forEach((tgt, i) => setTimeout(() => {
+        const ball = new THREE.Mesh(new THREE.SphereGeometry(big ? 0.18 : 0.12, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffd24d, blending: ADD, transparent: true }));
+        ball.position.copy(mz); scene.add(ball); let t = 0; const L = 0.32; const end = tgt.position.clone();
+        addU((dt) => { t += dt; const k = Math.min(1, t / L); ball.position.lerpVectors(mz, end, k); if (k >= 1) { scene.remove(ball); ball.geometry.dispose(); ball.material.dispose(); impact(tgt, 0xffd24d, big); return false; } return true; });
+      }, i * 70)); }
+    function bez(a, c, b, t) { const it = 1 - t; return new THREE.Vector3(it*it*a.x + 2*it*t*c.x + t*t*b.x, it*it*a.y + 2*it*t*c.y + t*t*b.y, it*it*a.z + 2*it*t*c.z + t*t*b.z); }
+    function fireBit(tgt, big, delay) {
+      setTimeout(() => {
+        const start = myCards[1].position.clone().add(new THREE.Vector3(0.5, 0.4, 0));
+        const end = tgt.position.clone().add(new THREE.Vector3(-0.8, 0.1, 0));
+        const ctrl = start.clone().lerp(end, 0.5).add(new THREE.Vector3(0, 2.4, (Math.random()-0.5)*2.5));
+        const cone = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.36, 8), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, blending: ADD, transparent: true }));
+        scene.add(cone); let t = 0; const L = 0.7; const prev = start.clone(); let trailT = 0;
+        addU((dt) => { t += dt; const k = Math.min(1, t / L); const p = bez(start, ctrl, end, k); cone.position.copy(p);
+          const v = new THREE.Vector3().subVectors(p, prev); if (v.lengthSq() > 1e-6) cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), v.normalize()); prev.copy(p);
+          trailT += dt; if (trailT > 0.03) { trailT = 0; burst(p, 0x8fe0ff, 1, 0.2, 0.4); }
+          if (k >= 1) { beam(p, tgt.position, 0x2f9bff, big); impact(tgt, 0xbfe6ff, big); scene.remove(cone); cone.geometry.dispose(); cone.material.dispose(); return false; } return true; });
+      }, delay);
+    }
+    function fxBit(big) { const n = big ? 3 : 1; for (let i = 0; i < n; i++) fireBit(foeCards[big ? i : 1], big, i * 180); }
+    function fxCharge(big) {
+      const mz = myCards[1].position.clone().add(new THREE.Vector3(0.6, 0.25, 0));
+      for (let i = 0; i < 22; i++) setTimeout(() => {
+        const a = Math.random()*Math.PI*2, b = Math.acos(2*Math.random()-1), r = 1.4;
+        const sp = mz.clone().add(new THREE.Vector3(Math.sin(b)*Math.cos(a), Math.cos(b), Math.sin(b)*Math.sin(a)).multiplyScalar(r));
+        const d = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), new THREE.MeshBasicMaterial({ color: 0xbfefff, blending: ADD, transparent: true }));
+        d.position.copy(sp); scene.add(d); let t = 0; const L = 0.34;
+        addU((dt) => { t += dt; const k = Math.min(1, t / L); d.position.lerpVectors(sp, mz, k); if (k >= 1) { scene.remove(d); d.geometry.dispose(); d.material.dispose(); return false; } return true; });
+      }, i * 24);
+      setTimeout(() => { const tgt = foeCards[1]; beam(mz, tgt.position, 0x2f9bff, big); impact(tgt, 0xbfe6ff, big); }, 640);
+    }
+
+    const crit = () => document.getElementById('o-crit').checked;
+    document.getElementById('b-laser').onclick = () => fxLaser(crit());
+    document.getElementById('b-charge').onclick = () => fxCharge(crit());
+    document.getElementById('b-shotgun').onclick = () => fxShotgun(crit());
+    document.getElementById('b-bit').onclick = () => fxBit(crit());
+
+    // 自動循環
+    const seq = [fxLaser, fxCharge, fxShotgun, fxBit]; let si = 0, autoT = 0;
+
+    // ---- render loop ----
+    let last = performance.now();
+    function tick(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      for (let i = updaters.length - 1; i >= 0; i--) { if (!updaters[i](dt)) updaters.splice(i, 1); }
+      if (document.getElementById('o-auto').checked) { autoT += dt; if (autoT > 2.6) { autoT = 0; seq[si % seq.length](crit()); si++; } }
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+  </script>
+</body>
+</html>
